@@ -31,11 +31,12 @@ namespace pwm {
                 :nnz(nzs), nor(nr), noc(nc) {}
 
             /**
-             * @brief Generate Sparse matrix comming from discretizised 2D laplace matrix
+             * @brief Fill the given matrix as a 2D discritizised poisson matrix with equal discritization steplength in x and y
              * 
-             * @param size size of the matrix
+             * @param n The amount of discritization steps in the x direction
+             * @param m The amount of discritization steps in the y direction
              */
-            virtual void generatePoissonMatrix(const int_type size);
+            virtual void generatePoissonMatrix(const int_type n, const int_type m) = 0;
             
             
             /**
@@ -44,7 +45,7 @@ namespace pwm {
              * @param x Vector to be modified with the matrix
              * @return T* Result vector
              */
-            virtual T* mv(const T* x);
+            virtual std::vector<T> mv(const std::vector<T> x) = 0;
 
             /**
              * @brief Power method
@@ -53,7 +54,7 @@ namespace pwm {
              * @param it Amount of iterations
              * @return T* Resulting vector
              */
-            virtual T* powerMethod(const T* x, const int_type it);
+            // virtual T* powerMethod(const T* x, const int_type it) = 0;
 
     };
 } // namespace pwm
