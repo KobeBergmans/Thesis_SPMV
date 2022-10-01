@@ -8,28 +8,56 @@
 
 #include <iostream>
 #include <algorithm>
+#include <time.h>
+#include <string>
 
 #include "CRS.hpp"
 #include "VectorUtill.hpp"
 
 int main(int argc, char** argv) {
-    // TODO: Select parallelisation method
+    struct timespec start, stop; 
+	double time;
+
+    if (argc < 4) {
+        std::cout << "You need to provide 3 command line arguments:" << std::endl;
+        std::cout << "  1° Amount of times the power algorithm is executed" << std::endl;
+        std::cout << "  2° Amount of iterations in the power method algorithm" << std::endl;
+        std::cout << "  3° Poisson equation discritization steps" << std::endl;
+        return -1;
+    }
+
+    int iter = std::stoi(argv[1]);
+    int pwm_iter = std::stoi(argv[2]);
+    int m = std::stoi(argv[3]);
+    int mat_size = m*m;
+    
+    //Select parallelisation method
     std::cout << "For now the basic sequential algorithm is used..." << std::endl;
 
-    // TODO: Initialize matrix and vectors
+    //Initialize matrix and vectors
+    clock_gettime(CLOCK_MONOTONIC, &start);
     pwm::CRS<double, int> test_mat;
-    test_mat.generatePoissonMatrix(3,3);
+    test_mat.generatePoissonMatrix(m,m);
 
-    double* x = new double[9];
-    double* y = new double[9];
-    std::fill(x, x+9, 1.);
+    double* x = new double[mat_size];
+    double* y = new double[mat_size];
+    std::fill(x, x+mat_size, 1.);
 
-    // TODO: Solve power method
-    test_mat.powerMethod(x, y, 100);
+    clock_gettime(CLOCK_MONOTONIC, &stop);
+    time  = (stop.tv_sec-start.tv_sec)*1000;
+	time += (stop.tv_nsec-start.tv_nsec)/1000000.0;
+    std::cout << "Time to set up datastructures: " << time << "ms" << std::endl;
 
-    std::cout << "Solution of power method: " << std::endl;
-    pwm::printVector(x, 9);
-    pwm::printVector(y, 9);
-
+    // Solve power method an amount of time
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    for (int i = 0; i < iter; ++i) {
+        test_mat.powerMethod(x, y, pwm_iter);
+    }
+    clock_gettime(CLOCK_MONOTONIC, &stop);
+    time  = (stop.tv_sec-start.tv_sec)*1000;
+	time += (stop.tv_nsec-start.tv_nsec)/1000000.0;
+    std::cout << "Time (ms) to get 1000 executions: " << time << "ms" << std::endl;
+    
+    
     return 0;
 }
