@@ -1,13 +1,13 @@
 /**
  * @file VectorUtil.hpp
  * @author Kobe Bergmans (kobe.bergmans@student.kuleuven.be)
- * @brief Utillity functions to perform vector operations 
+ * @brief Utility functions to perform vector operations 
  * @version 0.1
  * @date 2022-10-01
  */
 
-#ifndef PWM_VECTORUTIL_HPP
-#define PWM_VECTORUTIL_HPP
+#ifndef PWM_VECTORUTILL_HPP
+#define PWM_VECTORUTILL_HPP
 
 #include <vector>
 #include <numeric>
@@ -57,4 +57,4 @@ namespace pwm
     }
 } // namespace pwm
 
-#endif
+#endif // PWM_VECTORUTILL_HPP

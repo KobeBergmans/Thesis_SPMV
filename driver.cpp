@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
         std::cout << "You need to provide 3 command line arguments:" << std::endl;
         std::cout << "  1° Amount of times the power algorithm is executed" << std::endl;
         std::cout << "  2° Amount of iterations in the power method algorithm" << std::endl;
-        std::cout << "  3° Poisson equation discritization steps" << std::endl;
+        std::cout << "  3° Poisson equation discretization steps" << std::endl;
         return -1;
     }
 
@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
     int m = std::stoi(argv[3]);
     int mat_size = m*m;
     
-    //Select parallelisation method
+    //Select method
     std::cout << "For now the basic sequential algorithm is used..." << std::endl;
 
     //Initialize matrix and vectors

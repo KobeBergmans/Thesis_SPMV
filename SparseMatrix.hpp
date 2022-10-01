@@ -31,10 +31,10 @@ namespace pwm {
                 :nnz(nzs), nor(nr), noc(nc) {}
 
             /**
-             * @brief Fill the given matrix as a 2D discritizised poisson matrix with equal discritization steplength in x and y
+             * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
              * 
-             * @param n The amount of discritization steps in the x direction
-             * @param m The amount of discritization steps in the y direction
+             * @param n The amount of discretization steps in the x direction
+             * @param m The amount of discretization steps in the y direction
              */
             virtual void generatePoissonMatrix(const int_type n, const int_type m) = 0;
             
