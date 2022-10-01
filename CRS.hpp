@@ -13,21 +13,24 @@
 
 #include <vector>
 #include <iostream>
+#include <cassert>
+#include <algorithm>
 
 #include "SparseMatrix.hpp"
+#include "VectorUtill.hpp"
 
 namespace pwm {
     template<typename T, typename int_type>
     class CRS: public pwm::SparseMatrix<T, int_type> {
         protected:
             // Row start array for the CRS format
-            std::vector<int_type> row_start;
+            int_type* row_start;
             
             // Column index array for the CRS format
-            std::vector<int_type> col_ind;
+            int_type* col_ind;
 
             // Data array which stores the actual nonzeros
-            std::vector<T> data_arr;
+            T* data_arr;
 
         public:
             // Base constructor
@@ -45,9 +48,9 @@ namespace pwm {
                 this->nor = nb_r;
                 this->noc = nb_c;
 
-                row_start.resize(this->nor+1);
-                col_ind.resize(this->nnz);
-                data_arr.resize(this->nnz);
+                row_start = new int_type[this->nor+1];
+                col_ind = new int_type[this->nnz];
+                data_arr = new T[this->nnz];
             }
 
             /**
@@ -64,9 +67,9 @@ namespace pwm {
 
                 this->nnz = n*(m+2*(m-1)) + 2*(n-1)*m;
 
-                row_start.resize(this->nor+1);
-                col_ind.resize(this->nnz);
-                data_arr.resize(this->nnz);
+                row_start = new int_type[this->nor+1];
+                col_ind = new int_type[this->nnz];
+                data_arr = new T[this->nnz];
 
                 // Fill data rows
                 // TODO: Can this be more efficient?
@@ -104,7 +107,6 @@ namespace pwm {
 
                     // Check for identity after D
                     if (row < m*n - n) {
-                        std::cout << "row after: " << row << std::endl;
                         data_arr[nnz_index] = -1;
                         col_ind[nnz_index] = m+row;
                         nnz_index++;
@@ -113,32 +115,26 @@ namespace pwm {
                     row_start[row+1] = nnz_index;
                 }
 
-                row_start[this->nor] = row_start[this->nor]; // Deduct one from the last row
+#ifndef NDEBUG
+                assert(this->nnz == nnz_index);
+                assert(row_start[0] == 0);
+                assert(row_start[this->nor] == this->nnz);
 
                 std::cout << "nnz and index: " << this->nnz << ", " << nnz_index << std::endl;
-                std::cout << "Row, col and data sizes: " << row_start.size() << ", " << col_ind.size() << ", " << data_arr.size() << std::endl;
 
                 std::cout << "Row start: " << std::endl;
-                for (int i = 0; i < row_start.size(); ++i) {
-                    std::cout << row_start[i] << ", ";
-                }
-                std::cout << std::endl;
+                pwm::printVector(row_start, this->nor+1);
 
                 std::cout << "Col ind: " << std::endl;
-                for (int i = 0; i < col_ind.size(); ++i) {
-                    std::cout << col_ind[i] << ", ";
-                }
-                std::cout << std::endl;
+                pwm::printVector(col_ind, this->nnz);
 
                 std::cout << "Data: " << std::endl;
-                for (int i = 0; i < data_arr.size(); ++i) {
-                    std::cout << data_arr[i] << ", ";
-                }
-                std::cout << std::endl;
+                pwm::printVector(data_arr, this->nnz);
+#endif
             }
 
-            std::vector<T> mv(const std::vector<T> x) {
-                std::vector<T> y(this->nor, 0);
+            void mv(const T* x, T* y) {
+                std::fill(y, y+this->nor, 0.);
 
                 int_type j;
                 for (int_type i = 0; i < this->nor; ++i) {
@@ -147,8 +143,18 @@ namespace pwm {
                         y[i] = y[i] + data_arr[k]*x[j];
                     }
                 }
+            }
 
-                return y;
+            void powerMethod(T* x, T* y, const int_type it) {
+                assert(this->nor == this->noc); //Power method only works on square matrices
+                
+                for (int i = 0; i < it; ++i) {
+                    this->mv(x, y);
+                    pwm::normalize(y, this->nor);
+
+                    // TODO: Not completely efficient on the last iteration
+                    std::copy(y, y+this->nor, x);
+                }
             }
     };
 } // namespace pwm

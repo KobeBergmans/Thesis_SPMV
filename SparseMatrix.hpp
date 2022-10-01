@@ -45,7 +45,7 @@ namespace pwm {
              * @param x Vector to be modified with the matrix
              * @return T* Result vector
              */
-            virtual std::vector<T> mv(const std::vector<T> x) = 0;
+            virtual void mv(const T* x, T* y) = 0;
 
             /**
              * @brief Power method
@@ -54,7 +54,7 @@ namespace pwm {
              * @param it Amount of iterations
              * @return T* Resulting vector
              */
-            // virtual T* powerMethod(const T* x, const int_type it) = 0;
+            virtual void powerMethod(T* x, T* y, const int_type it) = 0;
 
     };
 } // namespace pwm
