@@ -73,56 +73,11 @@ namespace pwm {
                 col_ind = new int_type[this->nnz];
                 data_arr = new T[this->nnz];
 
-                // Fill data rows
-                // TODO: Can this be more efficient?
-                int_type nnz_index = 0;
-                for (int_type row = 0; row < m*n; ++row) {
-
-                    // Check for identity before D
-                    if (row >= m) {
-                        // Diagonal of I
-                        data_arr[nnz_index] = -1;
-                        col_ind[nnz_index] = row - m;
-                        nnz_index++;
-                    }
-
-                    // Check if we are not on the first row of D
-                    if (row % m != 0) {
-                        // Subdiagonal of D
-                        data_arr[nnz_index] = -1;
-                        col_ind[nnz_index] = row-1;
-                        nnz_index++;
-                    } 
-
-                    // Diagonal of D
-                    data_arr[nnz_index] = 4;
-                    col_ind[nnz_index] = row;
-                    nnz_index++;
-
-                    // Check if we are not on the last row of D
-                    if (row % m != m-1) {
-                        // Superdiagonal of D
-                        data_arr[nnz_index] = -1;
-                        col_ind[nnz_index] = row+1;
-                        nnz_index++;
-                    }
-
-                    // Check for identity after D
-                    if (row < m*n - n) {
-                        data_arr[nnz_index] = -1;
-                        col_ind[nnz_index] = m+row;
-                        nnz_index++;
-                    }
-
-                    row_start[row+1] = nnz_index;
-                }
+                pwm::fillPoisson(data_arr, row_start, col_ind, m, n);
 
 #ifndef NDEBUG
-                assert(this->nnz == nnz_index);
                 assert(row_start[0] == 0);
                 assert(row_start[this->nor] == this->nnz);
-
-                std::cout << "nnz and index: " << this->nnz << ", " << nnz_index << std::endl;
 
                 std::cout << "Row start: " << std::endl;
                 pwm::printVector(row_start, this->nor+1);

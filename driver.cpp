@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
     }
 
     //Initialize parallelization params
-    if (threads != -1) {
+    if (method > 1 && threads != -1) {
         std::cout << "Initializing " << threads << " threads..." << std::endl;
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, threads);
         omp_set_num_threads(threads);
