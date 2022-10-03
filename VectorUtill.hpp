@@ -57,11 +57,17 @@ namespace pwm
     }
 
     template<typename T, typename int_type>
-    void fillPoisson(T* data_arr, int_type* row_start, int_type* col_ind, int_type m, int_type n) {
+    void fillPoisson(T* data_arr, int_type* row_start, int_type* col_ind, int_type m, int_type n, int_type first_row = 0, int_type last_row = 0) {
+        if (last_row == 0) {
+            last_row = m*n;
+        }
+
+        row_start[0] = 0;
+
         // Fill data rows
         // TODO: Can this be more efficient?
         int_type nnz_index = 0;
-        for (int_type row = 0; row < m*n; ++row) {
+        for (int_type row = first_row; row < last_row; ++row) {
 
             // Check for identity before D
             if (row >= m) {
@@ -99,7 +105,7 @@ namespace pwm
                 nnz_index++;
             }
 
-            row_start[row+1] = nnz_index;
+            row_start[row-first_row+1] = nnz_index;
         }
     }
 } // namespace pwm

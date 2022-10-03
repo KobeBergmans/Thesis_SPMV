@@ -14,6 +14,7 @@
 #include "CRS.hpp"
 #include "CRSOMP.hpp"
 #include "CRSTBB.hpp"
+#include "CRSTBBGraph.hpp"
 #include "VectorUtill.hpp"
 
 #include "omp.h"
@@ -30,6 +31,7 @@ void printErrorMsg() {
     std::cout << "     1) Standard CRS (sequential)" << std::endl;
     std::cout << "     2) CRS parallelized using OpenMP" << std::endl;
     std::cout << "     3) CRS parallelized using TBB" << std::endl;
+    std::cout << "     4) CRS parallelized using TBB graphs" << std::endl;
     std::cout << "  5° Amount of threads (only for a parallel method). -1 lets the program choose the amount of threads arbitrarily" << std::endl;
 }
 
@@ -44,6 +46,9 @@ pwm::SparseMatrix<T, int_type>* selectType(int method) {
 
         case 3:
             return new pwm::CRSTBB<T, int_type>();
+
+        case 4:
+            return new pwm::CRSTBBGraph<T, int_type>();
         
         default:
             return NULL;
@@ -91,7 +96,7 @@ int main(int argc, char** argv) {
     
     //Initialize matrix and vectors
     clock_gettime(CLOCK_MONOTONIC, &start);
-    test_mat->generatePoissonMatrix(m,m);
+    test_mat->generatePoissonMatrix(m, m, threads);
 
     double* x = new double[mat_size];
     double* y = new double[mat_size];
@@ -114,7 +119,7 @@ int main(int argc, char** argv) {
 
 #ifndef NDEBUG
     std::cout << "Result for checking measures: " << std::endl;
-    pwm::printVector(x, mat_size);
+    pwm::printVector(y, mat_size);
 #endif
     
     return 0;

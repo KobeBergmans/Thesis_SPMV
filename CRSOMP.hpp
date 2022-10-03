@@ -39,23 +39,6 @@ namespace pwm {
             CRSOMP() {}
 
             /**
-             * @brief Base constructor which initializes internal arrays
-             * 
-             * @param nnz Number of nonzeros
-             * @param nor Number of rows
-             * @param noc Number of columns
-             */
-            CRSOMP(const int_type non_z, const int_type nb_r, const int_type nb_c) {
-                this->nnz = non_z;
-                this->nor = nb_r;
-                this->noc = nb_c;
-
-                row_start = new int_type[this->nor+1];
-                col_ind = new int_type[this->nnz];
-                data_arr = new T[this->nnz];
-            }
-
-            /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
              * 
              * https://en.wikipedia.org/wiki/Discrete_Poisson_equation
@@ -63,7 +46,7 @@ namespace pwm {
              * @param m The amount of discretization steps in the x direction
              * @param n The amount of discretization steps in the y direction
              */
-            void generatePoissonMatrix(const int_type m, const int_type n) {
+            void generatePoissonMatrix(const int_type m, const int_type n, const int threads) {
                 this->noc = m*n;
                 this->nor = m*n;
 
@@ -90,7 +73,7 @@ namespace pwm {
 #endif
             }
 
-            void mv(const T* x, T* y) const {             
+            void mv(const T* x, T* y) {             
                 #pragma omp parallel for shared(x, y) schedule(dynamic, 8) // We use dynamic scheduler because of the varying workload per row
                 for (int_type i = 0; i < this->nor; ++i) {
                     T sum = 0.;
@@ -104,7 +87,7 @@ namespace pwm {
                 }
             }
 
-            void powerMethod(T* x, T* y, const int_type it) const {
+            void powerMethod(T* x, T* y, const int_type it) {
                 assert(this->nor == this->noc); //Power method only works on square matrices
                 
                 for (int i = 0; i < it; ++i) {
