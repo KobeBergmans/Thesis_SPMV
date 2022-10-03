@@ -32,7 +32,8 @@ void printErrorMsg() {
     std::cout << "     2) CRS parallelized using OpenMP" << std::endl;
     std::cout << "     3) CRS parallelized using TBB" << std::endl;
     std::cout << "     4) CRS parallelized using TBB graphs" << std::endl;
-    std::cout << "  5° Amount of threads (only for a parallel method). -1 lets the program choose the amount of threads arbitrarily" << std::endl;
+    std::cout << "  5° Amount of threads (only for a parallel method).";
+    std::cout << "-1 lets the program choose the amount of threads arbitrarily (not available for method 4)" << std::endl;
 }
 
 template<typename T, typename int_type>
@@ -82,7 +83,7 @@ int main(int argc, char** argv) {
     //Select method
     pwm::SparseMatrix<double, int>* test_mat = selectType<double, int>(method);
 
-    if (test_mat == NULL) {
+    if (test_mat == NULL || (method == 4 && threads == -1)) {
         printErrorMsg();
         return -1;
     }
