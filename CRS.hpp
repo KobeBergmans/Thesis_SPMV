@@ -133,7 +133,7 @@ namespace pwm {
 #endif
             }
 
-            void mv(const T* x, T* y) {
+            void mv(const T* x, T* y) const {
                 std::fill(y, y+this->nor, 0.);
 
                 int_type j;
@@ -145,7 +145,7 @@ namespace pwm {
                 }
             }
 
-            void powerMethod(T* x, T* y, const int_type it) {
+            void powerMethod(T* x, T* y, const int_type it) const {
                 assert(this->nor == this->noc); //Power method only works on square matrices
                 
                 for (int i = 0; i < it; ++i) {

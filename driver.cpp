@@ -13,6 +13,7 @@
 
 #include "CRS.hpp"
 #include "CRSOMP.hpp"
+#include "CRSTBB.hpp"
 #include "VectorUtill.hpp"
 
 void printErrorMsg() {
@@ -23,6 +24,7 @@ void printErrorMsg() {
     std::cout << "  4° Method to use:" << std::endl;
     std::cout << "     1) Standard CRS (sequential)" << std::endl;
     std::cout << "     2) CRS parallelized using OpenMP" << std::endl;
+    std::cout << "     3) CRS parallelized using TBB" << std::endl;
     std::cout << "  5° Amount of threads (only for a parallel method)" << std::endl;
 }
 
@@ -31,12 +33,13 @@ pwm::SparseMatrix<T, int_type>* selectType(int method, int threads) {
     switch (method) {
         case 1:
             return new pwm::CRS<T, int_type>();
-            break;
 
         case 2:
             omp_set_num_threads(threads);
             return new pwm::CRSOMP<T, int_type>();
-            break;
+
+        case 3:
+            return new pwm::CRSTBB<T, int_type>();
         
         default:
             return NULL;
@@ -98,7 +101,11 @@ int main(int argc, char** argv) {
     time  = (stop.tv_sec-start.tv_sec)*1000;
 	time += (stop.tv_nsec-start.tv_nsec)/1000000.0;
     std::cout << "Time (ms) to get " << iter << " executions: " << time << "ms" << std::endl;
-    
+
+#ifndef NDEBUG
+    std::cout << "Result for checking measures: " << std::endl;
+    pwm::printVector(x, mat_size);
+#endif
     
     return 0;
 }

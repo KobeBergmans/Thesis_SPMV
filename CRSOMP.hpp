@@ -135,7 +135,7 @@ namespace pwm {
 #endif
             }
 
-            void mv(const T* x, T* y) {             
+            void mv(const T* x, T* y) const {             
                 #pragma omp parallel for shared(x, y) schedule(dynamic, 8) // We use dynamic scheduler because of the varying workload per row
                 for (int_type i = 0; i < this->nor; ++i) {
                     T sum = 0.;
@@ -149,7 +149,7 @@ namespace pwm {
                 }
             }
 
-            void powerMethod(T* x, T* y, const int_type it) {
+            void powerMethod(T* x, T* y, const int_type it) const {
                 assert(this->nor == this->noc); //Power method only works on square matrices
                 
                 for (int i = 0; i < it; ++i) {
