@@ -16,6 +16,11 @@
 #include "CRSTBB.hpp"
 #include "VectorUtill.hpp"
 
+#include "omp.h"
+#include "oneapi/tbb.h"
+
+namespace tbb = oneapi::tbb;
+
 void printErrorMsg() {
     std::cout << "You need to provide the correct command line arguments:" << std::endl;
     std::cout << "  1° Amount of times the power algorithm is executed" << std::endl;
@@ -25,17 +30,16 @@ void printErrorMsg() {
     std::cout << "     1) Standard CRS (sequential)" << std::endl;
     std::cout << "     2) CRS parallelized using OpenMP" << std::endl;
     std::cout << "     3) CRS parallelized using TBB" << std::endl;
-    std::cout << "  5° Amount of threads (only for a parallel method)" << std::endl;
+    std::cout << "  5° Amount of threads (only for a parallel method). -1 lets the program choose the amount of threads arbitrarily" << std::endl;
 }
 
 template<typename T, typename int_type>
-pwm::SparseMatrix<T, int_type>* selectType(int method, int threads) {
+pwm::SparseMatrix<T, int_type>* selectType(int method) {
     switch (method) {
         case 1:
             return new pwm::CRS<T, int_type>();
 
         case 2:
-            omp_set_num_threads(threads);
             return new pwm::CRSOMP<T, int_type>();
 
         case 3:
@@ -44,7 +48,6 @@ pwm::SparseMatrix<T, int_type>* selectType(int method, int threads) {
         default:
             return NULL;
     }
-
 }
 
 int main(int argc, char** argv) {
@@ -72,11 +75,18 @@ int main(int argc, char** argv) {
     }  
     
     //Select method
-    pwm::SparseMatrix<double, int>* test_mat = selectType<double, int>(method, threads);
+    pwm::SparseMatrix<double, int>* test_mat = selectType<double, int>(method);
 
     if (test_mat == NULL) {
         printErrorMsg();
         return -1;
+    }
+
+    //Initialize parallelization params
+    if (threads != -1) {
+        std::cout << "Initializing " << threads << " threads..." << std::endl;
+        tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, threads);
+        omp_set_num_threads(threads);
     }
     
     //Initialize matrix and vectors
