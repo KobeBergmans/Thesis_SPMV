@@ -42,9 +42,7 @@ namespace pwm {
 
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
-             * 
-             * https://en.wikipedia.org/wiki/Discrete_Poisson_equation
-             * 
+             *
              * @param m The amount of discretization steps in the x direction
              * @param n The amount of discretization steps in the y direction
              */
@@ -60,21 +58,18 @@ namespace pwm {
 
                 pwm::fillPoisson(data_arr, row_start, col_ind, m, n);
 
-#ifndef NDEBUG
                 assert(row_start[0] == 0);
                 assert(row_start[this->nor] == this->nnz);
-
-                std::cout << "Row start: " << std::endl;
-                pwm::printVector(row_start, this->nor+1);
-
-                std::cout << "Col ind: " << std::endl;
-                pwm::printVector(col_ind, this->nnz);
-
-                std::cout << "Data: " << std::endl;
-                pwm::printVector(data_arr, this->nnz);
-#endif
             }
 
+            /**
+             * @brief Matrix vector product Ax = y
+             * 
+             * Loop is parallelized using parallel_for function from TBB
+             * 
+             * @param x Input vector
+             * @param y Output vector
+             */
             void mv(const T* x, T* y) {   
                 tbb::parallel_for(0, this->nor, [=](int_type i) {
                     T sum = 0.;
@@ -88,6 +83,15 @@ namespace pwm {
                 });
             }
 
+            /**
+             * @brief Power method: Executes matrix vector product repeatedly to get the dominant eigenvector.
+             * 
+             * Loop is parallelized using parallel_for function of TBB
+             * 
+             * @param x Input vector to start calculation, contains the output at the end of the algorithm
+             * @param y Temporary vector to store calculations
+             * @param it Amount of iterations for the algorithm
+             */
             void powerMethod(T* x, T* y, const int_type it) {
                 assert(this->nor == this->noc); //Power method only works on square matrices
                 

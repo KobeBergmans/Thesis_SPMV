@@ -54,7 +54,10 @@ namespace pwm {
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
              * 
-             * https://en.wikipedia.org/wiki/Discrete_Poisson_equation
+             * The matrix is partitioned for each thread 
+             * This is done by splitting the rows equally, this is only optimal because every row has approximately the same elements.
+             * 
+             * Then each Matrix part gets its own TBB function_node which is used to calculate the matrix vector product of the given partition.
              * 
              * @param m The amount of discretization steps in the x direction
              * @param n The amount of discretization steps in the y direction
@@ -115,6 +118,14 @@ namespace pwm {
                 
             }
 
+            /**
+             * @brief Matrix vector product Ax = y
+             * 
+             * The loop is parallelized using different graph nodes from TBB for each thread.
+             * 
+             * @param x Input vector
+             * @param y Output vector
+             */
             void mv(const T* x, T* y) {   
                 for (int i = 0; i < threads; ++i) {
                     n_list[i].try_put(std::make_tuple(x,y));
@@ -123,6 +134,15 @@ namespace pwm {
                 g.wait_for_all();
             }
 
+            /**
+             * @brief Power method: Executes matrix vector product repeatedly to get the dominant eigenvector.
+             * 
+             * Loop is parallelized using parallel_for from TBB
+             * 
+             * @param x Input vector to start calculation, contains the output at the end of the algorithm
+             * @param y Temporary vector to store calculations
+             * @param it Amount of iterations for the algorithm
+             */
             void powerMethod(T* x, T* y, const int_type it) {
                 assert(this->nor == this->noc); //Power method only works on square matrices
                 

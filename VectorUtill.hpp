@@ -56,6 +56,21 @@ namespace pwm
         std::cout << std::endl;
     }
 
+    /**
+     * @brief Fill the 2D discretized Poisson matrix.
+     * 
+     * https://en.wikipedia.org/wiki/Discrete_Poisson_equation
+     * 
+     * With the first_row and last_row parameters it is possible to put part of the Poisson matrix into CRS format.
+     * 
+     * @param data_arr Data array of CRS format
+     * @param row_start Row_start array of CRS format
+     * @param col_ind Column indices array of CRS format
+     * @param m The amount of discretization steps in the x direction
+     * @param n The amount of discretization steps in the y direction
+     * @param first_row First row of the matrix which is put into CRS format
+     * @param last_row Last row of the matrix which is put into CRS format
+     */
     template<typename T, typename int_type>
     void fillPoisson(T* data_arr, int_type* row_start, int_type* col_ind, int_type m, int_type n, int_type first_row = 0, int_type last_row = 0) {
         if (last_row == 0) {
