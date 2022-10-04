@@ -26,17 +26,18 @@ namespace tbb = oneapi::tbb;
 void printErrorMsg() {
     std::cout << "You need to provide the correct command line arguments:" << std::endl;
     std::cout << "  1° Amount of times the power algorithm is executed" << std::endl;
-    std::cout << "  2° Amount of iterations in the power method algorithm" << std::endl;
-    std::cout << "  3° Poisson equation discretization steps" << std::endl;
-    std::cout << "  4° Method to use:" << std::endl;
+    std::cout << "  2° Amount of warm up runs for the power algorithm (not timed)" << std::endl;
+    std::cout << "  3° Amount of iterations in the power method algorithm" << std::endl;
+    std::cout << "  4° Poisson equation discretization steps" << std::endl;
+    std::cout << "  5° Method to use:" << std::endl;
     std::cout << "     1) Standard CRS (sequential)" << std::endl;
     std::cout << "     2) CRS parallelized using OpenMP" << std::endl;
     std::cout << "     3) CRS parallelized using TBB" << std::endl;
     std::cout << "     4) CRS parallelized using TBB graphs" << std::endl;
     std::cout << "     5) CRS parallelized using Boost Thread Pool" << std::endl;
-    std::cout << "  5° Amount of threads (only for a parallel method).";
+    std::cout << "  6° Amount of threads (only for a parallel method).";
     std::cout << " -1 lets the program choose the amount of threads arbitrarily" << std::endl;
-    std::cout << "  6° Amount of partitions the matrix is split up into (only for method 4 and 5)" << std::endl;
+    std::cout << "  7° Amount of partitions the matrix is split up into (only for method 4 and 5)" << std::endl;
 }
 
 template<typename T, typename int_type>
@@ -66,17 +67,18 @@ int main(int argc, char** argv) {
     struct timespec start, stop; 
 	double time;
 
-    if (argc < 5) {
+    if (argc < 6) {
         printErrorMsg();
         return -1;
     }
 
     int iter = std::stoi(argv[1]);
-    int pwm_iter = std::stoi(argv[2]);
-    int m = std::stoi(argv[3]);
+    int warm_up = std::stoi(argv[2]);
+    int pwm_iter = std::stoi(argv[3]);
+    int m = std::stoi(argv[4]);
     int mat_size = m*m;
 
-    int method = std::stoi(argv[4]);
+    int method = std::stoi(argv[5]);
     int threads = 0;
     int partitions = 0;
     if (method > 1 && argc < 6) {
@@ -84,14 +86,14 @@ int main(int argc, char** argv) {
         printErrorMsg();
         return -1;
     } else if (method > 1) {
-        threads = std::stoi(argv[5]);
+        threads = std::stoi(argv[6]);
     }
 
     if ((method == 4 || method == 5) && argc < 7) {
         printErrorMsg();
         return -1;
     } else if (method == 4 || method == 5) {
-        partitions = std::stoi(argv[6]);
+        partitions = std::stoi(argv[7]);
     }
     
     //Select method
@@ -115,9 +117,16 @@ int main(int argc, char** argv) {
 	time += (stop.tv_nsec-start.tv_nsec)/1000000.0;
     std::cout << "Time to set up datastructures: " << time << "ms" << std::endl;
 
+    // Do warm up iterations
+    for (int i = 0; i < warm_up; ++i) {
+        std::fill(x, x+mat_size, 1.);
+        test_mat->powerMethod(x, y, pwm_iter);
+    }
+
     // Solve power method an amount of time
     clock_gettime(CLOCK_MONOTONIC, &start);
     for (int i = 0; i < iter; ++i) {
+        std::fill(x, x+mat_size, 1.);
         test_mat->powerMethod(x, y, pwm_iter);
     }
     clock_gettime(CLOCK_MONOTONIC, &stop);
