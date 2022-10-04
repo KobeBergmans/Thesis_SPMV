@@ -36,6 +36,9 @@ namespace pwm {
             // Base constructor
             CRS() {}
 
+            // Base constructor
+            CRS(int threads) {}
+
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
              * 

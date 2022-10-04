@@ -36,9 +36,15 @@ namespace pwm {
             // Data array which stores the actual nonzeros
             T* data_arr;
 
+            // Global threads limit
+            tbb::global_control global_limit;
+
         public:
             // Base constructor
             CRSTBB() {}
+
+            // Base constructor
+            CRSTBB(int threads): global_limit(tbb::global_control::max_allowed_parallelism, threads) {}
 
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y

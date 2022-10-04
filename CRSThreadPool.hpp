@@ -56,6 +56,9 @@ namespace pwm {
             // Base constructor
             CRSThreadPool() {}
 
+            // Base constructor
+            CRSThreadPool(int threads): pool(threads) {}
+
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
              * 

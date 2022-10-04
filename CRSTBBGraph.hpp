@@ -47,9 +47,15 @@ namespace pwm {
             // TBB nodes list
             std::vector<flow::function_node<std::tuple<const T*, T*>, int>> n_list;
 
+            // Global threads limit
+            tbb::global_control global_limit;
+
         public:
             // Base constructor
             CRSTBBGraph() {}
+
+            // Base constructor
+            CRSTBBGraph(int threads): global_limit(tbb::global_control::max_allowed_parallelism, threads) {}
 
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y

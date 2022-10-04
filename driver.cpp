@@ -35,26 +35,27 @@ void printErrorMsg() {
     std::cout << "     4) CRS parallelized using TBB graphs" << std::endl;
     std::cout << "     5) CRS parallelized using Boost Thread Pool" << std::endl;
     std::cout << "  5° Amount of threads (only for a parallel method).";
-    std::cout << " -1 lets the program choose the amount of threads arbitrarily (not available for method 4 & 5)" << std::endl;
+    std::cout << " -1 lets the program choose the amount of threads arbitrarily" << std::endl;
+    std::cout << "  6° Amount of partitions the matrix is split up into (only for method 4 and 5)" << std::endl;
 }
 
 template<typename T, typename int_type>
-pwm::SparseMatrix<T, int_type>* selectType(int method) {
+pwm::SparseMatrix<T, int_type>* selectType(int method, int threads) {
     switch (method) {
         case 1:
-            return new pwm::CRS<T, int_type>();
+            return new pwm::CRS<T, int_type>(threads);
 
         case 2:
-            return new pwm::CRSOMP<T, int_type>();
+            return new pwm::CRSOMP<T, int_type>(threads);
 
         case 3:
-            return new pwm::CRSTBB<T, int_type>();
+            return new pwm::CRSTBB<T, int_type>(threads);
 
         case 4:
-            return new pwm::CRSTBBGraph<T, int_type>();
+            return new pwm::CRSTBBGraph<T, int_type>(threads);
 
         case 5:
-            return new pwm::CRSThreadPool<T, int_type>();
+            return new pwm::CRSThreadPool<T, int_type>(threads);
         
         default:
             return NULL;
@@ -77,6 +78,7 @@ int main(int argc, char** argv) {
 
     int method = std::stoi(argv[4]);
     int threads = 0;
+    int partitions = 0;
     if (method > 1 && argc < 6) {
         // No amount of threads specified
         printErrorMsg();
@@ -85,29 +87,24 @@ int main(int argc, char** argv) {
         threads = std::stoi(argv[5]);
     }
 
-    if ((method == 4 || method == 5) && threads == -1) {
+    if ((method == 4 || method == 5) && argc < 7) {
         printErrorMsg();
         return -1;
+    } else if (method == 4 || method == 5) {
+        partitions = std::stoi(argv[6]);
     }
     
     //Select method
-    pwm::SparseMatrix<double, int>* test_mat = selectType<double, int>(method);
+    pwm::SparseMatrix<double, int>* test_mat = selectType<double, int>(method, threads);
 
     if (test_mat == NULL) {
         printErrorMsg();
         return -1;
     }
-
-    //Initialize parallelization params
-    if (method > 1 && threads != -1) {
-        std::cout << "Initializing " << threads << " threads..." << std::endl;
-        tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, threads);
-        omp_set_num_threads(threads);
-    }
     
     //Initialize matrix and vectors
     clock_gettime(CLOCK_MONOTONIC, &start);
-    test_mat->generatePoissonMatrix(m, m, threads);
+    test_mat->generatePoissonMatrix(m, m, partitions);
 
     double* x = new double[mat_size];
     double* y = new double[mat_size];
