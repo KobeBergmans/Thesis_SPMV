@@ -15,6 +15,7 @@
 #include "CRSOMP.hpp"
 #include "CRSTBB.hpp"
 #include "CRSTBBGraph.hpp"
+#include "CRSThreadPool.hpp"
 #include "VectorUtill.hpp"
 
 #include "omp.h"
@@ -32,8 +33,9 @@ void printErrorMsg() {
     std::cout << "     2) CRS parallelized using OpenMP" << std::endl;
     std::cout << "     3) CRS parallelized using TBB" << std::endl;
     std::cout << "     4) CRS parallelized using TBB graphs" << std::endl;
+    std::cout << "     5) CRS parallelized using Boost Thread Pool" << std::endl;
     std::cout << "  5° Amount of threads (only for a parallel method).";
-    std::cout << "-1 lets the program choose the amount of threads arbitrarily (not available for method 4)" << std::endl;
+    std::cout << " -1 lets the program choose the amount of threads arbitrarily (not available for method 4 & 5)" << std::endl;
 }
 
 template<typename T, typename int_type>
@@ -50,6 +52,9 @@ pwm::SparseMatrix<T, int_type>* selectType(int method) {
 
         case 4:
             return new pwm::CRSTBBGraph<T, int_type>();
+
+        case 5:
+            return new pwm::CRSThreadPool<T, int_type>();
         
         default:
             return NULL;
@@ -80,7 +85,7 @@ int main(int argc, char** argv) {
         threads = std::stoi(argv[5]);
     }
 
-    if (method == 4 && threads == -1) {
+    if ((method == 4 || method == 5) && threads == -1) {
         printErrorMsg();
         return -1;
     }
