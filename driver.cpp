@@ -78,12 +78,17 @@ int main(int argc, char** argv) {
         return -1;
     } else if (method > 1) {
         threads = std::stoi(argv[5]);
-    }  
+    }
+
+    if (method == 4 && threads == -1) {
+        printErrorMsg();
+        return -1;
+    }
     
     //Select method
     pwm::SparseMatrix<double, int>* test_mat = selectType<double, int>(method);
 
-    if (test_mat == NULL || (method == 4 && threads == -1)) {
+    if (test_mat == NULL) {
         printErrorMsg();
         return -1;
     }
