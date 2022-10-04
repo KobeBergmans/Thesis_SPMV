@@ -62,7 +62,8 @@ namespace pwm {
              * The matrix is partitioned for each thread 
              * This is done by splitting the rows equally, this is only optimal because every row has approximately the same elements.
              * 
-             * Then each Matrix part gets its own TBB function_node which is used to calculate the matrix vector product of the given partition.
+             * Then each Matrix part gets its own mv_function and norm_function 
+             * This is used to calculate the matrix vector product & normalization of the given partition.
              * 
              * @param m The amount of discretization steps in the x direction
              * @param n The amount of discretization steps in the y direction
@@ -131,7 +132,7 @@ namespace pwm {
             /**
              * @brief Matrix vector product Ax = y
              * 
-             * The loop is parallelized using different graph nodes from TBB for each thread.
+             * The loop is parallelized using functions posted to the threadpool
              * 
              * @param x Input vector
              * @param y Output vector
@@ -158,7 +159,7 @@ namespace pwm {
             /**
              * @brief Power method: Executes matrix vector product repeatedly to get the dominant eigenvector.
              * 
-             * Loop is parallelized using parallel_for from TBB
+             * Loop is parallelized using functions posted to the threadpool
              * 
              * @param x Input vector to start calculation, contains the output at the end of the algorithm
              * @param y Temporary vector to store calculations
