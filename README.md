@@ -2,6 +2,8 @@
 
 ## Prerequisites
 
+* g++
+* OpenMP
 * Boost
 * oneTBB 
 
@@ -23,3 +25,8 @@
 6° Amount of threads (only for a parallel method). -1 lets the program choose the amount of threads arbitrarily
 7° Amount of partitions the matrix is split up into (only for method 4 and 5)
 ```
+
+## TODO
+
+* Fix that threads always run on the same data for `CRSTBBGraph` and `CRSThreadPool`.
+* Make an MPI multicore implementation (if this is available)
