@@ -16,6 +16,7 @@
 #include <cassert>
 #include <algorithm>
 #include <tuple>
+#include <thread>
 
 #include "SparseMatrix.hpp"
 #include "VectorUtill.hpp"
@@ -38,10 +39,10 @@ namespace pwm {
             // Array of data array which stores the actual nonzeros. 1 for each thread.
             T** data_arr;
 
-            // Amount of threads
-            int threads;
+            // Amount of partitions
+            int partitions;
 
-            // TBB graph object
+            // Graph for TBB nodes
             flow::graph g;
 
             // TBB nodes list
@@ -55,7 +56,8 @@ namespace pwm {
             CRSTBBGraph() {}
 
             // Base constructor
-            CRSTBBGraph(int threads): global_limit(tbb::global_control::max_allowed_parallelism, threads) {}
+            CRSTBBGraph(int threads):
+            global_limit(tbb::global_control::max_allowed_parallelism, threads) {}
 
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
@@ -67,28 +69,30 @@ namespace pwm {
              * 
              * @param m The amount of discretization steps in the x direction
              * @param n The amount of discretization steps in the y direction
+             * @param partitions_am The amount of partitions the matrix is partitioned in
              */
-            void generatePoissonMatrix(const int_type m, const int_type n, const int threads_am) {
+            void generatePoissonMatrix(const int_type m, const int_type n, const int partitions_am) {
                 this->noc = m*n;
                 this->nor = m*n;
 
                 this->nnz = n*(m+2*(m-1)) + 2*(n-1)*m;
 
-                threads = threads_am;
+                partitions = partitions_am;
 
-                row_start = new int_type*[threads];
-                col_ind = new int_type*[threads];
-                data_arr = new T*[threads];
+                row_start = new int_type*[partitions];
+                col_ind = new int_type*[partitions];
+                data_arr = new T*[partitions];
 
                 // Generate data for each thread
-                int_type am_rows = std::round(m*n/threads);
+                int_type am_rows = std::round(m*n/partitions);
                 int_type first_row = 0;
                 int_type last_row = 0;
                 int_type thread_rows;
-                for (int i = 0; i < threads; ++i) {
+                // int graph_index = 0;
+                for (int i = 0; i < partitions; ++i) {
                     first_row = last_row;
 
-                    if (i == threads - 1) last_row = m*n;
+                    if (i == partitions - 1) last_row = m*n;
                     else last_row = first_row + am_rows;
                     thread_rows = last_row - first_row;
 
@@ -101,10 +105,24 @@ namespace pwm {
                     // Fill CRS matrix for given thread
                     pwm::fillPoisson(data_arr[i], row_start[i], col_ind [i], m, n, first_row, last_row);
 
+                    // Get CPU count
+                    // auto cpu_count = std::thread::hardware_concurrency();
+
                     // Create node for this thread
                     flow::function_node<std::tuple<const T*, T*>, int> n(g, 1, [=](std::tuple<const T*, T*> input) -> int {
                         const T* x = std::get<0>(input);
                         T* y = std::get<1>(input);
+
+                        // Put the current thread on the right cpu
+                        // cpu_set_t *mask;
+                        // mask = CPU_ALLOC(1);
+                        // auto mask_size = CPU_ALLOC_SIZE(1);
+                        // CPU_ZERO_S(mask_size, mask);
+                        // CPU_SET_S(graph_index % cpu_count, mask_size, mask);
+
+                        // if (sched_setaffinity(0, mask_size, mask)) {
+                        //     std::cout << "Error in setAffinity" << std::endl;
+                        // }
 
                         int_type j;
                         for (int_type l = 0; l < thread_rows; ++l) {
@@ -120,8 +138,9 @@ namespace pwm {
                     });
 
                     n_list.push_back(n);
+
+                    // graph_index = (graph_index + 1) % graph_list.size();
                 }
-                
             }
 
             /**
@@ -133,7 +152,7 @@ namespace pwm {
              * @param y Output vector
              */
             void mv(const T* x, T* y) {   
-                for (int i = 0; i < threads; ++i) {
+                for (int i = 0; i < partitions; ++i) {
                     n_list[i].try_put(std::make_tuple(x,y));
                 }
                 

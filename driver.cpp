@@ -21,8 +21,6 @@
 #include "omp.h"
 #include "oneapi/tbb.h"
 
-namespace tbb = oneapi::tbb;
-
 void printErrorMsg() {
     std::cout << "You need to provide the correct command line arguments:" << std::endl;
     std::cout << "  1° Amount of times the power algorithm is executed" << std::endl;

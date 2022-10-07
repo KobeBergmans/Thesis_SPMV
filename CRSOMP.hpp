@@ -49,7 +49,7 @@ namespace pwm {
              * @param m The amount of discretization steps in the x direction
              * @param n The amount of discretization steps in the y direction
              */
-            void generatePoissonMatrix(const int_type m, const int_type n, const int threads) {
+            void generatePoissonMatrix(const int_type m, const int_type n, const int partitions) {
                 this->noc = m*n;
                 this->nor = m*n;
 
