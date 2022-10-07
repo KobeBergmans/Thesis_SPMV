@@ -16,6 +16,7 @@
 #include "CRSTBB.hpp"
 #include "CRSTBBGraph.hpp"
 #include "CRSThreadPool.hpp"
+#include "CRSThreadPoolPinned.hpp"
 #include "VectorUtill.hpp"
 
 #include "omp.h"
@@ -33,9 +34,10 @@ void printErrorMsg() {
     std::cout << "     3) CRS parallelized using TBB" << std::endl;
     std::cout << "     4) CRS parallelized using TBB graphs" << std::endl;
     std::cout << "     5) CRS parallelized using Boost Thread Pool" << std::endl;
+    std::cout << "     6) CRS parallelized using Boost Thread Pool with Threads pinned to a CPU" << std::endl;
     std::cout << "  6° Amount of threads (only for a parallel method).";
     std::cout << " -1 lets the program choose the amount of threads arbitrarily" << std::endl;
-    std::cout << "  7° Amount of partitions the matrix is split up into (only for method 4 and 5)" << std::endl;
+    std::cout << "  7° Amount of partitions the matrix is split up into (only for method 4, 5 and 6)" << std::endl;
 }
 
 template<typename T, typename int_type>
@@ -55,6 +57,9 @@ pwm::SparseMatrix<T, int_type>* selectType(int method, int threads) {
 
         case 5:
             return new pwm::CRSThreadPool<T, int_type>(threads);
+
+        case 6:
+            return new pwm::CRSThreadPoolPinned<T, int_type>(threads);
         
         default:
             return NULL;
@@ -87,10 +92,10 @@ int main(int argc, char** argv) {
         threads = std::stoi(argv[6]);
     }
 
-    if ((method == 4 || method == 5) && argc < 7) {
+    if ((method == 4 || method == 5 || method == 6) && argc < 7) {
         printErrorMsg();
         return -1;
-    } else if (method == 4 || method == 5) {
+    } else if (method == 4 || method == 5 || method == 6) {
         partitions = std::stoi(argv[7]);
     }
     

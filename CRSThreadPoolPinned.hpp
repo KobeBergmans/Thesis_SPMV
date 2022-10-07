@@ -1,15 +1,15 @@
 /**
- * @file CRSThreadPool.hpp
+ * @file CRSThreadPoolPinned.hpp
  * @author Kobe Bergmans (kobe.bergmans@student.kuleuven.be)
- * @brief Compressed Row Storage matrix class using Boost thread pool
+ * @brief Compressed Row Storage matrix class using Boost thread pool with threads pinned to a CPU
  * @version 0.1
- * @date 2022-10-03
+ * @date 2022-10-07
  * 
  * Includes method to generate CRS matrix obtained from discrete 2D poisson equation
  */
 
-#ifndef PWM_CRSTHREADPOOL_HPP
-#define PWM_CRSTHREADPOOL_HPP
+#ifndef PWM_CRSTHREADPOOLPINNED_HPP
+#define PWM_CRSTHREADPOOLPINNED_HPP
 
 #define BOOST_THREAD_PROVIDES_FUTURE_WHEN_ALL_WHEN_ANY
 
@@ -29,7 +29,7 @@
 
 namespace pwm {
     template<typename T, typename int_type>
-    class CRSThreadPool: public pwm::SparseMatrix<T, int_type> {
+    class CRSThreadPoolPinned: public pwm::SparseMatrix<T, int_type> {
         protected:
             // Array of row start arrays for the CRS format. 1 for each thread.
             int_type** row_start;
@@ -54,10 +54,10 @@ namespace pwm {
 
         public:
             // Base constructor
-            CRSThreadPool() {}
+            CRSThreadPoolPinned() {}
 
             // Base constructor
-            CRSThreadPool(int threads): pool(threads) {}
+            CRSThreadPoolPinned(int threads): pool(threads) {}
 
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
@@ -104,8 +104,22 @@ namespace pwm {
                     // Fill CRS matrix for given thread
                     pwm::fillPoisson(data_arr[i], row_start[i], col_ind [i], m, n, first_row, last_row);
 
+                    // Get cpu count
+                    auto cpu_count = std::thread::hardware_concurrency();
+
                     // Create mv lambda function for this thread
                     std::function<void(const T*, T*)> mv_func = [=](const T* x, T* y) -> void {
+                        // Put the current thread on the right cpu
+                        cpu_set_t *mask;
+                        mask = CPU_ALLOC(1);
+                        auto mask_size = CPU_ALLOC_SIZE(1);
+                        CPU_ZERO_S(mask_size, mask);
+                        CPU_SET_S(i % cpu_count, mask_size, mask);
+
+                        if (sched_setaffinity(0, mask_size, mask)) {
+                            std::cout << "Error in setAffinity" << std::endl;
+                        }
+
                         int_type j;
                         for (int_type l = 0; l < thread_rows; ++l) {
                             T sum = 0;
@@ -121,6 +135,17 @@ namespace pwm {
 
                     // Create normalize function for this thread
                     std::function<void(T*, T*, T)> norm_func = [=](T* x, T* y, T norm) -> void {
+                        // Put the current thread on the right cpu
+                        cpu_set_t *mask;
+                        mask = CPU_ALLOC(1);
+                        auto mask_size = CPU_ALLOC_SIZE(1);
+                        CPU_ZERO_S(mask_size, mask);
+                        CPU_SET_S(i % cpu_count, mask_size, mask);
+
+                        if (sched_setaffinity(0, mask_size, mask)) {
+                            std::cout << "Error in setAffinity" << std::endl;
+                        }
+
                         for (int_type l = 0; l < thread_rows; ++l) {
                             y[l+first_row] /= norm;
                             x[l+first_row] = y[l+first_row];
@@ -197,4 +222,4 @@ namespace pwm {
     };
 } // namespace pwm
 
-#endif // PWM_CRSTHREADPOOL_HPP
+#endif // PWM_CRSTHREADPOOLPINNED_HPP
