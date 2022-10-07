@@ -40,6 +40,9 @@ namespace pwm {
             // Array of data array which stores the actual nonzeros. 1 for each thread.
             T** data_arr;
 
+            // Amount of threads
+            int threads;
+
             // Amount of partitions
             int partitions;
 
@@ -57,7 +60,7 @@ namespace pwm {
             CRSThreadPoolPinned() {}
 
             // Base constructor
-            CRSThreadPoolPinned(int threads): pool(threads) {}
+            CRSThreadPoolPinned(int threads): threads(threads), pool(threads) {}
 
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
@@ -88,6 +91,8 @@ namespace pwm {
                 int_type first_row = 0;
                 int_type last_row = 0;
                 int_type thread_rows;
+                int cpu_count = std::thread::hardware_concurrency();
+                int max_threads = std::min(threads, cpu_count);
                 for (int i = 0; i < partitions_am; ++i) {
                     first_row = last_row;
 
@@ -104,9 +109,6 @@ namespace pwm {
                     // Fill CRS matrix for given thread
                     pwm::fillPoisson(data_arr[i], row_start[i], col_ind [i], m, n, first_row, last_row);
 
-                    // Get cpu count
-                    auto cpu_count = std::thread::hardware_concurrency();
-
                     // Create mv lambda function for this thread
                     std::function<void(const T*, T*)> mv_func = [=](const T* x, T* y) -> void {
                         // Put the current thread on the right cpu
@@ -114,8 +116,7 @@ namespace pwm {
                         mask = CPU_ALLOC(1);
                         auto mask_size = CPU_ALLOC_SIZE(1);
                         CPU_ZERO_S(mask_size, mask);
-                        CPU_SET_S(i % cpu_count, mask_size, mask);
-
+                        CPU_SET_S(i % max_threads, mask_size, mask);
                         if (sched_setaffinity(0, mask_size, mask)) {
                             std::cout << "Error in setAffinity" << std::endl;
                         }
@@ -133,6 +134,7 @@ namespace pwm {
 
                     mv_function_list.push_back(mv_func);
 
+
                     // Create normalize function for this thread
                     std::function<void(T*, T*, T)> norm_func = [=](T* x, T* y, T norm) -> void {
                         // Put the current thread on the right cpu
@@ -140,8 +142,7 @@ namespace pwm {
                         mask = CPU_ALLOC(1);
                         auto mask_size = CPU_ALLOC_SIZE(1);
                         CPU_ZERO_S(mask_size, mask);
-                        CPU_SET_S(i % cpu_count, mask_size, mask);
-
+                        CPU_SET_S(i % max_threads, mask_size, mask);
                         if (sched_setaffinity(0, mask_size, mask)) {
                             std::cout << "Error in setAffinity" << std::endl;
                         }
