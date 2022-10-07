@@ -1,15 +1,15 @@
 /**
- * @file CRSTBBGraph.hpp
+ * @file CRSTBBGraphPinned.hpp
  * @author Kobe Bergmans (kobe.bergmans@student.kuleuven.be)
- * @brief Compressed Row Storage matrix class using TBB Graph 
+ * @brief Compressed Row Storage matrix class using TBB Graph where each node is pinned to a CPU
  * @version 0.1
- * @date 2022-10-03
+ * @date 2022-10-07
  * 
  * Includes method to generate CRS matrix obtained from discrete 2D poisson equation
  */
 
-#ifndef PWM_CRSTBBGRAPH_HPP
-#define PWM_CRSTBBGRAPH_HPP
+#ifndef PWM_CRSTBBGRAPHPINNED_HPP
+#define PWM_CRSTBBGRAPHPINNED_HPP
 
 #include <vector>
 #include <iostream>
@@ -28,7 +28,7 @@ namespace flow = oneapi::tbb::flow;
 
 namespace pwm {
     template<typename T, typename int_type>
-    class CRSTBBGraph: public pwm::SparseMatrix<T, int_type> {
+    class CRSTBBGraphPinned: public pwm::SparseMatrix<T, int_type> {
         protected:
             // Array of row start arrays for the CRS format. 1 for each thread.
             int_type** row_start;
@@ -39,24 +39,31 @@ namespace pwm {
             // Array of data array which stores the actual nonzeros. 1 for each thread.
             T** data_arr;
 
+            // Threads
+            int threads;
+
             // Amount of partitions
             int partitions;
 
             // Graph for TBB nodes
             flow::graph g;
 
-            // TBB nodes list
-            std::vector<flow::function_node<std::tuple<const T*, T*>, int>> n_list;
+            // TBB mv nodes list
+            std::vector<flow::function_node<std::tuple<const T*, T*>, int>> mv_func_list;
+
+            // TBB normalize nodes list
+            std::vector<flow::function_node<std::tuple<T*, T*, T>, int>> norm_func_list;
 
             // Global threads limit
             tbb::global_control global_limit;
 
         public:
             // Base constructor
-            CRSTBBGraph() {}
+            CRSTBBGraphPinned() {}
 
             // Base constructor
-            CRSTBBGraph(int threads):
+            CRSTBBGraphPinned(int threads):
+            threads(threads),
             global_limit(tbb::global_control::max_allowed_parallelism, threads) {}
 
             /**
@@ -88,7 +95,8 @@ namespace pwm {
                 int_type first_row = 0;
                 int_type last_row = 0;
                 int_type thread_rows;
-                // int graph_index = 0;
+                int cpu_count = std::thread::hardware_concurrency();
+                int max_threads = std::min(threads, cpu_count);
                 for (int i = 0; i < partitions; ++i) {
                     first_row = last_row;
 
@@ -105,8 +113,18 @@ namespace pwm {
                     // Fill CRS matrix for given thread
                     pwm::fillPoisson(data_arr[i], row_start[i], col_ind [i], m, n, first_row, last_row);
 
-                    // Create node for this thread
-                    flow::function_node<std::tuple<const T*, T*>, int> n(g, 1, [=](std::tuple<const T*, T*> input) -> int {
+                    // Create mv node for this thread
+                    flow::function_node<std::tuple<const T*, T*>, int> mv_node(g, 1, [=](std::tuple<const T*, T*> input) -> int {
+                        // Put the current thread on the right cpu
+                        cpu_set_t *mask;
+                        mask = CPU_ALLOC(1);
+                        auto mask_size = CPU_ALLOC_SIZE(1);
+                        CPU_ZERO_S(mask_size, mask);
+                        CPU_SET_S(i % max_threads, mask_size, mask);
+                        if (sched_setaffinity(0, mask_size, mask)) {
+                            std::cout << "Error in setAffinity" << std::endl;
+                        }
+
                         const T* x = std::get<0>(input);
                         T* y = std::get<1>(input);
 
@@ -123,7 +141,33 @@ namespace pwm {
                         return 0;
                     });
 
-                    n_list.push_back(n);
+                    mv_func_list.push_back(mv_node);
+
+                    // Create normalize node for this thread
+                    flow::function_node<std::tuple<T*, T*, T>, int> norm_node(g, 1, [=](std::tuple<T*, T*, T> input) -> int {
+                        // Put the current thread on the right cpu
+                        cpu_set_t *mask;
+                        mask = CPU_ALLOC(1);
+                        auto mask_size = CPU_ALLOC_SIZE(1);
+                        CPU_ZERO_S(mask_size, mask);
+                        CPU_SET_S(i % max_threads, mask_size, mask);
+                        if (sched_setaffinity(0, mask_size, mask)) {
+                            std::cout << "Error in setAffinity" << std::endl;
+                        }
+
+                        T* x = std::get<0>(input);
+                        T* y = std::get<1>(input);
+                        T norm = std::get<2>(input);
+
+                        for (int_type l = 0; l < thread_rows; ++l) {
+                            y[l+first_row] /= norm;
+                            x[l+first_row] = y[l+first_row];
+                        }
+
+                        return 0;
+                    });
+
+                    norm_func_list.push_back(norm_node);
                 }
             }
 
@@ -137,7 +181,7 @@ namespace pwm {
              */
             void mv(const T* x, T* y) {   
                 for (int i = 0; i < partitions; ++i) {
-                    n_list[i].try_put(std::make_tuple(x,y));
+                    mv_func_list[i].try_put(std::make_tuple(x,y));
                 }
                 
                 g.wait_for_all();
@@ -160,13 +204,14 @@ namespace pwm {
 
                     T norm = pwm::norm2(y, this->nor);
                     
-                    tbb::parallel_for(0, this->nor, [=](int_type i) {
-                        y[i] /= norm;
-                        x[i] = y[i];
-                    });
+                    for (int i = 0; i < partitions; ++i) {
+                        norm_func_list[i].try_put(std::make_tuple(x,y,norm));
+                    }
+                    
+                    g.wait_for_all();
                 }
             }
     };
 } // namespace pwm
 
-#endif // PWM_CRSTBBGRAPH_HPP
+#endif // PWM_CRSTBBGRAPHPINNED_HPP
