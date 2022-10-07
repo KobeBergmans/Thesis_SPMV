@@ -29,7 +29,7 @@
 ```
 
 ## Remarks
-* There was not a way found to pin threads of threadpool or TBB to a CPU for cache reuse. The only way found was to force this in execution of the function/node by setting the affinity.
+* There was not a way found to pin threads of threadpool or TBB to a CPU for cache reuse. The only way found was to force this in execution of the function/node by setting the affinity. This does not mean that a thread is fixed to a CPU but that only the tasks are fixed to a CPU. This is thus unoptimal
 
 ## TODO
 
