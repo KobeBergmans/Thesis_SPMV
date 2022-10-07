@@ -21,12 +21,16 @@
    2) CRS parallelized using OpenMP
    3) CRS parallelized using TBB
    4) CRS parallelized using TBB graphs
-   5) CRS parallelized using Boost Thread Pool
+   5) CRS parallelized using TBB graphs with each node pinned to a CPU
+   6) CRS parallelized using Boost Thread Pool
+   7) CRS parallelized using Boost Thread Pool with Threads pinned to a CPU
 6° Amount of threads (only for a parallel method). -1 lets the program choose the amount of threads arbitrarily
-7° Amount of partitions the matrix is split up into (only for method 4 and 5)
+7° Amount of partitions the matrix is split up into (only for method 4, 5, 6 and 7)
 ```
+
+## Remarks
+* There was not a way found to pin threads of threadpool or TBB to a CPU for cache reuse. The only way found was to force this in execution of the function/node by setting the affinity.
 
 ## TODO
 
-* Fix that threads always run on the same data for `CRSTBBGraph` and `CRSThreadPool`.
 * Make an MPI multicore implementation (if this is available)
