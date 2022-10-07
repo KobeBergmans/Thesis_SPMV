@@ -23,7 +23,7 @@
    4) CRS parallelized using TBB graphs
    5) CRS parallelized using TBB graphs with each node pinned to a CPU
    6) CRS parallelized using Boost Thread Pool
-   7) CRS parallelized using Boost Thread Pool with Threads pinned to a CPU
+   7) CRS parallelized using Boost Thread Pool with functions pinned to a CPU
 6° Amount of threads (only for a parallel method). -1 lets the program choose the amount of threads arbitrarily
 7° Amount of partitions the matrix is split up into (only for method 4, 5, 6 and 7)
 ```

@@ -36,7 +36,7 @@ void printErrorMsg() {
     std::cout << "     4) CRS parallelized using TBB graphs" << std::endl;
     std::cout << "     5) CRS parallelized using TBB graphs with each node pinned to a CPU" << std::endl;
     std::cout << "     6) CRS parallelized using Boost Thread Pool" << std::endl;
-    std::cout << "     7) CRS parallelized using Boost Thread Pool with Threads pinned to a CPU" << std::endl;
+    std::cout << "     7) CRS parallelized using Boost Thread Pool with functions pinned to a CPU" << std::endl;
     std::cout << "  6° Amount of threads (only for a parallel method).";
     std::cout << " -1 lets the program choose the amount of threads arbitrarily" << std::endl;
     std::cout << "  7° Amount of partitions the matrix is split up into (only for method 4, 5, 6 and 7)" << std::endl;
