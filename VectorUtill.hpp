@@ -80,7 +80,6 @@ namespace pwm
         row_start[0] = 0;
 
         // Fill data rows
-        // TODO: Can this be more efficient?
         int_type nnz_index = 0;
         for (int_type row = first_row; row < last_row; ++row) {
 

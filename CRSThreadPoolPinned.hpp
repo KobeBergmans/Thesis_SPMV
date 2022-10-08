@@ -100,8 +100,7 @@ namespace pwm {
                     else last_row = first_row + am_rows;
                     thread_rows = last_row - first_row;
 
-                    // Generate datastructures for this thread CRS
-                    // TODO: The size of data_arr & col_ind is not exactly right
+                    // Generate datastructures for this thread CRS (data_arr & col_ind are sometimes too large...)
                     data_arr[i] = new T[5*thread_rows];
                     row_start[i] = new int_type[thread_rows+1];
                     col_ind[i] = new int_type[5*thread_rows];
@@ -197,7 +196,7 @@ namespace pwm {
             void powerMethod(T* x, T* y, const int_type it) {
                 assert(this->nor == this->noc); //Power method only works on square matrices
                 
-                for (int i = 0; i < it; ++i) {
+                for (int it_nb = 0; i < it; ++i) {
                     this->mv(x, y);
 
                     T norm = pwm::norm2(y, this->nor);

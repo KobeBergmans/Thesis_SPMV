@@ -92,8 +92,6 @@ namespace pwm {
                 for (int i = 0; i < it; ++i) {
                     this->mv(x, y);
                     pwm::normalize(y, this->nor);
-
-                    // TODO: Not completely efficient on the last iteration
                     std::copy(y, y+this->nor, x);
                 }
             }
