@@ -1,16 +1,22 @@
-# Powermethod implementation
+# Powermethod implementation for Discretized Poisson equation matrix
 
 ## Prerequisites
 
+driver:
 * g++
 * OpenMP
 * Boost
-* oneTBB 
+* oneTBB
+
+MPI_driver:
+ * g++
+ * openMPI
 
 ## Running the code
 
-* Compile driver with `make driver` or `make driver_debug`
-* Run the driver with the right arguments:
+driver:
+* Compile the program with `make driver` or `make driver_debug`
+* Run `./driver` with the right arguments:
 ```
 1° Amount of times the power algorithm is executed
 2° Amount of warm up runs for the power algorithm (not timed)
@@ -28,9 +34,15 @@
 7° Amount of partitions the matrix is split up into (only for method 4, 5, 6 and 7)
 ```
 
+MPI_driver:
+ * Compile the program with `make MPI_driver` or `make MPI_driver_debug`
+ * Run `mpirun -n X ./MPI_driver` with `X` the amount of processors and the right arguments:
+```
+  1° Amount of times the power algorithm is executed
+  2° Amount of warm up runs for the power algorithm (not timed)
+  3° Amount of iterations in the power method algorithm
+  4° Poisson equation discretization steps
+```
+
 ## Remarks
 * There was not a way found to pin threads of threadpool or TBB to a CPU for cache reuse. The only way found was to force this in execution of the function/node by setting the affinity.
-
-## TODO
-
-* Make an MPI multicore implementation (if this is available)
