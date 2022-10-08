@@ -198,7 +198,7 @@ namespace pwm {
             void powerMethod(T* x, T* y, const int_type it) {
                 assert(this->nor == this->noc); //Power method only works on square matrices
                 
-                for (int it_nb = 0; i < it; ++i) {
+                for (int it_nb = 0; it_nb < it; ++it_nb) {
                     this->mv(x, y);
 
                     T norm = pwm::norm2(y, this->nor);
