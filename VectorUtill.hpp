@@ -146,7 +146,7 @@ namespace pwm
         row_start[0] = 0;
 
         // Fill data rows
-        #pragma omp parallel for shared(data_arr, row_start, col_ind) schedule(static)
+        #pragma omp parallel for shared(data_arr, row_start, col_ind) schedule(dynamic, 8)
         for (int_type row = 0; row < last_row; ++row) {
             // Calculate nnz_index (this is needed because this variable can't be shared anymore).
             int_type nnz_index = 0;
