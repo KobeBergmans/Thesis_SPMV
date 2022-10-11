@@ -59,7 +59,7 @@ namespace pwm {
                 col_ind = new int_type[this->nnz];
                 data_arr = new T[this->nnz];
 
-                pwm::fillPoisson(data_arr, row_start, col_ind, m, n);
+                pwm::fillPoissonOMP(data_arr, row_start, col_ind, m, n);
 
                 assert(row_start[0] == 0);
                 assert(row_start[this->nor] == this->nnz);
