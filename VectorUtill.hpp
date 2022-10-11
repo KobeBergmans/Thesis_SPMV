@@ -141,25 +141,24 @@ namespace pwm
      * @param last_row Last row of the matrix which is put into CRS format
      */
     template<typename T, typename int_type>
-    void fillPoissonOMP(T* data_arr, int_type* row_start, int_type* col_ind, int_type m, int_type n, int_type first_row = 0, int_type last_row = 0) {
-        if (last_row == 0) {
-            last_row = m*n;
-        }
-
+    void fillPoissonOMP(T* data_arr, int_type* row_start, int_type* col_ind, int_type m, int_type n) {
+        int_type last_row = m*n;
         row_start[0] = 0;
 
         // Fill data rows
         #pragma omp parallel for shared(data_arr, row_start, col_ind) schedule(static)
-        for (int_type row = first_row; row < last_row; ++row) {
-            // Calculate nnz_index (this is needed because this variable can't be shared anymore). This is suboptimal...
+        for (int_type row = 0; row < last_row; ++row) {
+            // Calculate nnz_index (this is needed because this variable can't be shared anymore).
             int_type nnz_index = 0;
-            for (int_type temp_row = first_row; temp_row < row; ++temp_row) {
-                if (temp_row >= m) nnz_index++;
-                if (temp_row % m != 0) nnz_index++;
-                nnz_index++;
-                if (temp_row % m != m-1) nnz_index++;
-                if (temp_row < m*n - n) nnz_index++;
-            }
+            if (row > 0) {
+                nnz_index += std::max(0, row - m);
+                nnz_index += (row/m)*(m-1) + row%m;
+                nnz_index += row;
+                nnz_index += (row/m)*(m-1) + row%m;
+                nnz_index += std::min(row, m*n - n);
+            
+                if (row % m >= 1) nnz_index -= 1;
+            }            
 
             // Check for identity before D
             if (row >= m) {
@@ -197,7 +196,7 @@ namespace pwm
                 nnz_index++;
             }
 
-            row_start[row-first_row+1] = nnz_index;
+            row_start[row+1] = nnz_index;
         }
     }
 } // namespace pwm
