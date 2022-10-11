@@ -1,0 +1,87 @@
+30 3 100 1500:
+Running sequential algorithm...
+59782
+Running OpenMP implementation with 2 - 8 threads...
+69955.4
+66907.3
+65478.4
+61805.7
+58910.2
+56625.8
+56809.1
+Running TBB implementation with 2 - 8 threads...
+41821.8
+40950.4
+41964.1
+41894.5
+42401.5
+42774.9
+42816.1
+Running TBB graphs implementation with 2 - 8 threads and partitions equal to threads
+43996.5
+42293.9
+42647.2
+44091.9
+43291.7
+43257.4
+43632.9
+Running TBB graphs implementation with 2 - 8 threads and double the amount of partitions than threads
+44130
+42004.5
+42539.7
+44276.5
+43312.8
+43218.7
+43662.3
+Running TBB graphs pinned implementation with 2 - 8 threads and partitions equal to threads
+43158.6
+41531.7
+43179.9
+43406.8
+43498.4
+43751.3
+43973.9
+Running TBB graphs pinned implementation with 2 - 8 threads and double the amount of partitions than threads
+47235.3
+43893.5
+43241.4
+43350.9
+42851.7
+43391.7
+43260.8
+Running Threadpool implementation with 2 - 8 threads and partitions equal to threads
+44238.9
+42440.1
+43134.2
+44327.1
+43355.1
+43473.6
+44403.5
+Running Threadpool implementation with 2 - 8 threads and double the amount of partitions than threads
+44262.5
+42341.9
+43198.4
+44323.4
+43371.2
+43446.1
+44385.5
+Running Threadpool pinned implementation with 2 - 8 threads and partitions equal to threads
+44015.6
+42451.1
+42864.9
+44285.1
+44046.5
+44035.3
+44456.5
+Running Threadpool pinned implementation with 2 - 8 threads and double the amount of partitions than threads
+44164.7
+42635.6
+42944.3
+43477
+43553.6
+43810.1
+44028.3
+Running MPI implementation with 2-4 cores
+43806.3
+48084.2
+52583.7
