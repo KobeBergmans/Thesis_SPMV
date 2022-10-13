@@ -147,22 +147,31 @@ namespace pwm {
              * 
              * Loop is parallelized using parallel_for from TBB
              * 
-             * @param x Input vector to start calculation, contains the output at the end of the algorithm
-             * @param y Temporary vector to store calculations
+             * @param x Input vector to start calculation, contains the output at the end of the algorithm is it is uneven
+             * @param y Vector to store calculations, contains the output at the end of the algorithm if it is even
              * @param it Amount of iterations for the algorithm
              */
             void powerMethod(T* x, T* y, const int_type it) {
                 assert(this->nor == this->noc); //Power method only works on square matrices
                 
                 for (int it_nb = 0; it_nb < it; ++it_nb) {
-                    this->mv(x, y);
+                    if (it_nb % 2 == 0) {
+                        this->mv(x, y);
 
-                    T norm = pwm::norm2(y, this->nor);
-                    
-                    tbb::parallel_for(0, this->nor, [=](int_type i) {
-                        y[i] /= norm;
-                        x[i] = y[i];
-                    });
+                        T norm = pwm::norm2(y, this->nor);
+
+                        tbb::parallel_for(0, this->nor, [=](int_type i) {
+                            y[i] /= norm;
+                        });
+                    } else {
+                        this->mv(y, x);
+
+                        T norm = pwm::norm2(x, this->nor);
+
+                        tbb::parallel_for(0, this->nor, [=](int_type i) {
+                            x[i] /= norm;
+                        });
+                    }
                 }
             }
     };

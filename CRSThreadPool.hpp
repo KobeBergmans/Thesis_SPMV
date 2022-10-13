@@ -50,7 +50,7 @@ namespace pwm {
             std::vector<std::function<void(const T*, T*)>> mv_function_list;
 
             // Normalize Function list
-            std::vector<std::function<void(T*, T*, T)>> norm_function_list;
+            std::vector<std::function<void(T*, T)>> norm_function_list;
 
         public:
             // Base constructor
@@ -119,10 +119,9 @@ namespace pwm {
                     mv_function_list.push_back(mv_func);
 
                     // Create normalize function for this thread
-                    std::function<void(T*, T*, T)> norm_func = [=](T* x, T* y, T norm) -> void {
+                    std::function<void(T*, T)> norm_func = [=](T* x, T norm) -> void {
                         for (int_type l = 0; l < thread_rows; ++l) {
-                            y[l+first_row] /= norm;
-                            x[l+first_row] = y[l+first_row];
+                            x[l+first_row] /= norm;
                         }
                     };
 
@@ -163,33 +162,54 @@ namespace pwm {
              * 
              * Loop is parallelized using functions posted to the threadpool
              * 
-             * @param x Input vector to start calculation, contains the output at the end of the algorithm
-             * @param y Temporary vector to store calculations
+             * @param x Input vector to start calculation, contains the output at the end of the algorithm is it is uneven
+             * @param y Vector to store calculations, contains the output at the end of the algorithm if it is even
              * @param it Amount of iterations for the algorithm
              */
             void powerMethod(T* x, T* y, const int_type it) {
                 assert(this->nor == this->noc); //Power method only works on square matrices
                 
                 for (int it_nb = 0; it_nb < it; ++it_nb) {
-                    this->mv(x, y);
+                    if (it_nb % 2 == 0) {
+                        this->mv(x, y);
+                        T norm = pwm::norm2(y, this->nor);
+                        
+                        std::vector<boost::packaged_task<void>> tasks;
+                        tasks.reserve(partitions);
 
-                    T norm = pwm::norm2(y, this->nor);
-                    
-                    std::vector<boost::packaged_task<void>> tasks;
-                    tasks.reserve(partitions);
+                        for (int i = 0; i < partitions; ++i) {
+                            tasks.emplace_back(boost::bind(norm_function_list[i], y, norm));
+                        }
 
-                    for (int i = 0; i < partitions; ++i) {
-                        tasks.emplace_back(boost::bind(norm_function_list[i], x, y, norm));
-                    }
+                        std::vector<boost::unique_future<boost::packaged_task<void>::result_type>> futures;
+                        for (auto& t : tasks) {
+                            futures.push_back(t.get_future());
+                            boost::asio::post(pool, std::move(t));
+                        }
 
-                    std::vector<boost::unique_future<boost::packaged_task<void>::result_type>> futures;
-                    for (auto& t : tasks) {
-                        futures.push_back(t.get_future());
-                        boost::asio::post(pool, std::move(t));
-                    }
+                        for (auto& fut : boost::when_all(futures.begin(), futures.end()).get()) {
+                            fut.get();
+                        }
+                    } else {
+                        this->mv(y, x);
+                        T norm = pwm::norm2(x, this->nor);
+                        
+                        std::vector<boost::packaged_task<void>> tasks;
+                        tasks.reserve(partitions);
 
-                    for (auto& fut : boost::when_all(futures.begin(), futures.end()).get()) {
-                        fut.get();
+                        for (int i = 0; i < partitions; ++i) {
+                            tasks.emplace_back(boost::bind(norm_function_list[i], x, norm));
+                        }
+
+                        std::vector<boost::unique_future<boost::packaged_task<void>::result_type>> futures;
+                        for (auto& t : tasks) {
+                            futures.push_back(t.get_future());
+                            boost::asio::post(pool, std::move(t));
+                        }
+
+                        for (auto& fut : boost::when_all(futures.begin(), futures.end()).get()) {
+                            fut.get();
+                        }
                     }
                 }
             }

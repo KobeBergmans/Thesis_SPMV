@@ -82,8 +82,8 @@ namespace pwm {
             /**
              * @brief Power method: Executes matrix vector product repeatedly to get the dominant eigenvector.
              * 
-             * @param x Input vector to start calculation, contains the output at the end of the algorithm
-             * @param y Temporary vector to store calculations
+             * @param x Input vector to start calculation, contains the output at the end of the algorithm is it is uneven
+             * @param y Vector to store calculations, contains the output at the end of the algorithm if it is even
              * @param it Amount of iterations for the algorithm
              */
             void powerMethod(T* x, T* y, const int_type it) {
@@ -96,10 +96,6 @@ namespace pwm {
                     } else {
                         this->mv(y,x);
                         pwm::normalize(x, this->nor);
-                    }
-
-                    if (i % it == 0) {
-                        std::copy(y, y+this->nor, x);
                     }
                 }
             }

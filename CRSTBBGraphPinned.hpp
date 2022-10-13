@@ -52,7 +52,7 @@ namespace pwm {
             std::vector<flow::function_node<std::tuple<const T*, T*>, int>> mv_func_list;
 
             // TBB normalize nodes list
-            std::vector<flow::function_node<std::tuple<T*, T*, T>, int>> norm_func_list;
+            std::vector<flow::function_node<std::tuple<T*, T>, int>> norm_func_list;
 
             // Global threads limit
             tbb::global_control global_limit;
@@ -143,7 +143,7 @@ namespace pwm {
                     mv_func_list.push_back(mv_node);
 
                     // Create normalize node for this thread
-                    flow::function_node<std::tuple<T*, T*, T>, int> norm_node(g, 1, [=](std::tuple<T*, T*, T> input) -> int {
+                    flow::function_node<std::tuple<T*, T>, int> norm_node(g, 1, [=](std::tuple<T*, T> input) -> int {
                         // Put the current thread on the right cpu
                         cpu_set_t *mask;
                         mask = CPU_ALLOC(1);
@@ -155,12 +155,10 @@ namespace pwm {
                         }
 
                         T* x = std::get<0>(input);
-                        T* y = std::get<1>(input);
-                        T norm = std::get<2>(input);
+                        T norm = std::get<1>(input);
 
                         for (int_type l = 0; l < thread_rows; ++l) {
-                            y[l+first_row] /= norm;
-                            x[l+first_row] = y[l+first_row];
+                            x[l+first_row] /= norm;
                         }
 
                         return 0;
@@ -191,23 +189,35 @@ namespace pwm {
              * 
              * Loop is parallelized using parallel_for from TBB
              * 
-             * @param x Input vector to start calculation, contains the output at the end of the algorithm
-             * @param y Temporary vector to store calculations
+             * @param x Input vector to start calculation, contains the output at the end of the algorithm is it is uneven
+             * @param y Vector to store calculations, contains the output at the end of the algorithm if it is even
              * @param it Amount of iterations for the algorithm
              */
             void powerMethod(T* x, T* y, const int_type it) {
                 assert(this->nor == this->noc); //Power method only works on square matrices
                 
                 for (int it_nb = 0; it_nb < it; ++it_nb) {
-                    this->mv(x, y);
+                    if (it_nb % 2 == 0) {
+                        this->mv(x, y);
 
-                    T norm = pwm::norm2(y, this->nor);
-                    
-                    for (int i = 0; i < partitions; ++i) {
-                        norm_func_list[i].try_put(std::make_tuple(x,y,norm));
+                        T norm = pwm::norm2(y, this->nor);
+                        
+                        for (int i = 0; i < partitions; ++i) {
+                            norm_func_list[i].try_put(std::make_tuple(y,norm));
+                        }
+                        
+                        g.wait_for_all();
+                    } else {
+                        this->mv(y, x);
+
+                        T norm = pwm::norm2(x, this->nor);
+                        
+                        for (int i = 0; i < partitions; ++i) {
+                            norm_func_list[i].try_put(std::make_tuple(x,norm));
+                        }
+                        
+                        g.wait_for_all();
                     }
-                    
-                    g.wait_for_all();
                 }
             }
     };

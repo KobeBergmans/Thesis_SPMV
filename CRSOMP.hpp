@@ -92,22 +92,30 @@ namespace pwm {
              * 
              * Loop is parallelized using OpenMP
              * 
-             * @param x Input vector to start calculation, contains the output at the end of the algorithm
-             * @param y Temporary vector to store calculations
+             * @param x Input vector to start calculation, contains the output at the end of the algorithm is it is uneven
+             * @param y Vector to store calculations, contains the output at the end of the algorithm if it is even
              * @param it Amount of iterations for the algorithm
              */
             void powerMethod(T* x, T* y, const int_type it) {
                 assert(this->nor == this->noc); //Power method only works on square matrices
                 
                 for (int it_nb = 0; it_nb < it; ++it_nb) {
-                    this->mv(x, y);
+                    if (it_nb % 2 == 0) {
+                        this->mv(x, y);
+                        T norm = pwm::norm2(y, this->nor);
 
-                    T norm = pwm::norm2(y, this->nor);
-                    
-                    #pragma omp parallel for shared(x, y) schedule(static) // Static scheduler because workload is the same for each row
-                    for (int i = 0; i < this->nor; ++i) {
-                        y[i] /= norm;
-                        x[i] = y[i];
+                        #pragma omp parallel for shared (y, norm) schedule(static)
+                        for (int i = 0; i < this->nor; ++i) {
+                            y[i] /= norm;
+                        }
+                    } else {
+                        this->mv(y, x);
+                        T norm = pwm::norm2(x, this->nor);
+
+                        #pragma omp parallel for shared(y, norm) schedule(static)
+                        for (int i = 0; i < this->nor; ++i) {
+                            x[i] /= norm;
+                        }
                     }
                 }
             }

@@ -144,7 +144,12 @@ int main(int argc, char** argv) {
 
 #ifndef NDEBUG
     std::cout << "Result for checking measures: " << std::endl;
-    pwm::printVector(y, mat_size);
+    if (pwm_iter % 2 == 0) {
+        pwm::printVector(x, mat_size);
+    } else {
+        pwm::printVector(y, mat_size);
+    }
+    
 #endif
     
     return 0;
