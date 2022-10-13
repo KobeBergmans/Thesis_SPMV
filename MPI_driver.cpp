@@ -72,8 +72,6 @@ int main(int argc, char **argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &processes);
     MPI_Comm_rank(MPI_COMM_WORLD, &processID);
 
-    std::cout << "Process " << processID << " Joined..." << std::endl;
-
     if (argc < 5) {
         if (processID == 0) printErrorMsg();
         return -1;
@@ -99,7 +97,6 @@ int main(int argc, char **argv) {
     int* row_start = new int[thread_rows + 1];
     int* col_ind = new int[5 * thread_rows];
     double* data_arr = new double[5 * thread_rows];
-    std::cout << "Proc " << processID << ": First row: " << first_row << ", last_row: " << last_row << std::endl; 
     pwm::fillPoisson(data_arr, row_start, col_ind, m, m, first_row, last_row);
 
     // Create y and x on each processor
