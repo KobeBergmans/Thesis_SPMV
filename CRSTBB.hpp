@@ -102,13 +102,28 @@ namespace pwm {
                 assert(this->nor == this->noc); //Power method only works on square matrices
                 
                 for (int it_nb = 0; it_nb < it; ++it_nb) {
-                    this->mv(x, y);
+                    if (it_nb % 2 == 0) {
+                        this->mv(x, y);
 
-                    T norm = pwm::norm2(y, this->nor);
-                    
+                        T norm = pwm::norm2(y, this->nor);
+
+                        tbb::parallel_for(0, this->nor, [=](int_type i) {
+                            y[i] /= norm;
+                        });
+                    } else {
+                        this->mv(y, x);
+
+                        T norm = pwm::norm2(x, this->nor);
+
+                        tbb::parallel_for(0, this->nor, [=](int_type i) {
+                            x[i] /= norm;
+                        });
+                    }
+                }
+
+                if (it % 2 == 0) {
                     tbb::parallel_for(0, this->nor, [=](int_type i) {
-                        y[i] /= norm;
-                        x[i] = y[i];
+                        y[i] = x[i];
                     });
                 }
             }
