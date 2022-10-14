@@ -1,0 +1,66 @@
+Running sequential algorithm...
+55475.8ms
+Running OpenMP implementation with 2 - 8 threads...
+63628.3ms
+62379.1ms
+61769.6ms
+58462.9ms
+54727.6ms
+51320.1ms
+50665.7ms
+Running TBB implementation with 2 - 8 threads...
+38841.7ms
+36787ms
+37142.5ms
+37956.6ms
+37480ms
+38216.4ms
+38556ms
+Running TBB graphs implementation with 2 - 8 threads and partitions equal to threads
+39246.3ms
+38127.7ms
+37809.2ms
+39231.5ms
+38298.8ms
+38537.9ms
+38596ms
+Running TBB graphs implementation with 2 - 8 threads and double the amount of partitions than threads
+40338.7ms
+37736.7ms
+37991.4ms
+39248.5ms
+38596.5ms
+38444.4ms
+38777.9ms
+Running TBB graphs pinned implementation with 2 - 8 threads and partitions equal to threads
+40039.6ms
+37940.1ms
+39035ms
+39568.2ms
+39406.1ms
+39669.9ms
+39726.2ms
+Running TBB graphs pinned implementation with 2 - 8 threads and double the amount of partitions than threads
+44409.6ms
+40900.2ms
+39732.4ms
+39380ms
+39207.3ms
+39103.4ms
+39188.1ms
+Running Threadpool implementation with 2 - 8 threads and partitions equal to threads
+41196.7ms
+38883.4ms
+39692.9ms
+40095.8ms
+39116.5ms
+39158ms
+39914.5ms
+Running Threadpool pinned implementation with 2 - 8 threads and partitions equal to threads
+40652.1ms
+38708.8ms
+38822.2ms
+40179.4ms
+39618.6ms
+39630.5ms
+39993ms
