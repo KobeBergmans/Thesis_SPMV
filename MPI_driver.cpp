@@ -1,9 +1,9 @@
 /**
- * @file driver.cpp
+ * @file MPI_driver.cpp
  * @author Kobe Bergmans (kobe.bergmans@student.kuleuven.be)
- * @brief Main executable for power method comparison
+ * @brief Main executable for power method comparison using MPI
  * @version 0.1
- * @date 2022-09-29
+ * @date 2022-10-08
  */
 
 #include <iostream>

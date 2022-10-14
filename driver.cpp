@@ -2,7 +2,7 @@
  * @file driver.cpp
  * @author Kobe Bergmans (kobe.bergmans@student.kuleuven.be)
  * @brief Main executable for power method comparison
- * @version 0.1
+ * @version 0.2
  * @date 2022-09-29
  */
 
