@@ -72,8 +72,7 @@ pwm::SparseMatrix<T, int_type>* selectType(int method, int threads) {
 }
 
 int main(int argc, char** argv) {
-    struct timespec start, stop; 
-	double time;
+    double start, stop, time; 
 
     if (argc < 6) {
         printErrorMsg();
@@ -113,16 +112,15 @@ int main(int argc, char** argv) {
     }
     
     //Initialize matrix and vectors
-    clock_gettime(CLOCK_MONOTONIC, &start);
+    start = omp_get_wtime();
     test_mat->generatePoissonMatrix(m, m, partitions);
 
     double* x = new double[mat_size];
     double* y = new double[mat_size];
     std::fill(x, x+mat_size, 1.);
 
-    clock_gettime(CLOCK_MONOTONIC, &stop);
-    time  = (stop.tv_sec-start.tv_sec)*1000;
-	time += (stop.tv_nsec-start.tv_nsec)/1000000.0;
+    stop = omp_get_wtime();
+    time = (stop - start) * 1000;
     std::cout << "Time to set up datastructures: " << time << "ms" << std::endl;
 
     // Do warm up iterations
@@ -132,14 +130,13 @@ int main(int argc, char** argv) {
     }
 
     // Solve power method an amount of time
-    clock_gettime(CLOCK_MONOTONIC, &start);
+    start = omp_get_wtime();
     for (int i = 0; i < iter; ++i) {
         std::fill(x, x+mat_size, 1.);
         test_mat->powerMethod(x, y, pwm_iter);
     }
-    clock_gettime(CLOCK_MONOTONIC, &stop);
-    time  = (stop.tv_sec-start.tv_sec)*1000;
-	time += (stop.tv_nsec-start.tv_nsec)/1000000.0;
+    stop = omp_get_wtime();
+    time = (stop - start) * 1000;
     std::cout << "Time (ms) to get " << iter << " executions: " << time << "ms" << std::endl;
 
 #ifndef NDEBUG

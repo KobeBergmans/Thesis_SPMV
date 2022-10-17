@@ -14,6 +14,7 @@
 #include "VectorUtill.hpp"
 
 #include <mpi.h>
+#include "omp.h"
 
 void printErrorMsg() {
     std::cout << "You need to provide the correct command line arguments:" << std::endl;
@@ -63,7 +64,8 @@ void powerMethod(double* x, double* y, const double* data_arr, const int* col_in
 }
 
 int main(int argc, char **argv) {
-    struct timespec start, stop;
+    double start = 0;
+    double stop; 
     double time;
 
     // Setup MPI
@@ -78,7 +80,7 @@ int main(int argc, char **argv) {
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
-    if (processID == 0) clock_gettime(CLOCK_MONOTONIC, &start);
+    if (processID == 0) start = omp_get_wtime();
 
     // Get command line arguments and properties of matrix
     int iter = std::stoi(argv[1]);
@@ -117,9 +119,8 @@ int main(int argc, char **argv) {
 
     MPI_Barrier(MPI_COMM_WORLD);
     if (processID == 0) {
-        clock_gettime(CLOCK_MONOTONIC, &stop);
-        time  = (stop.tv_sec-start.tv_sec)*1000;
-        time += (stop.tv_nsec-start.tv_nsec)/1000000.0;
+        stop = omp_get_wtime();
+        time = (stop - start) * 1000;
         std::cout << "Time to set up datastructures: " << time << "ms" << std::endl;
     }
 
@@ -130,7 +131,7 @@ int main(int argc, char **argv) {
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
-    if (processID == 0) clock_gettime(CLOCK_MONOTONIC, &start);
+    if (processID == 0)     start = omp_get_wtime();
 
     // Do power iterations
     for (int i = 0; i < iter; ++i) {
@@ -140,9 +141,8 @@ int main(int argc, char **argv) {
 
     MPI_Barrier(MPI_COMM_WORLD);
     if (processID == 0) {
-        clock_gettime(CLOCK_MONOTONIC, &stop);
-        time  = (stop.tv_sec-start.tv_sec)*1000;
-        time += (stop.tv_nsec-start.tv_nsec)/1000000.0;
+        stop = omp_get_wtime();
+        time = (stop - start) * 1000;
         std::cout << "Time (ms) to get " << iter << " executions: " << time << "ms" << std::endl;
     }
 
