@@ -20,7 +20,8 @@
 #include <functional>
 
 #include "SparseMatrix.hpp"
-#include "VectorUtill.hpp"
+#include "Utill/VectorUtill.hpp"
+#include "Utill/PoissonUtill.hpp"
 
 #include <boost/bind/bind.hpp>
 #include <boost/asio.hpp>

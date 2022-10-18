@@ -19,8 +19,6 @@
 
 #include <boost/lexical_cast.hpp>
 
-#include "VectorUtill.hpp"
-
 namespace pwm {
     template<typename T, typename int_type>
     class Triplet {

@@ -11,7 +11,8 @@
 #include <time.h>
 #include <string>
 
-#include "VectorUtill.hpp"
+#include "Utill/VectorUtill.hpp"
+#include "Utill/PoissonUtill.hpp"
 
 #include <mpi.h>
 #include "omp.h"

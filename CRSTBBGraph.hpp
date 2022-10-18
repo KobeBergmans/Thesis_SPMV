@@ -19,7 +19,8 @@
 #include <thread>
 
 #include "SparseMatrix.hpp"
-#include "VectorUtill.hpp"
+#include "Utill/VectorUtill.hpp"
+#include "Utill/PoissonUtill.hpp"
 
 #include "oneapi/tbb.h"
 
