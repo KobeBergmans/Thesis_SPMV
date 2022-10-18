@@ -1,6 +1,10 @@
 # misc files
 /.vscode
 
+# Input files
+/input
+
 # Executables
 driver_poisson
 MPI_driver_poisson
+driver_input
