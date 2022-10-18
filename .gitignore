@@ -2,5 +2,5 @@
 /.vscode
 
 # Executables
-driver
-MPI_driver
+driver_poisson
+MPI_driver_poisson
