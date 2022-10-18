@@ -21,7 +21,7 @@
 
 #include "SparseMatrix.hpp"
 #include "Utill/VectorUtill.hpp"
-#include "Utill/PoissonUtill.hpp"
+#include "Utill/Poisson.hpp"
 
 #include <boost/bind/bind.hpp>
 #include <boost/asio.hpp>

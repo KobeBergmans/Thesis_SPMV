@@ -18,7 +18,7 @@
 
 #include "SparseMatrix.hpp"
 #include "Utill/VectorUtill.hpp"
-#include "Utill/PoissonUtill.hpp"
+#include "Utill/Poisson.hpp"
 
 namespace pwm {
     template<typename T, typename int_type>
