@@ -19,24 +19,26 @@
 
 #include <boost/lexical_cast.hpp>
 
+#include "Utill/VectorUtill.hpp"
+
 namespace pwm {
     template<typename T, typename int_type>
     class Triplet {
         public:
-            // x Coordinate array
-            int_type* xcoord;
+            // Row Coordinate array
+            int_type* row_coord;
 
-            // y coordinate array
-            int_type* ycoord;
+            // Column coordinate array
+            int_type* col_coord;
 
             // Data array
             T* data;
 
             // x size
-            int_type x_size;
+            int_type row_size;
 
             // y size
-            int_type y_size;
+            int_type col_size;
 
             // Amount of nonzeros
             int_type nnz;
@@ -61,22 +63,22 @@ namespace pwm {
                             line >> word;
 
                             // Get matrix size and amount of entries
-                            x_size = boost::lexical_cast<int_type>(word);
+                            row_size = boost::lexical_cast<int_type>(word);
 
                             line >> word;
-                            y_size = boost::lexical_cast<int_type>(word);
+                            col_size = boost::lexical_cast<int_type>(word);
 
                             line >> word; // Get amount of entries
                             nnz  = boost::lexical_cast<int_type>(word);
-                            xcoord = new int_type[nnz];
-                            ycoord = new int_type[nnz];
+                            row_coord = new int_type[nnz];
+                            col_coord = new int_type[nnz];
                             data = new T[nnz];
 
                             break;
                         }
                     }
 
-                    // Get data
+                    // Get data (Subtract 1 from coordinates to get index 0 for start)
                     int_type index = 0;
                     while (input_file.good()) {
                         std::getline(input_file, temp_line);
@@ -86,11 +88,11 @@ namespace pwm {
 
                         // x coord
                         line >> word;
-                        xcoord[index] = boost::lexical_cast<int_type>(word);
+                        row_coord[index] = boost::lexical_cast<int_type>(word) - 1;
 
                         // y coord
                         line >> word;
-                        ycoord[index] = boost::lexical_cast<int_type>(word);
+                        col_coord[index] = boost::lexical_cast<int_type>(word) - 1;
 
                         // Data
                         line >> word;
