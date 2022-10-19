@@ -66,6 +66,11 @@ namespace pwm {
                 assert(row_start[this->nor] == this->nnz);
             }
 
+            /**
+             * @brief Input the CRS matrix from a Triplet format
+             * 
+             * @param input Triplet format matrix used to convert to CRS
+             */
             void loadFromTriplets(pwm::Triplet<T, int_type> input) {
                 this->noc = input.col_size;
                 this->nor = input.row_size;
