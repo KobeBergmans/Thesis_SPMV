@@ -63,10 +63,22 @@ namespace pwm {
                 col_ind = new int_type[this->nnz];
                 data_arr = new T[this->nnz];
 
-                pwm::fillPoisson(data_arr, row_start, col_ind, m, n);
+                pwm::fillPoissonTBB(data_arr, row_start, col_ind, m, n);
 
                 assert(row_start[0] == 0);
                 assert(row_start[this->nor] == this->nnz);
+            }
+
+            void loadFromTriplets(pwm::Triplet<T, int_type> input) {
+                this->noc = input.col_size;
+                this->nor = input.row_size;
+                this->nnz = input.nnz;
+
+                row_start = new int_type[this->nor+1];
+                col_ind = new int_type[this->nnz];
+                data_arr = new T[this->nnz];
+
+                pwm::TripletToCRSTBB(input.row_coord, input.col_coord, input.data, row_start, col_ind, data_arr, this->nnz);
             }
 
             /**
