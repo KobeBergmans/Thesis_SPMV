@@ -121,7 +121,6 @@ namespace pwm {
 
                 // Generate data for each thread
                 int_type am_rows = std::round(m*n/partitions);
-                first_rows[0] = 0;
                 int_type last_row = 0;
                 for (int i = 0; i < partitions; ++i) {
                     first_rows[i] = last_row;

@@ -242,14 +242,11 @@ namespace pwm {
         int_type part_index = 0;
         int_type row_index;
         for (int i = 0; i < partitions; ++i) {
-            std::cout << " !! " << std::endl;
             // Calculate first and last row (last row is exclusive)
             first_rows[i] = last_row;
             if (i == partitions - 1) last_row = nor;
             else last_row = first_rows[i] + am_rows;
             thread_rows[i] = last_row - first_rows[i];
-
-            std::cout << " !! " << std::endl;
 
             // Calculate nnz for the amount of rows
             int_type j = nnz_index;
@@ -262,11 +259,6 @@ namespace pwm {
             }
 
             // Create datastructures
-            std::cout << "number of nnz for partition " << i <<  " is " << j-nnz_index << std::endl;
-            std::cout << "Number of rows for partition " << i << " is " << thread_rows[i] << std::endl;
-            std::cout << "First row of partition: " << first_rows[i] << std::endl;
-            std::cout << "last row of partition: " << last_row << std::endl;
-
             row_start[i] = new int_type[thread_rows[i]+1];
             col_ind[i] = new int_type[j-nnz_index];
             CRS_data[i] = new T[j-nnz_index];
@@ -292,14 +284,9 @@ namespace pwm {
             }
             row_start[i][row_index + 1] = part_index;
 
-            std::cout << " !! " << std::endl;
-            pwm::printVector(row_start[i], thread_rows[i]+1);
-
             // Sort columns of CRS data
             coords[0] = col_ind[i];
             for (int row = 0; row <= row_index; ++row) {
-                std::cout << "row: " << row << std::endl;
-                std::cout << "row_start begin: " << row_start[i][row] << ", row_start end: " << row_start[i][row+1] << std::endl;
                 sortCoordsForCRS(coords, CRS_data[i], 1, row_start[i][row], row_start[i][row+1]-1);
             }
         }        
