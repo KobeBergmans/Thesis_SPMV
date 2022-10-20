@@ -44,6 +44,12 @@ namespace pwm {
             // Amount of partitions
             int partitions;
 
+            // Amount of rows per partition
+            int_type* partition_rows;
+
+            // First row of each partition
+            int_type* first_rows;
+
             // Graph for TBB nodes
             flow::graph g;
 
@@ -52,6 +58,31 @@ namespace pwm {
 
             // Global threads limit
             tbb::global_control global_limit;
+
+        private:
+            void generateFunctionNodes() {
+                for (int i = 0; i < partitions; ++i) {
+                    // Create node for this thread
+                    flow::function_node<std::tuple<const T*, T*>, int> n(g, 1, [=](std::tuple<const T*, T*> input) -> int {
+                        const T* x = std::get<0>(input);
+                        T* y = std::get<1>(input);
+
+                        int_type j;
+                        for (int_type l = 0; l < partition_rows[i]; ++l) {
+                            T sum = 0;
+                            for (int_type k = row_start[i][l]; k < row_start[i][l+1]; ++k) {
+                                j = col_ind[i][k];
+                                sum += data_arr[i][k]*x[j];
+                            }
+                            y[l+first_rows[i]] = sum;
+                        }
+
+                        return 0;
+                    });
+
+                    n_list.push_back(n);
+                }
+            }
 
         public:
             // Base constructor
@@ -85,46 +116,31 @@ namespace pwm {
                 col_ind = new int_type*[partitions];
                 data_arr = new T*[partitions];
 
+                partition_rows = new int_type[partitions];
+                first_rows = new int_type[partitions];
+
                 // Generate data for each thread
                 int_type am_rows = std::round(m*n/partitions);
-                int_type first_row = 0;
+                first_rows[0] = 0;
                 int_type last_row = 0;
-                int_type thread_rows;
                 for (int i = 0; i < partitions; ++i) {
-                    first_row = last_row;
+                    first_rows[i] = last_row;
 
                     if (i == partitions - 1) last_row = m*n;
-                    else last_row = first_row + am_rows;
-                    thread_rows = last_row - first_row;
+                    else last_row = first_rows[i] + am_rows;
+                    partition_rows[i] = last_row - first_rows[i];
 
                     // Generate datastructures for this thread CRS (data_arr & col_ind are sometimes too large...)
-                    data_arr[i] = new T[5*thread_rows];
-                    row_start[i] = new int_type[thread_rows+1];
-                    col_ind[i] = new int_type[5*thread_rows];
+                    data_arr[i] = new T[5*partition_rows[i]];
+                    row_start[i] = new int_type[partition_rows[i]+1];
+                    col_ind[i] = new int_type[5*partition_rows[i]];
                     
                     // Fill CRS matrix for given thread
-                    pwm::fillPoisson(data_arr[i], row_start[i], col_ind [i], m, n, first_row, last_row);
-
-                    // Create node for this thread
-                    flow::function_node<std::tuple<const T*, T*>, int> n(g, 1, [=](std::tuple<const T*, T*> input) -> int {
-                        const T* x = std::get<0>(input);
-                        T* y = std::get<1>(input);
-
-                        int_type j;
-                        for (int_type l = 0; l < thread_rows; ++l) {
-                            T sum = 0;
-                            for (int_type k = row_start[i][l]; k < row_start[i][l+1]; ++k) {
-                                j = col_ind[i][k];
-                                sum += data_arr[i][k]*x[j];
-                            }
-                            y[l+first_row] = sum;
-                        }
-
-                        return 0;
-                    });
-
-                    n_list.push_back(n);
+                    pwm::fillPoisson(data_arr[i], row_start[i], col_ind [i], m, n, first_rows[i], last_row);                    
                 }
+
+                // Create function nodes
+                generateFunctionNodes();
             }
 
             /**
@@ -142,35 +158,16 @@ namespace pwm {
                 row_start = new int_type*[partitions];
                 col_ind = new int_type*[partitions];
                 data_arr = new T*[partitions];
-                int_type* thread_rows = new int_type[partitions];
-                int_type* first_rows = new int_type[partitions];
+                
+                partition_rows = new int_type[partitions];
+                first_rows = new int_type[partitions];
 
                 // Generate data for each thread
                 pwm::TripletToMultipleCRS(input.row_coord, input.col_coord, input.data, row_start, col_ind, data_arr, 
-                                          partitions, thread_rows, first_rows, this->nnz, this->nor);
+                                          partitions, partition_rows, first_rows, this->nnz, this->nor);
 
                 // Generate function nodes per thread
-                for (int i = 0; i < partitions; ++i) {
-                    // Create node for this thread
-                    flow::function_node<std::tuple<const T*, T*>, int> n(g, 1, [=](std::tuple<const T*, T*> input) -> int {
-                        const T* x = std::get<0>(input);
-                        T* y = std::get<1>(input);
-
-                        int_type j;
-                        for (int_type l = 0; l < thread_rows[i]; ++l) {
-                            T sum = 0;
-                            for (int_type k = row_start[i][l]; k < row_start[i][l+1]; ++k) {
-                                j = col_ind[i][k];
-                                sum += data_arr[i][k]*x[j];
-                            }
-                            y[l+first_rows[i]] = sum;
-                        }
-
-                        return 0;
-                    });
-
-                    n_list.push_back(n);
-                }
+                generateFunctionNodes();
             }
 
             /**
