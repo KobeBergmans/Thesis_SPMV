@@ -146,7 +146,7 @@ namespace pwm {
         }
 
         // Fill CRS row_start
-        row_coord[0] = 0;
+        row_start[0] = 0;
         int_type row_index = 0;
         for (int i = 0; i < nnz; ++i) {
             if (row_coord[i] != row_index) {
@@ -164,7 +164,7 @@ namespace pwm {
         }
     }
 
-        /**
+    /**
      * @brief Transforms Triplet format to CRS format
      * 
      * The output arrays are assumed to have the right size.
@@ -194,7 +194,7 @@ namespace pwm {
         });
 
         // Fill CRS row_start
-        row_coord[0] = 0;
+        row_start[0] = 0;
         int_type row_index = 0;
         for (int i = 0; i < nnz; ++i) {
             if (row_coord[i] != row_index) {
@@ -209,6 +209,100 @@ namespace pwm {
         tbb::parallel_for(0, row_coord[nnz-1]+1, [=](int_type row) {
             sortCoordsForCRS(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
         });
+    }
+
+    /**
+     * @brief Transforms Triplet format to CRS format
+     * 
+     * The output arrays are assumed to have the right size.
+     * 
+     * @param row_coord Array of row coordinates of Triplet format
+     * @param col_coord Array of column coordinates of Triplet format
+     * @param data Data array for Triplet format
+     * @param row_start Output row_start arrays of CRS format
+     * @param col_ind Output col_ind arrays of CRS format
+     * @param CRS_data Output data arrays of CRS format
+     * @param partitions Amount of partitions for the CRS matrix (amount of arrays in row_start, col_ind, and CRS_data)
+     * @param nnz Number of nonzeros in matrix
+     */
+    template<typename T, typename int_type>
+    void TripletToMultipleCRS(int_type* row_coord, int_type* col_coord, T* data, int_type** row_start, int_type** col_ind, T** CRS_data, 
+                              int partitions, int_type* thread_rows, int_type* first_rows, int_type nnz, int_type nor) {
+
+        // Sort triplets on row value
+        int_type** coords = new int_type*[2];
+        coords[0] = row_coord;
+        coords[1] = col_coord;
+        sortCoordsForCRS(coords, data, 2, 0, nnz-1);
+
+        // Fill CRS datastructures
+        int_type am_rows = std::round(nor/partitions);
+        int_type last_row = 0;
+        int_type nnz_index = 0;
+        int_type part_index = 0;
+        int_type row_index;
+        for (int i = 0; i < partitions; ++i) {
+            std::cout << " !! " << std::endl;
+            // Calculate first and last row (last row is exclusive)
+            first_rows[i] = last_row;
+            if (i == partitions - 1) last_row = nor;
+            else last_row = first_rows[i] + am_rows;
+            thread_rows[i] = last_row - first_rows[i];
+
+            std::cout << " !! " << std::endl;
+
+            // Calculate nnz for the amount of rows
+            int_type j = nnz_index;
+            while (true) {
+                if (j == nnz || row_coord[j] >= last_row) {
+                    break;
+                }
+
+                j++;
+            }
+
+            // Create datastructures
+            std::cout << "number of nnz for partition " << i <<  " is " << j-nnz_index << std::endl;
+            std::cout << "Number of rows for partition " << i << " is " << thread_rows[i] << std::endl;
+            std::cout << "First row of partition: " << first_rows[i] << std::endl;
+            std::cout << "last row of partition: " << last_row << std::endl;
+
+            row_start[i] = new int_type[thread_rows[i]+1];
+            col_ind[i] = new int_type[j-nnz_index];
+            CRS_data[i] = new T[j-nnz_index];
+
+            // Fill datastructures
+            row_start[i][0] = 0;
+            row_index = 0;
+            part_index = 0;
+            while (true) {
+                col_ind[i][part_index] = col_coord[nnz_index];
+                CRS_data[i][part_index] = data[nnz_index];
+                part_index++;
+                nnz_index++;
+
+                if (nnz_index >= nnz || row_coord[nnz_index] >= last_row) {
+                    break;
+                }
+
+                if (row_coord[nnz_index] != row_index+first_rows[i]) {
+                    row_index++;
+                    row_start[i][row_index] = part_index;
+                }
+            }
+            row_start[i][row_index + 1] = part_index;
+
+            std::cout << " !! " << std::endl;
+            pwm::printVector(row_start[i], thread_rows[i]+1);
+
+            // Sort columns of CRS data
+            coords[0] = col_ind[i];
+            for (int row = 0; row <= row_index; ++row) {
+                std::cout << "row: " << row << std::endl;
+                std::cout << "row_start begin: " << row_start[i][row] << ", row_start end: " << row_start[i][row+1] << std::endl;
+                sortCoordsForCRS(coords, CRS_data[i], 1, row_start[i][row], row_start[i][row+1]-1);
+            }
+        }        
     }
 } // namespace pwm
 

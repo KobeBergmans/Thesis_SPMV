@@ -69,7 +69,7 @@ namespace pwm {
                             col_size = boost::lexical_cast<int_type>(word);
 
                             line >> word; // Get amount of entries
-                            nnz  = boost::lexical_cast<int_type>(word);
+                            nnz = boost::lexical_cast<int_type>(word);
                             row_coord = new int_type[nnz];
                             col_coord = new int_type[nnz];
                             data = new T[nnz];

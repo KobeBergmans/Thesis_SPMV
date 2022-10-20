@@ -21,6 +21,7 @@
 #include "SparseMatrix.hpp"
 #include "Utill/VectorUtill.hpp"
 #include "Utill/Poisson.hpp"
+#include "Utill/TripletToCRS.hpp"
 
 #include "oneapi/tbb.h"
 
@@ -89,7 +90,6 @@ namespace pwm {
                 int_type first_row = 0;
                 int_type last_row = 0;
                 int_type thread_rows;
-                // int graph_index = 0;
                 for (int i = 0; i < partitions; ++i) {
                     first_row = last_row;
 
@@ -118,6 +118,52 @@ namespace pwm {
                                 sum += data_arr[i][k]*x[j];
                             }
                             y[l+first_row] = sum;
+                        }
+
+                        return 0;
+                    });
+
+                    n_list.push_back(n);
+                }
+            }
+
+            /**
+             * @brief Input the CRS matrix from a Triplet format
+             * 
+             * @param input Triplet format matrix used to convert to CRS
+             */
+            void loadFromTriplets(pwm::Triplet<T, int_type> input, const int partitions_am) {
+                this->noc = input.col_size;
+                this->nor = input.row_size;
+                this->nnz = input.nnz;
+
+                partitions = partitions_am;
+
+                row_start = new int_type*[partitions];
+                col_ind = new int_type*[partitions];
+                data_arr = new T*[partitions];
+                int_type* thread_rows = new int_type[partitions];
+                int_type* first_rows = new int_type[partitions];
+
+                // Generate data for each thread
+                pwm::TripletToMultipleCRS(input.row_coord, input.col_coord, input.data, row_start, col_ind, data_arr, 
+                                          partitions, thread_rows, first_rows, this->nnz, this->nor);
+
+                // Generate function nodes per thread
+                for (int i = 0; i < partitions; ++i) {
+                    // Create node for this thread
+                    flow::function_node<std::tuple<const T*, T*>, int> n(g, 1, [=](std::tuple<const T*, T*> input) -> int {
+                        const T* x = std::get<0>(input);
+                        T* y = std::get<1>(input);
+
+                        int_type j;
+                        for (int_type l = 0; l < thread_rows[i]; ++l) {
+                            T sum = 0;
+                            for (int_type k = row_start[i][l]; k < row_start[i][l+1]; ++k) {
+                                j = col_ind[i][k];
+                                sum += data_arr[i][k]*x[j];
+                            }
+                            y[l+first_rows[i]] = sum;
                         }
 
                         return 0;
