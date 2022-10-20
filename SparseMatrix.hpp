@@ -9,6 +9,8 @@
 #ifndef PWM_SPARSEMATRIX_HPP
 #define PWM_SPARSEMATRIX_HPP
 
+#include "Triplet.hpp"
+
 namespace pwm {
     template<typename T, typename int_type>
     class SparseMatrix {
@@ -36,6 +38,13 @@ namespace pwm {
              * @param m The amount of discretization steps in the y direction
              */
             virtual void generatePoissonMatrix(const int_type m, const int_type n, const int partitions) = 0;
+
+            /**
+             * @brief Input the CRS matrix from a Triplet format
+             * 
+             * @param input Triplet format matrix used to convert to CRS
+             */
+            virtual void loadFromTriplets(pwm::Triplet<T, int_type> input, const int partitions_am) = 0;
             
             
             /**

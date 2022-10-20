@@ -19,6 +19,7 @@
 #include "CRSThreadPool.hpp"
 #include "CRSThreadPoolPinned.hpp"
 #include "Utill/VectorUtill.hpp"
+#include "Utill/TripletToCRS.hpp"
 #include "Triplet.hpp"
 
 #include "omp.h"
@@ -103,12 +104,55 @@ int main(int argc, char** argv) {
         partitions = std::stoi(argv[7]);
     }
     
-    //Select method
+    // Select method
     pwm::SparseMatrix<double, int>* test_mat = selectType<double, int>(method, threads);
 
-    // Input matrix
+    if (test_mat == NULL) {
+        printErrorMsg();
+        return -1;
+    }
+
+    // Input matrix & initialize vectors
+    start = omp_get_wtime();
     pwm::Triplet<double, int> input_mat;
     input_mat.loadFromMM(input_file);
+    int mat_size = input_mat.row_size;
+
+    test_mat->loadFromTriplets(input_mat, partitions);
+    
+    double* x = new double[mat_size];
+    double* y = new double[mat_size];
+    std::fill(x, x+mat_size, 1.);
+
+    stop = omp_get_wtime();
+    time = (stop - start) * 1000;
+    std::cout << "Time to set up datastructures: " << time << "ms" << std::endl;
+
+    // Do warm up iterations
+    for (int i = 0; i < warm_up; ++i) {
+        std::fill(x, x+mat_size, 1.);
+        test_mat->powerMethod(x, y, pwm_iter);
+    }
+
+    // Solve power method an amount of time
+    start = omp_get_wtime();
+    for (int i = 0; i < iter; ++i) {
+        std::fill(x, x+mat_size, 1.);
+        test_mat->powerMethod(x, y, pwm_iter);
+    }
+    stop = omp_get_wtime();
+    time = (stop - start) * 1000;
+    std::cout << "Time (ms) to get " << iter << " executions: " << time << "ms" << std::endl;
+
+#ifndef NDEBUG
+    std::cout << "Result for checking measures: " << std::endl;
+    if (pwm_iter % 2 == 0) {
+        pwm::printVector(x, mat_size);
+    } else {
+        pwm::printVector(y, mat_size);
+    }
+    
+#endif
     
     return 0;
 }

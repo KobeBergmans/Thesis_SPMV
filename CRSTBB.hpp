@@ -74,7 +74,7 @@ namespace pwm {
              * 
              * @param input Triplet format matrix used to convert to CRS
              */
-            void loadFromTriplets(pwm::Triplet<T, int_type> input) {
+            void loadFromTriplets(pwm::Triplet<T, int_type> input, const int partition_am) {
                 this->noc = input.col_size;
                 this->nor = input.row_size;
                 this->nnz = input.nnz;
