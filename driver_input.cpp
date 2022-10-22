@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <time.h>
 #include <string>
+#include <cmath>
 
 #include "CRS.hpp"
 #include "CRSOMP.hpp"
@@ -22,12 +23,15 @@
 #include "Utill/TripletToCRS.hpp"
 #include "Triplet.hpp"
 
+#include <boost/algorithm/string/predicate.hpp>
+
 #include "omp.h"
 #include "oneapi/tbb.h"
 
 void printErrorMsg() {
     std::cout << "You need to provide the correct command line arguments:" << std::endl;
-    std::cout << "  1° Filename of Matrix market input file" << std::endl;
+    std::cout << "  1° Filename of Matrix market / Kronecker graph input file";
+    std::cout << " (Kronecker input file must start with matrix size in power of 2 and boolean indicating the fill in separated by an underscore)" << std::endl;
     std::cout << "  2° Amount of times the power algorithm is executed" << std::endl;
     std::cout << "  3° Amount of warm up runs for the power algorithm (not timed)" << std::endl;
     std::cout << "  4° Amount of iterations in the power method algorithm" << std::endl;
@@ -115,7 +119,16 @@ int main(int argc, char** argv) {
     // Input matrix & initialize vectors
     start = omp_get_wtime();
     pwm::Triplet<double, int> input_mat;
-    input_mat.loadFromMM(input_file);
+
+    if (boost::algorithm::ends_with(input_file, ".mtx")) {
+        input_mat.loadFromMM(input_file);
+    } else if (boost::algorithm::ends_with(input_file, ".bin")) {
+        int start = input_file.find("/");
+        int first_ = input_file.find("_");
+        int mat_size = std::pow(2, std::stoi(input_file.substr(start+1, first_-start-1)));
+        bool fill_in = std::stoi(input_file.substr(first_+1, 1));
+        input_mat.loadFromKronecker(input_file, mat_size, fill_in);
+    }
     int mat_size = input_mat.row_size;
 
     test_mat->loadFromTriplets(input_mat, partitions);

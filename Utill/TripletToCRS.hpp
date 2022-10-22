@@ -100,12 +100,11 @@ namespace pwm {
             col_ind[i] = col_coord[i];
             CRS_data[i] = data[i];
 
-            if (row_coord[i] != row_index) {
+            while (row_coord[i] != row_index) {
                 row_index++;
                 row_start[row_index] = i;
             }
         }
-
         row_start[row_index + 1] = nnz;
 
         // Sort columns of CRS data
@@ -149,7 +148,7 @@ namespace pwm {
         row_start[0] = 0;
         int_type row_index = 0;
         for (int i = 0; i < nnz; ++i) {
-            if (row_coord[i] != row_index) {
+            while (row_coord[i] != row_index) {
                 row_index++;
                 row_start[row_index] = i;
             }
@@ -197,7 +196,7 @@ namespace pwm {
         row_start[0] = 0;
         int_type row_index = 0;
         for (int i = 0; i < nnz; ++i) {
-            if (row_coord[i] != row_index) {
+            while (row_coord[i] != row_index) {
                 row_index++;
                 row_start[row_index] = i;
             }
@@ -277,7 +276,7 @@ namespace pwm {
                     break;
                 }
 
-                if (row_coord[nnz_index] != row_index+first_rows[i]) {
+                while (row_coord[nnz_index] != row_index+first_rows[i]) {
                     row_index++;
                     row_start[i][row_index] = part_index;
                 }

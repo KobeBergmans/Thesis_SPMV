@@ -16,8 +16,11 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <sys/stat.h>
 
 #include <boost/lexical_cast.hpp>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_real_distribution.hpp>
 
 #include "Utill/VectorUtill.hpp"
 
@@ -43,10 +46,20 @@ namespace pwm {
             // Amount of nonzeros
             int_type nnz;
 
-            // Base constructor
-            Triplet() {}
+            // Random number generator for random vals of kronecker graph (set seed is 747846)
+            boost::random::mt19937 gen;
 
-            // Load from matrix market format
+            // Uniform real distribution
+            boost::random::uniform_real_distribution<T> dist;
+
+            // Base constructor
+            Triplet(): gen(747846), dist(-100., 100.) {}
+
+            /**
+             * @brief Load from Matrix Market format
+             * 
+             * @param filename Filename of file to load
+             */
             void loadFromMM(std::string filename) {
                 std::ifstream input_file(filename);
 
@@ -99,6 +112,48 @@ namespace pwm {
                         data[index] = boost::lexical_cast<T>(word);
 
                         index++;
+                    }
+                }
+            }
+
+            /**
+             * @brief Loads Triplet matrix from Kronecker graph generator binary output.
+             * 
+             * @param filename Filename of input file
+             * @param random_vals If this is true generate random matrix values. If this is false every value is 1.
+             */
+            void loadFromKronecker(std::string filename, int_type mat_size, bool random_vals) {
+                row_size = mat_size;
+                col_size = mat_size;
+
+                struct stat results;
+                if (stat(filename.c_str(), &results) == 0) {
+                    std::cout << results.st_size << std::endl;
+                    nnz = results.st_size / (2*sizeof(uint32_t)); // Binary file is stored in unsigned long format
+                } else {
+                    std::cout << "An error occurred while reading the Kronecker input file" << std::endl;
+                }
+
+                row_coord = new int_type[nnz];
+                col_coord = new int_type[nnz];
+                data = new T[nnz];
+
+                uint32_t input_nb;
+                char input_buf[sizeof(uint32_t)];
+                std::ifstream input_file(filename, std::ios::in | std::ios::binary);
+                for (int i = 0; i < nnz; ++i) {
+                    input_file.read(input_buf, sizeof(uint32_t));
+                    std::memcpy(&input_nb, input_buf, sizeof(uint32_t));
+                    row_coord[i] = input_nb;
+
+                    input_file.read(input_buf, sizeof(uint32_t));
+                    std::memcpy(&input_nb, input_buf, sizeof(uint32_t));
+                    col_coord[i] = input_nb;
+
+                    if (random_vals) {
+                        data[i] = dist(gen);
+                    } else {
+                        data[i] = 1;
                     }
                 }
             }

@@ -73,11 +73,11 @@ namespace pwm {
                 this->noc = input.col_size;
                 this->nor = input.row_size;
                 this->nnz = input.nnz;
-
+                
                 row_start = new int_type[this->nor+1];
                 col_ind = new int_type[this->nnz];
                 data_arr = new T[this->nnz];
-
+ 
                 pwm::TripletToCRS(input.row_coord, input.col_coord, input.data, row_start, col_ind, data_arr, this->nnz);
             }
 
