@@ -130,14 +130,16 @@ int main(int argc, char** argv) {
     }
 
     // Solve power method an amount of time
-    start = omp_get_wtime();
+    double timings[iter];
     for (int i = 0; i < iter; ++i) {
+        start = omp_get_wtime();
         std::fill(x, x+mat_size, 1.);
         test_mat->powerMethod(x, y, pwm_iter);
+        stop = omp_get_wtime();
+        timings[i] = (stop - start) * 1000;
     }
-    stop = omp_get_wtime();
-    time = (stop - start) * 1000;
-    std::cout << "Time (ms) to get " << iter << " executions: " << time << "ms" << std::endl;
+
+    pwm::printVector(timings, iter);
 
 #ifndef NDEBUG
     std::cout << "Result for checking measures: " << std::endl;
