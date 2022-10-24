@@ -139,7 +139,6 @@ BOOST_AUTO_TEST_CASE(mv_8_4_bin_no_rand, * boost::unit_test::tolerance(std::pow(
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
         
         for (int partitions = 1; partitions <= std::min(max_threads*2, mat_size); ++partitions) {
-            std::cout << mat_index << " " << partitions << std::endl;
             mat->loadFromTriplets(input_mat, partitions);
             std::fill(x, x+mat_size, 1.);
             mat->mv(x,y);
@@ -147,6 +146,55 @@ BOOST_AUTO_TEST_CASE(mv_8_4_bin_no_rand, * boost::unit_test::tolerance(std::pow(
             // Check solution
             for (int i = 0; i < mat_size; ++i) {
                 BOOST_TEST(y[i] == real_sol[i]);
+            }
+
+            // If matrix is an omp or TBB matrix break because all executions are the same
+            if ((mat_index-1) % 6 == 0 || (mat_index-2) % 6 == 0) {
+                break;
+            }
+        }
+
+        // Reset omp threads
+        omp_set_num_threads(max_threads);
+    }
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(powermethod_input)
+
+BOOST_AUTO_TEST_CASE(powermethod_arc130, * boost::unit_test::tolerance(std::pow(10, -12))) {
+    pwm::Triplet<double, int> input_mat;
+    input_mat.loadFromMM("test_input/arc130.mtx");
+    int mat_size = input_mat.col_size;
+
+    // Precomputed solution using matlab
+    double real_sol[] = {2.492724633018974e-05, -2.390029079751346e-05,  9.572440154285601e-11, -1.109479628632532e-11,  1.715107887135334e-13,  3.217882304082448e-13, -1.103385548634800e-14,  3.804972004156662e-15,  1.882468120622790e-14,  1.140532528010935e-14, -4.594905476337396e-09, -2.320827044723591e-13,  1.882468120622791e-14,  3.063003439297170e-14, -7.616237553357624e-14,  9.144373928721132e-43,  3.804972004156651e-15, -2.552141537821988e-12, -3.614444536730160e-15,  2.345394485375163e-05, -9.999999988276607e-01,  2.413916021070737e-06, -1.502618542048214e-07,  6.580273154716977e-20,  6.631828979854100e-21,  1.505217311193943e-18, -2.908108657714851e-17,  2.023037754317203e-22, -1.083417245222760e-25, -1.179250234161811e-26,  3.232387725635387e-08, -4.253028950103695e-14,  3.500727758463204e-18, -2.461158769088564e-25, -2.371662405296508e-26,  2.441597623040829e-05, -9.709691231986644e-12,  3.158497694918372e-14, -3.405279088750418e-25, -3.170354596220193e-26,  9.613918117342152e-08, -4.725999046775580e-11,  3.068545850069518e-12, -3.572140791950370e-25, -3.379215405504973e-26,  1.241625888841511e-13, -4.874748886745859e-12,  9.112121257184283e-13, -3.069491249112258e-25, -3.049410847276142e-26,  5.983033908266379e-19, -4.417361316865787e-14,  3.067671212294626e-15, -2.232127347602557e-25, -2.392621564417478e-26,  2.906737113546671e-19, -2.383116132109114e-16,  1.569211620952665e-18, -1.375234202085984e-25, -1.652061731301824e-26,  1.446550408766568e-19, -3.363870499144852e-18,  1.423922154806218e-21, -6.985855466232769e-26, -1.012985515704650e-26,  6.906566290005820e-20, -1.775352932370874e-19,  9.989737052140664e-24, -2.797138906980411e-26, -5.598427441933988e-27,  3.043238914248902e-20, -1.863352857380007e-20,  5.058331373195670e-25, -8.822788286630944e-27, -2.835705943917218e-27,  1.215604059972376e-20, -2.306664397097668e-21,  6.387263749122422e-26, -2.492666863481531e-27, -1.325242311424826e-27,  4.421046919925564e-21, -2.708778096203366e-22,  1.191369106005722e-26, -7.641908724116118e-28, -5.702200070880650e-28,  1.470438915185142e-21, -2.762550553171631e-23,  2.826480477014610e-27, -2.666214528287778e-28, -2.248519241544640e-28,  4.450576621929338e-22, -2.358631566905962e-24,  7.512050477594792e-28, -9.591616969540117e-29, -8.099239148449887e-29,  1.219136530295899e-22, -1.664052789972254e-25,  1.988899583820249e-28, -3.266229613456442e-29, -2.660296808107736e-29,  3.016669594564926e-23, -9.809816746503891e-27,  4.917391644914019e-29, -1.016476204363154e-29, -7.963685200252959e-30,  6.737259576708041e-24, -5.198926435409626e-28,  1.106465704700631e-29, -2.862493410156643e-30, -2.171746248176351e-30,  1.358528192832975e-24, -3.286162656589790e-29,  2.245307575584594e-30, -7.283612954709367e-31, -5.397250090223691e-31,  2.474209551260810e-25, -3.556879472566343e-30,  4.094532802665354e-31, -1.675059552087905e-31, -1.222350384316561e-31,  4.069920466191034e-26, -5.371192394150234e-31,  6.692700063432779e-32, -3.484628829395268e-32, -2.523009568753440e-32,  6.051792861149525e-27, -8.243952012206658e-32,  9.774577391985403e-33, -6.561899876147630e-33, -4.747971448455573e-33};
+
+
+    // Get datastructures
+    std::vector<pwm::SparseMatrix<double, int>*> matrices = pwm::get_all_matrices<double, int>();
+    double* x = new double[mat_size];
+    double* y = new double[mat_size];
+
+    // Run test on all the matrices
+    for (size_t mat_index = 0; mat_index < matrices.size(); ++mat_index) {
+        pwm::SparseMatrix<double, int>* mat = matrices[mat_index];
+
+        // Get omp max threads
+        int max_threads = omp_get_max_threads();
+
+        // If we have a TBB implementation set a global limiter to overwrite other limits
+        tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
+        
+        for (int partitions = 1; partitions <= std::min(max_threads*2, mat_size); ++partitions) {
+            mat->loadFromTriplets(input_mat, partitions);
+            std::fill(x, x+mat_size, 1.);
+            mat->powerMethod(x, y, 100);
+
+            // Check solution
+            for (int i = 0; i < mat_size; ++i) {
+                BOOST_TEST(x[i] == real_sol[i]);
             }
 
             // If matrix is an omp or TBB matrix break because all executions are the same
