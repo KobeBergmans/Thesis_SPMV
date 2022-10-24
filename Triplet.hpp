@@ -128,7 +128,6 @@ namespace pwm {
 
                 struct stat results;
                 if (stat(filename.c_str(), &results) == 0) {
-                    std::cout << results.st_size << std::endl;
                     nnz = results.st_size / (2*sizeof(uint32_t)); // Binary file is stored in unsigned long format
                 } else {
                     std::cout << "An error occurred while reading the Kronecker input file" << std::endl;
@@ -153,7 +152,7 @@ namespace pwm {
                     if (random_vals) {
                         data[i] = dist(gen);
                     } else {
-                        data[i] = 1;
+                        data[i] = 1.;
                     }
                 }
             }

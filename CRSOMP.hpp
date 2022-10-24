@@ -85,7 +85,7 @@ namespace pwm {
                 col_ind = new int_type[this->nnz];
                 data_arr = new T[this->nnz];
 
-                pwm::TripletToCRSOMP(input.row_coord, input.col_coord, input.data, row_start, col_ind, data_arr, this->nnz);
+                pwm::TripletToCRSOMP(input.row_coord, input.col_coord, input.data, row_start, col_ind, data_arr, this->nnz, this->nor);
             }
 
             /**

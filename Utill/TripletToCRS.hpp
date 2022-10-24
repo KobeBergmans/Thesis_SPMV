@@ -86,7 +86,7 @@ namespace pwm {
      * @param nnz Number of nonzeros in matrix
      */
     template<typename T, typename int_type>
-    void TripletToCRS(int_type* row_coord, int_type* col_coord, T* data, int_type* row_start, int_type* col_ind, T* CRS_data, int_type nnz) {
+    void TripletToCRS(int_type* row_coord, int_type* col_coord, T* data, int_type* row_start, int_type* col_ind, T* CRS_data, int_type nnz, int_type nor) {
         // Sort triplets on row value
         int_type** coords = new int_type*[2];
         coords[0] = row_coord;
@@ -105,7 +105,12 @@ namespace pwm {
                 row_start[row_index] = i;
             }
         }
-        row_start[row_index + 1] = nnz;
+
+        // Fill last elements of row_start with nnz
+        while (row_index < nor) {
+            row_index++;
+            row_start[row_index] = nnz;
+        }
 
         // Sort columns of CRS data
         coords[0] = col_ind;
@@ -130,7 +135,7 @@ namespace pwm {
      * @param nnz Number of nonzeros in matrix
      */
     template<typename T, typename int_type>
-    void TripletToCRSOMP(int_type* row_coord, int_type* col_coord, T* data, int_type* row_start, int_type* col_ind, T* CRS_data, int_type nnz) {
+    void TripletToCRSOMP(int_type* row_coord, int_type* col_coord, T* data, int_type* row_start, int_type* col_ind, T* CRS_data, int_type nnz, int_type nor) {
         // Sort triplets on row value
         int_type** coords = new int_type*[2];
         coords[0] = row_coord;
@@ -153,7 +158,12 @@ namespace pwm {
                 row_start[row_index] = i;
             }
         }
-        row_start[row_index + 1] = nnz;
+        
+        // Fill last elements of row_start with nnz
+        while (row_index < nor) {
+            row_index++;
+            row_start[row_index] = nnz;
+        }
 
         // Sort columns of CRS data
         coords[0] = col_ind;
@@ -179,7 +189,7 @@ namespace pwm {
      * @param nnz Number of nonzeros in matrix
      */
     template<typename T, typename int_type>
-    void TripletToCRSTBB(int_type* row_coord, int_type* col_coord, T* data, int_type* row_start, int_type* col_ind, T* CRS_data, int_type nnz) {
+    void TripletToCRSTBB(int_type* row_coord, int_type* col_coord, T* data, int_type* row_start, int_type* col_ind, T* CRS_data, int_type nnz, int_type nor) {
         // Sort triplets on row value
         int_type** coords = new int_type*[2];
         coords[0] = row_coord;
@@ -201,7 +211,12 @@ namespace pwm {
                 row_start[row_index] = i;
             }
         }
-        row_start[row_index + 1] = nnz;
+        
+        // Fill last elements of row_start with nnz
+        while (row_index < nor) {
+            row_index++;
+            row_start[row_index] = nnz;
+        }
 
         // Sort columns of CRS data
         coords[0] = col_ind;
@@ -258,9 +273,10 @@ namespace pwm {
             }
 
             // Create datastructures
+            int_type nnz_this_part = j - nnz_index;
             row_start[i] = new int_type[thread_rows[i]+1];
-            col_ind[i] = new int_type[j-nnz_index];
-            CRS_data[i] = new T[j-nnz_index];
+            col_ind[i] = new int_type[nnz_this_part];
+            CRS_data[i] = new T[nnz_this_part];
 
             // Fill datastructures
             row_start[i][0] = 0;
@@ -269,23 +285,29 @@ namespace pwm {
             while (true) {
                 col_ind[i][part_index] = col_coord[nnz_index];
                 CRS_data[i][part_index] = data[nnz_index];
+
+                while (row_coord[nnz_index] != row_index+first_rows[i]) {
+                    row_index++;
+                    row_start[i][row_index] = part_index;
+                }
+
                 part_index++;
                 nnz_index++;
 
                 if (nnz_index >= nnz || row_coord[nnz_index] >= last_row) {
                     break;
                 }
-
-                while (row_coord[nnz_index] != row_index+first_rows[i]) {
-                    row_index++;
-                    row_start[i][row_index] = part_index;
-                }
             }
-            row_start[i][row_index + 1] = part_index;
 
+            // Fill last elements of row_start with part_index
+            while (row_index < thread_rows[i]) {
+                row_index++;
+                row_start[i][row_index] = part_index;
+            }
+            
             // Sort columns of CRS data
             coords[0] = col_ind[i];
-            for (int row = 0; row <= row_index; ++row) {
+            for (int row = 0; row < thread_rows[i]; ++row) {
                 sortCoordsForCRS(coords, CRS_data[i], 1, row_start[i][row], row_start[i][row+1]-1);
             }
         }        
