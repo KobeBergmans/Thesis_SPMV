@@ -61,6 +61,8 @@ namespace pwm {
 
         private:
             void generateFunctionNodes() {
+                n_list = std::vector<flow::function_node<std::tuple<const T*, T*>, int>>();                
+
                 for (int i = 0; i < partitions; ++i) {
                     // Create node for this thread
                     flow::function_node<std::tuple<const T*, T*>, int> n(g, 1, [=](std::tuple<const T*, T*> input) -> int {

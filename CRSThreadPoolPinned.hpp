@@ -64,6 +64,9 @@ namespace pwm {
 
         private:
             void generateFunctions() {
+                mv_function_list = std::vector<std::function<void(const T*, T*)>>();
+                norm_function_list = std::vector<std::function<void(T*, T)>>();
+
                 int cpu_count = std::thread::hardware_concurrency();
                 int max_threads = std::min(threads, cpu_count);
                 for (int i = 0; i < partitions; ++i) {

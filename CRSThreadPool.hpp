@@ -61,6 +61,9 @@ namespace pwm {
 
         private:
             void generateFunctions() {
+                mv_function_list = std::vector<std::function<void(const T*, T*)>>();
+                norm_function_list = std::vector<std::function<void(T*, T)>>();
+
                 for (int i = 0; i < partitions; ++i) {
                     // Create mv lambda function for this thread
                     std::function<void(const T*, T*)> mv_func = [=](const T* x, T* y) -> void {

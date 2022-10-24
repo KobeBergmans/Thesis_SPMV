@@ -35,14 +35,15 @@ namespace pwm {
             // Data array which stores the actual nonzeros
             T* data_arr;
 
+            // Amount of threads to be used
+            int threads;
+
         public:
             // Base constructor
             CRSOMP() {}
 
             // Base constructor
-            CRSOMP(int threads) {
-                omp_set_num_threads(threads);
-            }
+            CRSOMP(int threads): threads(threads) {}
 
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
@@ -51,6 +52,8 @@ namespace pwm {
              * @param n The amount of discretization steps in the y direction
              */
             void generatePoissonMatrix(const int_type m, const int_type n, const int partitions) {
+                omp_set_num_threads(threads);
+
                 this->noc = m*n;
                 this->nor = m*n;
 
@@ -72,6 +75,8 @@ namespace pwm {
              * @param input Triplet format matrix used to convert to CRS
              */
             void loadFromTriplets(pwm::Triplet<T, int_type> input, const int partition_am) {
+                omp_set_num_threads(threads);
+
                 this->noc = input.col_size;
                 this->nor = input.row_size;
                 this->nnz = input.nnz;

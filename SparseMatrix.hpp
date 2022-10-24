@@ -31,6 +31,9 @@ namespace pwm {
             // Base constructor
             SparseMatrix(int threads) {}
 
+            // Base destructor
+            virtual ~SparseMatrix() {}
+
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
              * 

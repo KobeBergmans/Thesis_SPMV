@@ -66,6 +66,9 @@ namespace pwm {
 
         private:
             void generateFunctionNodes() {
+                mv_func_list = std::vector<flow::function_node<std::tuple<const T*, T*>, int>>();
+                norm_func_list = std::vector<flow::function_node<std::tuple<T*, T>, int>>();
+
                 int cpu_count = std::thread::hardware_concurrency();
                 int max_threads = std::min(threads, cpu_count);
                 for (int i = 0; i < partitions; ++i) {

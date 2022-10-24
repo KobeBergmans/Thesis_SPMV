@@ -16,6 +16,7 @@
 #include "GetMatrices.hpp"
 
 #include "omp.h"
+#include "oneapi/tbb.h"
 
 BOOST_AUTO_TEST_SUITE(poisson_mv)
 
@@ -32,8 +33,16 @@ BOOST_AUTO_TEST_CASE(mv_size_3_3, * boost::unit_test::tolerance(std::pow(10, -14
     double* y = new double[mat_size];
 
     // Run test on all the matrices
-    for (pwm::SparseMatrix<double, int>* mat: matrices) {
-        for (int partitions = 1; partitions <= std::min(omp_get_max_threads()*3, 3*3); ++partitions) {
+    for (size_t mat_index = 0; mat_index < matrices.size(); ++mat_index) {
+        pwm::SparseMatrix<double, int>* mat = matrices[mat_index];
+
+        // Get omp max threads
+        int max_threads = omp_get_max_threads();
+
+        // If we have a TBB implementation set a global limiter to overwrite other limits
+        tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
+        
+        for (int partitions = 1; partitions <= std::min(max_threads*3, 3*3); ++partitions) {
             mat->generatePoissonMatrix(3, 3, partitions);
             std::fill(x, x+mat_size, 1.);
             mat->mv(x,y);
@@ -42,7 +51,15 @@ BOOST_AUTO_TEST_CASE(mv_size_3_3, * boost::unit_test::tolerance(std::pow(10, -14
             for (int i = 0; i < mat_size; ++i) {
                 BOOST_TEST(y[i] == real_sol[i]);
             }
+
+            // If matrix is an omp or TBB matrix break because all executions are the same
+            if ((mat_index-1) % 6 == 0 || (mat_index-2) % 6 == 0) {
+                break;
+            }
         }
+
+        // Reset omp threads
+        omp_set_num_threads(max_threads);
     }
 }
 
@@ -60,8 +77,16 @@ BOOST_AUTO_TEST_CASE(mv_size_9_3, * boost::unit_test::tolerance(std::pow(10, -14
     double* y = new double[mat_size];
 
     // Run test on all the matrices
-    for (pwm::SparseMatrix<double, int>* mat: matrices) {
-        for (int partitions = 1; partitions <= std::min(omp_get_max_threads()*3, 9*3); ++partitions) {
+    for (size_t mat_index = 0; mat_index < matrices.size(); ++mat_index) {
+        pwm::SparseMatrix<double, int>* mat = matrices[mat_index];
+            
+        // Get omp max threads
+        int max_threads = omp_get_max_threads();
+
+        // If we have a TBB implementation set a global limiter to overwrite other limits
+        tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
+
+        for (int partitions = 1; partitions <= std::min(max_threads*3, 9*3); ++partitions) {
             mat->generatePoissonMatrix(9, 3, partitions);
             std::fill(x, x+mat_size, 1.);
             mat->mv(x,y);
@@ -70,7 +95,16 @@ BOOST_AUTO_TEST_CASE(mv_size_9_3, * boost::unit_test::tolerance(std::pow(10, -14
             for (int i = 0; i < mat_size; ++i) {
                 BOOST_TEST(y[i] == real_sol[i]);
             }
+
+            // If matrix is an omp or TBB matrix break because all executions are the same
+            if ((mat_index-1) % 6 == 0 || (mat_index-2) % 6 == 0) {
+                break;
+            }
         }
+
+
+        // Reset omp threads
+        omp_set_num_threads(max_threads);
     }
 }
 
@@ -92,8 +126,16 @@ BOOST_AUTO_TEST_CASE(powermethod_size_5_5, * boost::unit_test::tolerance(std::po
     double* y = new double[mat_size];
 
     // Run test on all the matrices
-    for (pwm::SparseMatrix<double, int>* mat: matrices) {
-        for (int partitions = 1; partitions <= std::min(omp_get_max_threads()*3, 5*5); ++partitions) {
+    for (size_t mat_index = 0; mat_index < matrices.size(); ++mat_index) {
+        pwm::SparseMatrix<double, int>* mat = matrices[mat_index];
+
+        // Get omp max threads
+        int max_threads = omp_get_max_threads();
+
+        // If we have a TBB implementation set a global limiter to overwrite other limits
+        tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
+        
+        for (int partitions = 1; partitions <= std::min(max_threads*3, 5*5); ++partitions) {
             mat->generatePoissonMatrix(5, 5, partitions);
             std::fill(x, x+mat_size, 1.);
             mat->powerMethod(x, y, 100);
@@ -102,7 +144,15 @@ BOOST_AUTO_TEST_CASE(powermethod_size_5_5, * boost::unit_test::tolerance(std::po
             for (int i = 0; i < mat_size; ++i) {
                 BOOST_TEST(x[i] == real_sol[i]);
             }
+
+            // If matrix is an omp or TBB matrix break because all executions are the same
+            if ((mat_index-1) % 6 == 0 || (mat_index-2) % 6 == 0) {
+                break;
+            }
         }
+
+        // Reset omp threads
+        omp_set_num_threads(max_threads);
     }
 }
 
@@ -120,8 +170,16 @@ BOOST_AUTO_TEST_CASE(powermethod_size_10_5, * boost::unit_test::tolerance(std::p
     double* y = new double[mat_size];
 
     // Run test on all the matrices
-    for (pwm::SparseMatrix<double, int>* mat: matrices) {
-        for (int partitions = 1; partitions <= std::min(omp_get_max_threads()*3, 10*5); ++partitions) {
+    for (size_t mat_index = 0; mat_index < matrices.size(); ++mat_index) {
+        pwm::SparseMatrix<double, int>* mat = matrices[mat_index];
+
+        // Get omp max threads
+        int max_threads = omp_get_max_threads();
+
+        // If we have a TBB implementation set a global limiter to overwrite other limits
+        tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
+
+        for (int partitions = 1; partitions <= std::min(max_threads*3, 10*5); ++partitions) {
             mat->generatePoissonMatrix(10, 5, partitions);
             std::fill(x, x+mat_size, 1.);
             mat->powerMethod(x, y, 100);
@@ -130,7 +188,15 @@ BOOST_AUTO_TEST_CASE(powermethod_size_10_5, * boost::unit_test::tolerance(std::p
             for (int i = 0; i < mat_size; ++i) {
                 BOOST_TEST(x[i] == real_sol[i]);
             }
+
+            // If matrix is an omp or TBB matrix break because all executions are the same
+            if ((mat_index-1) % 6 == 0 || (mat_index-2) % 6 == 0) {
+                break;
+            }
         }
+
+        // Reset omp threads
+        omp_set_num_threads(max_threads);
     }
 }
 

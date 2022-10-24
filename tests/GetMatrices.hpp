@@ -35,8 +35,13 @@ namespace pwm {
             matrices.push_back(new pwm::CRSThreadPool<double, int>(i));
             matrices.push_back(new pwm::CRSThreadPoolPinned<double, int>(i));
         }
-
         return matrices;
+    }
+
+    int get_threads_for_matrix(int index) {
+        if (index == 0) return 1;
+
+        return std::floor((index - 1)/6.) + 1;
     }
 } // namespace pwm
 
