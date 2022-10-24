@@ -70,7 +70,7 @@ namespace pwm {
             }
 
             // Check for identity after D
-            if (row < m*n - n) {
+            if (row < m*n - m) {
                 data_arr[nnz_index] = -1;
                 col_ind[nnz_index] = m+row;
                 nnz_index++;
@@ -112,7 +112,7 @@ namespace pwm {
                 nnz_index += (row/m)*(m-1) + row%m;
                 nnz_index += row;
                 nnz_index += (row/m)*(m-1) + row%m;
-                nnz_index += std::min(row, m*n - n);
+                nnz_index += std::min(row, m*n - m);
             
                 if (row % m >= 1) nnz_index -= 1;
             }            
@@ -147,7 +147,7 @@ namespace pwm {
             }
 
             // Check for identity after D
-            if (row < m*n - n) {
+            if (row < m*n - m) {
                 data_arr[nnz_index] = -1;
                 col_ind[nnz_index] = m+row;
                 nnz_index++;
@@ -188,7 +188,7 @@ namespace pwm {
                 nnz_index += (row/m)*(m-1) + row%m;
                 nnz_index += row;
                 nnz_index += (row/m)*(m-1) + row%m;
-                nnz_index += std::min(row, m*n - n);
+                nnz_index += std::min(row, m*n - m);
             
                 if (row % m >= 1) nnz_index -= 1;
             }            
@@ -223,7 +223,7 @@ namespace pwm {
             }
 
             // Check for identity after D
-            if (row < m*n - n) {
+            if (row < m*n - m) {
                 data_arr[nnz_index] = -1;
                 col_ind[nnz_index] = m+row;
                 nnz_index++;
