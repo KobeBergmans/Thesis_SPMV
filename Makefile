@@ -15,3 +15,6 @@ driver_input:
 
 driver_input_debug:
 	g++ -Wall -Og -fopenmp -o driver_input driver_input.cpp -ltbb_debug -lboost_thread
+
+test:
+	g++ -Wall -Og -fopenmp -o test test.cpp -ltbb_debug -lboost_thread
