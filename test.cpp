@@ -10,3 +10,4 @@
 #include <boost/test/unit_test.hpp>
 
 #include "tests/poisson.cpp"
+#include "tests/input.cpp"
