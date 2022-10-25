@@ -22,7 +22,7 @@
 #include "Utill/VectorUtill.hpp"
 #include "Utill/Poisson.hpp"
 
-#include "oneapi/tbb.h"
+#include "tbb.h"
 
 namespace pwm {
     template<typename T, typename int_type>

@@ -16,7 +16,7 @@
 #include "GetMatrices.hpp"
 
 #include "omp.h"
-#include "oneapi/tbb.h"
+#include "tbb.h"
 
 BOOST_AUTO_TEST_SUITE(poisson_mv)
 

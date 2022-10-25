@@ -11,7 +11,7 @@
 
 #include "VectorUtill.hpp"
 
-#include "oneapi/tbb.h"
+#include "tbb.h"
 
 namespace pwm {
     template<typename T, typename int_type>
