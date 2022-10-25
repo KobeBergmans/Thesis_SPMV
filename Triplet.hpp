@@ -59,8 +59,10 @@ namespace pwm {
              * @brief Load from Matrix Market format
              * 
              * @param filename Filename of file to load
+             * @param has_data Specifies if this is a weighted graph (x, y and z coordinates are present)
+             * @param random_fill Specifies if the data should be randomly filled in. Only used if has_data is false.
              */
-            void loadFromMM(std::string filename) {
+            void loadFromMM(std::string filename, bool has_data, bool random_fill = false) {
                 std::ifstream input_file(filename);
 
                 if (input_file.is_open()) {
@@ -108,9 +110,15 @@ namespace pwm {
                         col_coord[index] = boost::lexical_cast<int_type>(word) - 1;
 
                         // Data
-                        line >> word;
-                        data[index] = boost::lexical_cast<T>(word);
-
+                        if (has_data) {
+                            line >> word;
+                            data[index] = boost::lexical_cast<T>(word);
+                        } else if (random_fill) {
+                            data[index] = dist(gen);
+                        } else {
+                            data[index] = 1.;
+                        }
+                        
                         index++;
                     }
                 }

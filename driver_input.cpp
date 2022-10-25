@@ -30,7 +30,9 @@
 
 void printErrorMsg() {
     std::cout << "You need to provide the correct command line arguments:" << std::endl;
-    std::cout << "  1° Filename of Matrix market / Kronecker graph input file";
+    std::cout << "  1° Filename of Matrix market";
+    std::cout << " (Matrix market file should start with a 0 if there is data present, if there is no data present and the values are 1 start with 1, otherwise the data is randomly filled in)";
+    std::cout << " / Kronecker graph input file";
     std::cout << " (Kronecker input file must start with matrix size in power of 2 and boolean indicating the fill in separated by an underscore)" << std::endl;
     std::cout << "  2° Amount of times the power algorithm is executed" << std::endl;
     std::cout << "  3° Amount of warm up runs for the power algorithm (not timed)" << std::endl;
@@ -120,12 +122,19 @@ int main(int argc, char** argv) {
     start = omp_get_wtime();
     pwm::Triplet<double, int> input_mat;
 
+    int file_start = input_file.find("/");
     if (boost::algorithm::ends_with(input_file, ".mtx")) {
-        input_mat.loadFromMM(input_file);
+        int indicator = std::stoi(input_file.substr(file_start+1, 1));
+        if (indicator == 0) {
+            input_mat.loadFromMM(input_file, true);
+        } else if (indicator == 1) {
+            input_mat.loadFromMM(input_file, false, false);
+        } else {
+            input_mat.loadFromMM(input_file, false, true);
+        }
     } else if (boost::algorithm::ends_with(input_file, ".bin")) {
-        int start = input_file.find("/");
         int first_ = input_file.find("_");
-        int mat_size = std::pow(2, std::stoi(input_file.substr(start+1, first_-start-1)));
+        int mat_size = std::pow(2, std::stoi(input_file.substr(file_start+1, first_-file_start-1)));
         bool fill_in = std::stoi(input_file.substr(first_+1, 1));
         input_mat.loadFromKronecker(input_file, mat_size, fill_in);
     }

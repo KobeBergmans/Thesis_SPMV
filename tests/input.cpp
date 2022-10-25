@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_SUITE(input_mv)
 
 BOOST_AUTO_TEST_CASE(mv_arc130, * boost::unit_test::tolerance(std::pow(10, -14))) {
     pwm::Triplet<double, int> input_mat;
-    input_mat.loadFromMM("test_input/arc130.mtx");
+    input_mat.loadFromMM("test_input/arc130.mtx", true);
     int mat_size = input_mat.col_size;
 
     // Precomputed solution using matlab
@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(mv_arc130, * boost::unit_test::tolerance(std::pow(10, -14))
 
 BOOST_AUTO_TEST_CASE(mv_gre_1107, * boost::unit_test::tolerance(std::pow(10, -14))) {
     pwm::Triplet<double, int> input_mat;
-    input_mat.loadFromMM("test_input/gre_1107.mtx");
+    input_mat.loadFromMM("test_input/gre_1107.mtx", true);
     int mat_size = input_mat.col_size;
 
     // Precomputed solution using matlab
@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_SUITE(powermethod_input)
 
 BOOST_AUTO_TEST_CASE(powermethod_arc130, * boost::unit_test::tolerance(std::pow(10, -12))) {
     pwm::Triplet<double, int> input_mat;
-    input_mat.loadFromMM("test_input/arc130.mtx");
+    input_mat.loadFromMM("test_input/arc130.mtx", true);
     int mat_size = input_mat.col_size;
 
     // Precomputed solution using matlab

@@ -34,7 +34,7 @@ namespace pwm {
 
         // Points to biggest element
         int_type i = (low - 1);
-        for (int j = low; j < high; j++) {
+        for (int j = low; j < high; ++j) {
             if (coords[0][j] <= pivot) {
                 // If element is smaller than pivot swap it with i+1
                 i++;
