@@ -50,27 +50,27 @@ namespace pwm {
             int_type* first_rows;
 
             // Graph for TBB nodes
-            oneapi::tbb::flow::graph g;
+            tbb::flow::graph g;
 
             // TBB mv nodes list
-            std::vector<oneapi::tbb::flow::function_node<std::tuple<const T*, T*>, int>> mv_func_list;
+            std::vector<tbb::flow::function_node<std::tuple<const T*, T*>, int>> mv_func_list;
 
             // TBB normalize nodes list
-            std::vector<oneapi::tbb::flow::function_node<std::tuple<T*, T>, int>> norm_func_list;
+            std::vector<tbb::flow::function_node<std::tuple<T*, T>, int>> norm_func_list;
 
             // Global threads limit
-            oneapi::tbb::global_control global_limit;
+            tbb::global_control global_limit;
 
         private:
             void generateFunctionNodes() {
-                mv_func_list = std::vector<oneapi::tbb::flow::function_node<std::tuple<const T*, T*>, int>>();
-                norm_func_list = std::vector<oneapi::tbb::flow::function_node<std::tuple<T*, T>, int>>();
+                mv_func_list = std::vector<tbb::flow::function_node<std::tuple<const T*, T*>, int>>();
+                norm_func_list = std::vector<tbb::flow::function_node<std::tuple<T*, T>, int>>();
 
                 int cpu_count = std::thread::hardware_concurrency();
                 int max_threads = std::min(threads, cpu_count);
                 for (int i = 0; i < partitions; ++i) {
                     // Create mv node for this partition
-                    oneapi::tbb::flow::function_node<std::tuple<const T*, T*>, int> mv_node(g, 1, [=](std::tuple<const T*, T*> input) -> int {
+                    tbb::flow::function_node<std::tuple<const T*, T*>, int> mv_node(g, 1, [=](std::tuple<const T*, T*> input) -> int {
                         // Put the current thread on the right cpu
                         cpu_set_t *mask;
                         mask = CPU_ALLOC(1);
@@ -100,7 +100,7 @@ namespace pwm {
                     mv_func_list.push_back(mv_node);
 
                     // Create normalize node for this partition
-                    oneapi::tbb::flow::function_node<std::tuple<T*, T>, int> norm_node(g, 1, [=](std::tuple<T*, T> input) -> int {
+                    tbb::flow::function_node<std::tuple<T*, T>, int> norm_node(g, 1, [=](std::tuple<T*, T> input) -> int {
                         // Put the current thread on the right cpu
                         cpu_set_t *mask;
                         mask = CPU_ALLOC(1);
@@ -132,7 +132,7 @@ namespace pwm {
             // Base constructor
             CRSTBBGraphPinned(int threads):
             threads(threads),
-            global_limit(oneapi::tbb::global_control::max_allowed_parallelism, threads) {}
+            global_limit(tbb::global_control::max_allowed_parallelism, threads) {}
 
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
