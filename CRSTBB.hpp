@@ -22,8 +22,6 @@
 
 #include "oneapi/tbb.h"
 
-namespace tbb = oneapi::tbb;
-
 namespace pwm {
     template<typename T, typename int_type>
     class CRSTBB: public pwm::SparseMatrix<T, int_type> {
@@ -38,14 +36,14 @@ namespace pwm {
             T* data_arr;
 
             // Global threads limit
-            tbb::global_control global_limit;
+            oneapi::tbb::global_control global_limit;
 
         public:
             // Base constructor
             CRSTBB() {}
 
             // Base constructor
-            CRSTBB(int threads): global_limit(tbb::global_control::max_allowed_parallelism, threads) {}
+            CRSTBB(int threads): global_limit(oneapi::tbb::global_control::max_allowed_parallelism, threads) {}
 
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
@@ -95,7 +93,7 @@ namespace pwm {
              * @param y Output vector
              */
             void mv(const T* x, T* y) {   
-                tbb::parallel_for(0, this->nor, [=](int_type i) {
+                oneapi::tbb::parallel_for(0, this->nor, [=](int_type i) {
                     T sum = 0.;
                     int_type j;
                     for (int_type k = row_start[i]; k < row_start[i+1]; ++k) {
@@ -125,7 +123,7 @@ namespace pwm {
 
                         T norm = pwm::norm2(y, this->nor);
 
-                        tbb::parallel_for(0, this->nor, [=](int_type i) {
+                        oneapi::tbb::parallel_for(0, this->nor, [=](int_type i) {
                             y[i] /= norm;
                         });
                     } else {
@@ -133,7 +131,7 @@ namespace pwm {
 
                         T norm = pwm::norm2(x, this->nor);
 
-                        tbb::parallel_for(0, this->nor, [=](int_type i) {
+                        oneapi::tbb::parallel_for(0, this->nor, [=](int_type i) {
                             x[i] /= norm;
                         });
                     }

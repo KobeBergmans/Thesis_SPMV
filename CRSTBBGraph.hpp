@@ -25,9 +25,6 @@
 
 #include "oneapi/tbb.h"
 
-namespace tbb = oneapi::tbb;
-namespace flow = oneapi::tbb::flow;
-
 namespace pwm {
     template<typename T, typename int_type>
     class CRSTBBGraph: public pwm::SparseMatrix<T, int_type> {
@@ -51,21 +48,21 @@ namespace pwm {
             int_type* first_rows;
 
             // Graph for TBB nodes
-            flow::graph g;
+            oneapi::tbb::flow::graph g;
 
             // TBB nodes list
-            std::vector<flow::function_node<std::tuple<const T*, T*>, int>> n_list;
+            std::vector<oneapi::tbb::flow::function_node<std::tuple<const T*, T*>, int>> n_list;
 
             // Global threads limit
-            tbb::global_control global_limit;
+            oneapi::tbb::global_control global_limit;
 
         private:
             void generateFunctionNodes() {
-                n_list = std::vector<flow::function_node<std::tuple<const T*, T*>, int>>();                
+                n_list = std::vector<oneapi::tbb::flow::function_node<std::tuple<const T*, T*>, int>>();                
 
                 for (int i = 0; i < partitions; ++i) {
                     // Create node for this thread
-                    flow::function_node<std::tuple<const T*, T*>, int> n(g, 1, [=](std::tuple<const T*, T*> input) -> int {
+                    oneapi::tbb::flow::function_node<std::tuple<const T*, T*>, int> n(g, 1, [=](std::tuple<const T*, T*> input) -> int {
                         const T* x = std::get<0>(input);
                         T* y = std::get<1>(input);
 
@@ -92,7 +89,7 @@ namespace pwm {
 
             // Base constructor
             CRSTBBGraph(int threads):
-            global_limit(tbb::global_control::max_allowed_parallelism, threads) {}
+            global_limit(oneapi::tbb::global_control::max_allowed_parallelism, threads) {}
 
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
@@ -205,7 +202,7 @@ namespace pwm {
 
                         T norm = pwm::norm2(y, this->nor);
 
-                        tbb::parallel_for(0, this->nor, [=](int_type i) {
+                        oneapi::tbb::parallel_for(0, this->nor, [=](int_type i) {
                             y[i] /= norm;
                         });
                     } else {
@@ -213,7 +210,7 @@ namespace pwm {
 
                         T norm = pwm::norm2(x, this->nor);
 
-                        tbb::parallel_for(0, this->nor, [=](int_type i) {
+                        oneapi::tbb::parallel_for(0, this->nor, [=](int_type i) {
                             x[i] /= norm;
                         });
                     }
