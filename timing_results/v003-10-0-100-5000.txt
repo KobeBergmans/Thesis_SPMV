@@ -1,0 +1,83 @@
+Make executable...
+dpcpp -Wall -DNDEBUG -O3 -fopenmp -o driver_poisson driver_poisson.cpp -ltbb -lboost_thread
+Running sequential algorithm...
+Time to set up datastructures: 485.725ms
+23988.4, 23947.6, 23951.7, 23948.9, 23947.3, 23955.9, 23947.8, 23951.5, 23952.7, 23949.1, 
+Running OpenMP implementation with 6 - 36 threads...
+Time to set up datastructures: 208.296ms
+16629.3, 16634.1, 16630.5, 16631.6, 16633.2, 16630.3, 16630.5, 16633.3, 16858.7, 17097.6, 
+Time to set up datastructures: 211.169ms
+17229.2, 17097.7, 17098.1, 17096.9, 17097.4, 17100.8, 17100.4, 17099, 17100.3, 17099, 
+Time to set up datastructures: 200.693ms
+17486.7, 17496, 17495.6, 17494.8, 17494.4, 17495.8, 17493.8, 17493, 17496.2, 17493.6, 
+Time to set up datastructures: 204.278ms
+18051.5, 18064.7, 18064.2, 18062.7, 18063.3, 18069.2, 18065.8, 18066.9, 18067.1, 18064.3, 
+Time to set up datastructures: 202.664ms
+18686.2, 18701.3, 18705.4, 18705.5, 18705.4, 18704.7, 18705.9, 18706.5, 18712.3, 18706.3, 
+Time to set up datastructures: 216.274ms
+19458.8, 19503.7, 19494.4, 19478.2, 19479, 19485.7, 19485.8, 19479.1, 19484.4, 19496.6, 
+Running TBB implementation with 6 - 36 threads...
+Time to set up datastructures: 194.221ms
+16719.9, 16729.9, 16723.1, 16725.6, 16728.4, 16724.7, 16725.3, 16737.7, 16730.8, 16726.4, 
+Time to set up datastructures: 195.898ms
+17154, 17169.6, 17168.8, 17168.3, 17167.5, 17169.2, 17166, 17168.8, 17180.3, 17165.8, 
+Time to set up datastructures: 200.459ms
+17524.1, 17536.3, 17535.8, 17532.4, 17533.6, 17537.4, 17536.3, 17533, 17540, 17534.2, 
+Time to set up datastructures: 200.729ms
+18068.3, 18084.7, 18083.2, 18085.4, 18085.6, 18090.3, 18087.4, 18081.3, 18087.3, 18082.6, 
+Time to set up datastructures: 204.486ms
+18762.6, 18777.2, 18777.3, 18776.1, 18775.7, 18779.9, 18775.9, 18779.1, 18775.7, 18778.6, 
+Time to set up datastructures: 225.443ms
+19504.9, 19521.9, 19526.1, 19519.4, 19524.5, 19524.9, 19520.8, 19523.6, 19523.6, 19523.1, 
+Running TBB_graphs implementation with 6 - 36 threads and double the amount of partitions than threads
+Time to set up datastructures: 473.588ms
+16715.9, 16726.2, 16729.4, 16728.5, 16726.2, 16722.7, 16723.3, 16728.9, 16728.5, 16730.5, 
+Time to set up datastructures: 447.42ms
+17113.4, 17132.8, 17122.9, 17116.1, 17120.3, 17123.2, 17123.9, 17118.9, 17127, 17117.8, 
+Time to set up datastructures: 468.363ms
+17476.9, 17484, 17486.5, 17484.8, 17485.7, 17489.8, 17487.3, 17481.7, 17485.1, 17490.3, 
+Time to set up datastructures: 446.883ms
+17887.4, 17899.9, 17901.7, 17898.3, 17900.5, 17894.4, 17902.1, 17900.4, 17895.4, 17901.4, 
+Time to set up datastructures: 444.558ms
+18450.3, 18481.2, 18468.6, 18461.3, 18477.6, 18474.6, 18468, 18463.8, 18468.7, 18463.9, 
+Time to set up datastructures: 449.574ms
+19388.7, 19422.9, 19405.8, 19414.4, 19407.6, 19437.1, 19409.2, 19414.7, 19425.4, 19411.8, 
+Running TBB_graphs_pinned implementation with 6 - 36 threads and double the amount of partitions than threads
+Time to set up datastructures: 469.37ms
+17068.3, 17119.3, 17029.8, 17061.4, 17062.4, 17057.2, 17117.8, 17114.1, 17084.1, 17058.6, 
+Time to set up datastructures: 472.489ms
+17152.3, 17137.4, 17140.3, 17166.1, 17141.8, 17148.4, 17116.1, 17175.4, 17167.4, 17139.1, 
+Time to set up datastructures: 460.451ms
+17319.2, 17310.4, 17328.2, 17315.7, 17301.5, 17315.4, 17329.4, 17324.5, 17301.9, 17434.6, 
+Time to set up datastructures: 497.64ms
+17842.6, 17935.8, 17789.8, 17650, 17648.1, 17656, 17650.5, 17641.1, 17643.5, 17636.9, 
+Time to set up datastructures: 473.593ms
+17991.5, 17992.6, 17994.3, 18027.5, 18000.3, 18031.1, 17993.6, 18008.9, 18013.4, 18014.2, 
+Time to set up datastructures: 482.133ms
+18391.2, 18429.3, 18436.3, 18436.9, 18399.1, 18411.8, 18428.5, 18427.2, 18433.7, 18404.3, 
+Running Threadpool implementation with 6 - 36 threads and double the amount of partitions than threads
+Time to set up datastructures: 476.409ms
+16920.5, 16936.3, 16852.1, 16804.3, 16758.4, 16763.5, 16766.7, 16762.7, 16759.8, 16770.8, 
+Time to set up datastructures: 469.732ms
+17176.7, 17130.3, 17141.2, 17135.6, 17143, 17331.5, 17218.2, 17134.3, 17129.5, 17133.4, 
+Time to set up datastructures: 447.45ms
+17566.7, 17635.2, 17582.8, 17582.3, 17593.9, 17568.3, 17607.2, 17578.7, 17598.1, 17598.7, 
+Time to set up datastructures: 444.513ms
+18004.4, 18019.1, 18013.9, 18004.5, 18011.2, 18010.2, 18013.5, 18003.7, 18009.1, 18010, 
+Time to set up datastructures: 459.005ms
+18541.1, 18538.7, 18554.1, 18545, 18538.2, 18515.1, 18521.2, 18530.5, 18541.7, 18542.3, 
+Time to set up datastructures: 473.977ms
+19436.2, 19454, 19454.2, 19459.6, 19450.8, 19461, 19459, 19454.5, 19455.8, 19456.1, 
+Running Threadpool_pinned implementation with 6 - 36 threads and double the amount of partitions than threads
+Time to set up datastructures: 442.453ms
+17106.4, 17224.7, 17219, 17290.8, 17213.9, 17040.7, 17069.1, 17202.6, 16994.8, 17295.8, 
+Time to set up datastructures: 474.459ms
+17542, 17535.2, 17446.4, 17517.4, 17414, 17548, 17504, 17509.5, 17556.4, 17536, 
+Time to set up datastructures: 473.166ms
+17542.3, 17547.1, 17540.8, 17539.1, 17539.1, 17536, 17550.1, 17541.3, 17541, 17545.1, 
+Time to set up datastructures: 469.897ms
+17909.2, 17913.4, 17920.3, 17922.7, 17960.5, 17925.2, 17969.7, 17915.7, 17929.5, 17986.1, 
+Time to set up datastructures: 485.298ms
+18335.4, 18347.7, 18355.7, 18343.4, 18318.1, 18336.1, 18337.7, 18348.9, 18346.1, 18341.9, 
+Time to set up datastructures: 491.129ms
+18762, 18808.6, 18807.2, 18785.4, 18774.9, 18782.9, 18783, 18783.3, 18781.5, 18790.6, 
