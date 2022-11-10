@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 def plot_results(algorithms, data_list, threads):
     
     for i in range(len(algorithms)):
-        if algorithms[i] == "Serial":
+        if algorithms[i] == "sequential":
             plt.plot([threads[0], threads[-1]], [data_list[i][0], data_list[i][0]])
         else:
             plt.plot(threads, data_list[i], '*-')
