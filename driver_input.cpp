@@ -37,8 +37,11 @@ void printErrorMsg() {
     std::cout << "     4) Symmetric matrix with only lower half entries without data and filled in with ones" << std::endl;
     std::cout << "     5) Symmetric matrix with only lower half entries without data and filled in randomly" << std::endl;
     std::cout << "     Other) Arbitrary matrix with data present" << std::endl;
-    std::cout << "  1° Kronecker graph input file (.bin extension): " << std::endl;
-    std::cout << "     File must start with matrix size in power of 2 and boolean indicating the random fill in separated by an underscore" << std::endl;
+    std::cout << "  1° Kronecker graph input file (.bin extension). Filename starts with size and then an indicator: " << std::endl;
+    std::cout << "     1) Arbitrary matrix with no data present and filled in with ones" << std::endl;
+    std::cout << "     2) Arbitrary matrix with no data present and random fill in" << std::endl;
+    std::cout << "     3) Symmetric matrix with only lower half entries without data and filled in with ones" << std::endl;
+    std::cout << "     Other) Symmetric matrix with only lower half entries without data and filled in randomly" << std::endl;
     std::cout << "  2° Amount of times the power algorithm is executed" << std::endl;
     std::cout << "  3° Amount of warm up runs for the power algorithm (not timed)" << std::endl;
     std::cout << "  4° Amount of iterations in the power method algorithm" << std::endl;
@@ -145,9 +148,18 @@ int main(int argc, char** argv) {
         }
     } else if (boost::algorithm::ends_with(input_file, ".bin")) {
         int first_ = input_file.find("_");
-        int mat_size = std::pow(2, std::stoi(input_file.substr(file_start+1, first_-file_start-1)));
-        bool fill_in = std::stoi(input_file.substr(first_+1, 1));
-        input_mat.loadFromBin(input_file, mat_size, fill_in);
+        int mat_size = std::stoi(input_file.substr(file_start+1, first_-file_start-1));
+        int indicator = std::stoi(input_file.substr(first_+1, 1));
+
+        if (indicator == 1) {
+            input_mat.loadFromBin(input_file, mat_size, false, false);
+        } else if (indicator == 2) {
+            input_mat.loadFromBin(input_file, mat_size, false, true);
+        } else if (indicator == 3) {
+            input_mat.loadFromBin(input_file, mat_size, true, false);
+        } else {
+            input_mat.loadFromBin(input_file, mat_size, true, true);
+        }
     }
     int mat_size = input_mat.row_size;
 
