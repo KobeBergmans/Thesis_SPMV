@@ -62,7 +62,7 @@ namespace pwm {
              * @param has_data Specifies if this is a weighted graph (x, y and z coordinates are present)
              * @param random_fill Specifies if the data should be randomly filled in. Only used if has_data is false.
              */
-            void loadFromMM(std::string filename, bool has_data, bool random_fill = false) {
+            void loadFromMM(std::string filename, bool has_data, bool symmetric, bool random_fill = false) {
                 std::ifstream input_file(filename);
 
                 if (input_file.is_open()) {
@@ -84,7 +84,12 @@ namespace pwm {
                             col_size = boost::lexical_cast<int_type>(word);
 
                             line >> word; // Get amount of entries
-                            nnz = boost::lexical_cast<int_type>(word);
+                            if (!symmetric) {
+                                nnz = boost::lexical_cast<int_type>(word);
+                            } else {
+                                nnz = 2*boost::lexical_cast<int_type>(word);
+                            }
+                            
                             row_coord = new int_type[nnz];
                             col_coord = new int_type[nnz];
                             data = new T[nnz];
@@ -120,6 +125,13 @@ namespace pwm {
                         }
                         
                         index++;
+
+                        if (symmetric) {
+                            row_coord[index] = col_coord[index-1];
+                            col_coord[index] = row_coord[index-1];
+                            data[index] = data[index-1];
+                            index++;
+                        }
                     }
                 }
             }
