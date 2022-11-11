@@ -147,7 +147,7 @@ int main(int argc, char** argv) {
         int first_ = input_file.find("_");
         int mat_size = std::pow(2, std::stoi(input_file.substr(file_start+1, first_-file_start-1)));
         bool fill_in = std::stoi(input_file.substr(first_+1, 1));
-        input_mat.loadFromKronecker(input_file, mat_size, fill_in);
+        input_mat.loadFromBin(input_file, mat_size, fill_in);
     }
     int mat_size = input_mat.row_size;
 

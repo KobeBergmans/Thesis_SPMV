@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE(mv_mycielskian5, * boost::unit_test::tolerance(std::pow(10,
 
 BOOST_AUTO_TEST_CASE(mv_8_4_bin_no_rand, * boost::unit_test::tolerance(std::pow(10, -14))) {
     pwm::Triplet<double, int> input_mat;
-    input_mat.loadFromKronecker("test_input/test_mat_8_4.bin", std::pow(2, 8), false);
+    input_mat.loadFromBin("test_input/test_mat_8_4.bin", std::pow(2, 8), false);
     int mat_size = input_mat.col_size;
 
     // Precomputed solution using matlab

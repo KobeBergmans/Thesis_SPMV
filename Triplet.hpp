@@ -142,7 +142,7 @@ namespace pwm {
              * @param filename Filename of input file
              * @param random_vals If this is true generate random matrix values. If this is false every value is 1.
              */
-            void loadFromKronecker(std::string filename, int_type mat_size, bool random_vals) {
+            void loadFromBin(std::string filename, int_type mat_size, bool random_vals) {
                 row_size = mat_size;
                 col_size = mat_size;
 
