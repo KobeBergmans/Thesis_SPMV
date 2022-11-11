@@ -9,6 +9,8 @@
 #ifndef PWM_TRIPLETTOCRS_HPP
 #define PWM_TRIPLETTOCRS_HPP
 
+#include <stdlib.h>
+
 #include "VectorUtill.hpp"
 
 #include "oneapi/tbb.h"
@@ -65,6 +67,7 @@ namespace pwm {
     template<typename T, typename int_type>
     void sortCoordsForCRS(int_type** coords, T* data, int am_coords, int_type low, int_type high) {
         if (low < high) {
+            swapArrayElems(coords, data, am_coords, (rand() % (high-low)) + low, high); // Random permutation of biggest element
             int_type middle = partitionArrays(coords, data, am_coords, low, high);
 
             sortCoordsForCRS(coords, data, am_coords, low, middle - 1);
