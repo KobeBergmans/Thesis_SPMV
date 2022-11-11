@@ -62,7 +62,7 @@ namespace pwm {
              * @param has_data Specifies if this is a weighted graph (x, y and z coordinates are present)
              * @param random_fill Specifies if the data should be randomly filled in. Only used if has_data is false.
              */
-            void loadFromMM(std::string filename, bool has_data, bool random_fill = false) {
+            void loadFromMM(std::string filename, bool has_data, bool symmetric, bool random_fill = false) {
                 std::ifstream input_file(filename);
 
                 if (input_file.is_open()) {
@@ -84,7 +84,12 @@ namespace pwm {
                             col_size = boost::lexical_cast<int_type>(word);
 
                             line >> word; // Get amount of entries
-                            nnz = boost::lexical_cast<int_type>(word);
+                            if (!symmetric) {
+                                nnz = boost::lexical_cast<int_type>(word);
+                            } else {
+                                nnz = 2*boost::lexical_cast<int_type>(word);
+                            }
+                            
                             row_coord = new int_type[nnz];
                             col_coord = new int_type[nnz];
                             data = new T[nnz];
@@ -120,6 +125,13 @@ namespace pwm {
                         }
                         
                         index++;
+
+                        if (symmetric) {
+                            row_coord[index] = col_coord[index-1];
+                            col_coord[index] = row_coord[index-1];
+                            data[index] = data[index-1];
+                            index++;
+                        }
                     }
                 }
             }
@@ -130,7 +142,7 @@ namespace pwm {
              * @param filename Filename of input file
              * @param random_vals If this is true generate random matrix values. If this is false every value is 1.
              */
-            void loadFromKronecker(std::string filename, int_type mat_size, bool random_vals) {
+            void loadFromBin(std::string filename, int_type mat_size, bool symmetric, bool random_vals) {
                 row_size = mat_size;
                 col_size = mat_size;
 
@@ -141,6 +153,10 @@ namespace pwm {
                     std::cout << "An error occurred while reading the Kronecker input file" << std::endl;
                 }
 
+                if (symmetric) {
+                    nnz = nnz*2;
+                }
+
                 row_coord = new int_type[nnz];
                 col_coord = new int_type[nnz];
                 data = new T[nnz];
@@ -148,7 +164,8 @@ namespace pwm {
                 uint32_t input_nb;
                 char input_buf[sizeof(uint32_t)];
                 std::ifstream input_file(filename, std::ios::in | std::ios::binary);
-                for (int i = 0; i < nnz; ++i) {
+                int_type i = 0;
+                while (i < nnz) {
                     input_file.read(input_buf, sizeof(uint32_t));
                     std::memcpy(&input_nb, input_buf, sizeof(uint32_t));
                     row_coord[i] = input_nb;
@@ -161,6 +178,15 @@ namespace pwm {
                         data[i] = dist(gen);
                     } else {
                         data[i] = 1.;
+                    }
+
+                    i++;
+
+                    if (symmetric) {
+                        row_coord[i] = col_coord[i-1];
+                        col_coord[i] = row_coord[i-1];
+                        data[i] = data[i-1];
+                        i++;
                     }
                 }
             }

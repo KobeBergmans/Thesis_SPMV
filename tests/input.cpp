@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_SUITE(input_mv)
 
 BOOST_AUTO_TEST_CASE(mv_arc130, * boost::unit_test::tolerance(std::pow(10, -14))) {
     pwm::Triplet<double, int> input_mat;
-    input_mat.loadFromMM("test_input/arc130.mtx", true);
+    input_mat.loadFromMM("test_input/arc130.mtx", true, false);
     int mat_size = input_mat.col_size;
 
     // Precomputed solution using matlab
@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(mv_arc130, * boost::unit_test::tolerance(std::pow(10, -14))
 
 BOOST_AUTO_TEST_CASE(mv_gre_1107, * boost::unit_test::tolerance(std::pow(10, -14))) {
     pwm::Triplet<double, int> input_mat;
-    input_mat.loadFromMM("test_input/gre_1107.mtx", true);
+    input_mat.loadFromMM("test_input/gre_1107.mtx", true, false);
     int mat_size = input_mat.col_size;
 
     // Precomputed solution using matlab
@@ -115,9 +115,99 @@ BOOST_AUTO_TEST_CASE(mv_gre_1107, * boost::unit_test::tolerance(std::pow(10, -14
     }
 }
 
+BOOST_AUTO_TEST_CASE(mv_mycielskian5, * boost::unit_test::tolerance(std::pow(10, -14))) {
+    pwm::Triplet<double, int> input_mat;
+    input_mat.loadFromMM("test_input/mycielskian5.mtx", false, true, false); // Symmetric matrix!
+    int mat_size = input_mat.col_size;
+
+    // Precomputed solution using matlab
+    double real_sol[] = {8., 8.,  8.,  8.,  8.,  6.,  6.,  6.,  6.,  6., 10.,  5.,  5.,  5.,  5.,  5.,  4.,  4.,  4.,  4.,  4.,  6.,  11};
+
+
+    // Get datastructures
+    std::vector<pwm::SparseMatrix<double, int>*> matrices = pwm::get_all_matrices<double, int>();
+    double* x = new double[mat_size];
+    double* y = new double[mat_size];
+
+    // Run test on all the matrices
+    for (size_t mat_index = 0; mat_index < matrices.size(); ++mat_index) {
+        pwm::SparseMatrix<double, int>* mat = matrices[mat_index];
+
+        // Get omp max threads
+        int max_threads = omp_get_max_threads();
+
+        // If we have a TBB implementation set a global limiter to overwrite other limits
+        tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
+        
+        for (int partitions = 1; partitions <= std::min(max_threads*2, mat_size); ++partitions) {
+            mat->loadFromTriplets(input_mat, partitions);
+            std::fill(x, x+mat_size, 1.);
+            mat->mv(x,y);
+
+            // Check solution
+            for (int i = 0; i < mat_size; ++i) {
+                BOOST_TEST(y[i] == real_sol[i]);
+            }
+
+            // If matrix is an omp or TBB matrix break because all executions are the same
+            if ((mat_index-1) % 6 == 0 || (mat_index-2) % 6 == 0) {
+                break;
+            }
+        }
+
+        // Reset omp threads
+        omp_set_num_threads(max_threads);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(mv_mycielskian5_bin, * boost::unit_test::tolerance(std::pow(10, -14))) {
+    pwm::Triplet<double, int> input_mat;
+    input_mat.loadFromBin("test_input/mycielskian5.bin", 23, true, false); // Symmetric matrix!
+    int mat_size = input_mat.col_size;
+
+    // Precomputed solution using matlab
+    double real_sol[] = {8., 8.,  8.,  8.,  8.,  6.,  6.,  6.,  6.,  6., 10.,  5.,  5.,  5.,  5.,  5.,  4.,  4.,  4.,  4.,  4.,  6.,  11};
+
+
+    // Get datastructures
+    std::vector<pwm::SparseMatrix<double, int>*> matrices = pwm::get_all_matrices<double, int>();
+    double* x = new double[mat_size];
+    double* y = new double[mat_size];
+
+    // Run test on all the matrices
+    for (size_t mat_index = 0; mat_index < matrices.size(); ++mat_index) {
+        pwm::SparseMatrix<double, int>* mat = matrices[mat_index];
+
+        // Get omp max threads
+        int max_threads = omp_get_max_threads();
+
+        // If we have a TBB implementation set a global limiter to overwrite other limits
+        tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
+        
+        for (int partitions = 1; partitions <= std::min(max_threads*2, mat_size); ++partitions) {
+            mat->loadFromTriplets(input_mat, partitions);
+            std::fill(x, x+mat_size, 1.);
+            mat->mv(x,y);
+
+            // Check solution
+            for (int i = 0; i < mat_size; ++i) {
+                BOOST_TEST(y[i] == real_sol[i]);
+            }
+
+            // If matrix is an omp or TBB matrix break because all executions are the same
+            if ((mat_index-1) % 6 == 0 || (mat_index-2) % 6 == 0) {
+                break;
+            }
+        }
+
+        // Reset omp threads
+        omp_set_num_threads(max_threads);
+    }
+}
+
 BOOST_AUTO_TEST_CASE(mv_8_4_bin_no_rand, * boost::unit_test::tolerance(std::pow(10, -14))) {
     pwm::Triplet<double, int> input_mat;
-    input_mat.loadFromKronecker("test_input/test_mat_8_4.bin", std::pow(2, 8), false);
+    input_mat.loadFromBin("test_input/test_mat_8_4.bin", std::pow(2, 8), false, false);
     int mat_size = input_mat.col_size;
 
     // Precomputed solution using matlab
@@ -165,7 +255,7 @@ BOOST_AUTO_TEST_SUITE(powermethod_input)
 
 BOOST_AUTO_TEST_CASE(powermethod_arc130, * boost::unit_test::tolerance(std::pow(10, -12))) {
     pwm::Triplet<double, int> input_mat;
-    input_mat.loadFromMM("test_input/arc130.mtx", true);
+    input_mat.loadFromMM("test_input/arc130.mtx", true, false);
     int mat_size = input_mat.col_size;
 
     // Precomputed solution using matlab
