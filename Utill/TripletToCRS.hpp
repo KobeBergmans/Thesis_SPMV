@@ -74,6 +74,7 @@ namespace pwm {
             int_type middle = partitionArrays(coords, data, am_coords, low, high);
 
             if (depth == 0) {
+                std::cout << low << ", " << middle << ", " << high << std::endl;
                 #pragma omp parallel 
                 {
                     #pragma omp task
@@ -109,7 +110,7 @@ namespace pwm {
         int_type** coords = new int_type*[2];
         coords[0] = row_coord;
         coords[1] = col_coord;
-        sortCoordsForCRS(coords, data, 2, 0, nnz-1);
+        sortCoordsForCRS(coords, data, 2, 0, nnz-1, 4);
 
         // Fill CRS datastructures
         row_start[0] = 0;
@@ -158,7 +159,7 @@ namespace pwm {
         int_type** coords = new int_type*[2];
         coords[0] = row_coord;
         coords[1] = col_coord;
-        sortCoordsForCRS(coords, data, 2, 0, nnz-1, omp_get_thread_num());
+        sortCoordsForCRS(coords, data, 2, 0, nnz-1, 4);
 
         // Fill CRS data with omp to avoid first touch
         #pragma omp parallel for shared(col_ind, col_coord, CRS_data, data, row_coord, row_start) schedule(dynamic, 8)
@@ -212,7 +213,7 @@ namespace pwm {
         int_type** coords = new int_type*[2];
         coords[0] = row_coord;
         coords[1] = col_coord;
-        sortCoordsForCRS(coords, data, 2, 0, nnz-1);
+        sortCoordsForCRS(coords, data, 2, 0, nnz-1, 4);
 
         // Fill CRS data with omp to avoid first touch
         tbb::parallel_for(0, nnz, [=](int_type i) {
