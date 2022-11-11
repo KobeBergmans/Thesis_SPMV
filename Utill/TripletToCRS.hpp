@@ -11,6 +11,7 @@
 
 #include "VectorUtill.hpp"
 
+#include "omp.h"
 #include "oneapi/tbb.h"
 
 namespace pwm {
@@ -61,14 +62,28 @@ namespace pwm {
      * @param am_coords Amount of arrays in coords
      * @param low Start index of quicksort
      * @param high End index of quicksort
+     * @param depth indicates the recursion depth by decreasing in every iteration. 
+     *              For parallel implementations we execute the sorting in parallel if depth = 0
      */
     template<typename T, typename int_type>
-    void sortCoordsForCRS(int_type** coords, T* data, int am_coords, int_type low, int_type high) {
+    void sortCoordsForCRS(int_type** coords, T* data, int am_coords, int_type low, int_type high, int depth = -1) {
         if (low < high) {
             int_type middle = partitionArrays(coords, data, am_coords, low, high);
 
-            sortCoordsForCRS(coords, data, am_coords, low, middle - 1);
-            sortCoordsForCRS(coords, data, am_coords, middle + 1, high);
+            if (depth == 0) {
+                #pragma omp parallel 
+                {
+                    #pragma omp task
+                    sortCoordsForCRS(coords, data, am_coords, low, middle - 1);
+
+                    #pragma omp task
+                    sortCoordsForCRS(coords, data, am_coords, middle + 1, high);
+                }
+                
+            } else {
+                sortCoordsForCRS(coords, data, am_coords, low, middle - 1, depth-1);
+                sortCoordsForCRS(coords, data, am_coords, middle + 1, high, depth-1);
+            }
         }
     }
 
@@ -140,7 +155,7 @@ namespace pwm {
         int_type** coords = new int_type*[2];
         coords[0] = row_coord;
         coords[1] = col_coord;
-        sortCoordsForCRS(coords, data, 2, 0, nnz-1);
+        sortCoordsForCRS(coords, data, 2, 0, nnz-1, omp_get_thread_num());
 
         // Fill CRS data with omp to avoid first touch
         #pragma omp parallel for shared(col_ind, col_coord, CRS_data, data, row_coord, row_start) schedule(dynamic, 8)
