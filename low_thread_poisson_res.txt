@@ -1,0 +1,20 @@
+Make executable...
+dpcpp -Wall -DNDEBUG -O3 -fopenmp -o driver_poisson driver_poisson.cpp -ltbb -lboost_thread
+Running sequential algorithm...
+Time to set up datastructures: 462.584ms
+23771.4, 23733.7, 23745.5, 23750.1, 23741, 23737.5, 23731.1, 23753.1, 23733.7, 23734.4, 
+Running TBB implementation with 2 - 8 threads...
+Time to set up datastructures: 358.989ms
+16974.2, 16961.9, 16959.6, 16960, 16956.8, 16955.2, 16955.6, 16955.5, 16952.4, 16954.5, 
+Time to set up datastructures: 266.048ms
+16228, 16203.6, 16204.5, 16206.2, 16208.7, 16205.5, 16205, 16206.9, 16206.8, 16204.1, 
+Time to set up datastructures: 218.742ms
+16523.7, 16533.3, 16531.9, 16532.7, 16531.7, 16534.7, 16532.4, 16533.1, 16533.7, 16535.1, 
+Time to set up datastructures: 198.538ms
+16431.9, 16442.7, 16446.9, 16439.6, 16442.1, 16442.3, 16440.4, 16441.4, 16440.5, 16444.7, 
+Time to set up datastructures: 198.671ms
+16587, 16596.4, 16597.9, 16703.3, 16804.5, 17113.3, 16616.7, 16598.6, 16594.7, 16594.9, 
+Time to set up datastructures: 193.354ms
+16662.4, 16670.3, 16669.5, 16671, 16673.5, 16670.9, 16671.1, 16672.1, 16671.6, 16670.1, 
+Time to set up datastructures: 195.105ms
+16723.7, 16734.6, 16730.8, 16729.8, 16735.5, 16731.6, 16732, 16732.1, 16736.1, 16732.3, 
