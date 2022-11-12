@@ -28,7 +28,7 @@ if __name__ == "__main__":
     
     # Read file
     with open(file_name, "r") as fileStream:
-        threads = np.fromstring(fileStream.readline(), dtype=np.integer, sep=" ")
+        threads = np.fromstring(fileStream.readline(), dtype=np.int8, sep=" ")
         
         
         for line in fileStream:
