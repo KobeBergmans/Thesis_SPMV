@@ -1,0 +1,20 @@
+Make executable...
+dpcpp -Wall -DNDEBUG -O3 -fopenmp -o driver_input driver_input.cpp -ltbb -lboost_thread
+Running sequential algorithm...
+Time to set up datastructures: 36417.6ms
+235908, 235701, 235719, 
+Running TBB implementation with 2 - 8 threads...
+Time to set up datastructures: 49586.6ms
+174205, 174136, 174132, 
+Time to set up datastructures: 41891.5ms
+154156, 154177, 154213, 
+Time to set up datastructures: 61426ms
+146961, 146989, 146987, 
+Time to set up datastructures: 62843.3ms
+144272, 144307, 144309, 
+Time to set up datastructures: 68302.5ms
+145808, 145173, 145153, 
+Time to set up datastructures: 70459.5ms
+146201, 146240, 146233, 
+Time to set up datastructures: 71031.4ms
+146944, 147123, 147021, 
