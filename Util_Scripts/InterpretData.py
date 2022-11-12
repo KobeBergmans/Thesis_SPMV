@@ -15,6 +15,10 @@ def plot_results(algorithms, data_list, threads):
     plt.legend(algorithms)
     plt.show()
 
+
+# Arguments:
+#    1) File name of test output
+#    2) 0 to plot the median, 1 to plot the minimum, 2 to plot the variance
 if __name__ == "__main__":
     file_name = sys.argv[1]
     

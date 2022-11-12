@@ -1,5 +1,4 @@
-Make executable...
-dpcpp -Wall -DNDEBUG -O3 -fopenmp -o driver_input driver_input.cpp -ltbb -lboost_thread
+6 12 18 24 30 36
 Running sequential algorithm...
 Time to set up datastructures: 43696.3ms
 241078, 240089, 239955, 239964, 239973, 239995, 240122, 240012, 
@@ -81,3 +80,6 @@ Time to set up datastructures: 37200.4ms
 143661, 143778, 143812, 143778, 143753, 143750, 143827, 143654, 
 Time to set up datastructures: 37203.5ms
 145895, 145958, 145975, 145990, 145919, 146001, 145918, 145972, 
+
+
+run on commit: c3accbc57270f38b1eb6235277d839def8b80e4f
