@@ -1,0 +1,21 @@
+2 3 4 5 6 7 8
+Running sequential algorithm...
+Time to set up datastructures: 1161.97ms
+60292.1, 59755.4, 59813.6, 
+Running TBB implementation with 2 - 8 threads...
+Time to set up datastructures: 786.939ms
+41632.7, 41615.9, 41630.2, 
+Time to set up datastructures: 599.878ms
+40073.9, 40151.2, 40100.9, 
+Time to set up datastructures: 498.838ms
+40865.3, 40889.9, 40899.3, 
+Time to set up datastructures: 462.425ms
+40470.3, 40508.1, 40499, 
+Time to set up datastructures: 459.861ms
+40737.8, 40734.5, 41229.1, 
+Time to set up datastructures: 460.338ms
+40907.5, 40915.6, 40919.5, 
+Time to set up datastructures: 456.413ms
+41183.9, 41170.4, 41161.5, 
+
+run on commit: c54eb9dde1ea8e3dbf31c64ec07027f91eb51135
