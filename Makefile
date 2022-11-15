@@ -1,6 +1,9 @@
 driver_poisson:
 	dpcpp -Wall -DNDEBUG -O3 -fopenmp -o driver_poisson driver_poisson.cpp -ltbb -lboost_thread
 
+driver_poisson_vtune:
+	dpcpp -Wall -DNDEBUG -O3 -g -qopenmp -o driver_poisson driver_poisson.cpp -ltbb -lboost_thread
+
 driver_poisson_debug:
 	dpcpp -Wall -Og -fopenmp -o driver_poisson driver_poisson.cpp -ltbb_debug -lboost_thread
 
@@ -12,6 +15,9 @@ MPI_driver_poisson_debug:
 
 driver_input:
 	dpcpp -Wall -DNDEBUG -O3 -fopenmp -o driver_input driver_input.cpp -ltbb -lboost_thread
+
+driver_input_vtune:
+	dpcpp -Wall -DNDEBUG -O3 -g -fopenmp -o driver_input driver_input.cpp -ltbb -lboost_thread
 
 driver_input_debug:
 	dpcpp -Wall -Og -fopenmp -o driver_input driver_input.cpp -ltbb_debug -lboost_thread
