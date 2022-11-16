@@ -9,7 +9,6 @@
  *   - arc130.mtx
  */
 
-#define BOOST_TEST_MODULE test_input
 #include <boost/test/included/unit_test.hpp>
 
 #include <vector>
@@ -26,7 +25,7 @@ BOOST_AUTO_TEST_SUITE(input_mv)
 
 BOOST_AUTO_TEST_CASE(mv_arc130, * boost::unit_test::tolerance(std::pow(10, -14))) {
     pwm::Triplet<double, int> input_mat;
-    input_mat.loadFromMM("test_input/arc130.mtx", true, false);
+    input_mat.loadFromMM("Test_input/arc130.mtx", true, false);
     int mat_size = input_mat.col_size;
 
     // Precomputed solution using matlab
@@ -72,7 +71,7 @@ BOOST_AUTO_TEST_CASE(mv_arc130, * boost::unit_test::tolerance(std::pow(10, -14))
 
 BOOST_AUTO_TEST_CASE(mv_gre_1107, * boost::unit_test::tolerance(std::pow(10, -14))) {
     pwm::Triplet<double, int> input_mat;
-    input_mat.loadFromMM("test_input/gre_1107.mtx", true, false);
+    input_mat.loadFromMM("Test_input/gre_1107.mtx", true, false);
     int mat_size = input_mat.col_size;
 
     // Precomputed solution using matlab
@@ -117,7 +116,7 @@ BOOST_AUTO_TEST_CASE(mv_gre_1107, * boost::unit_test::tolerance(std::pow(10, -14
 
 BOOST_AUTO_TEST_CASE(mv_mycielskian5, * boost::unit_test::tolerance(std::pow(10, -14))) {
     pwm::Triplet<double, int> input_mat;
-    input_mat.loadFromMM("test_input/mycielskian5.mtx", false, true, false); // Symmetric matrix!
+    input_mat.loadFromMM("Test_input/mycielskian5.mtx", false, true, false); // Symmetric matrix!
     int mat_size = input_mat.col_size;
 
     // Precomputed solution using matlab
@@ -162,7 +161,7 @@ BOOST_AUTO_TEST_CASE(mv_mycielskian5, * boost::unit_test::tolerance(std::pow(10,
 
 BOOST_AUTO_TEST_CASE(mv_mycielskian5_bin, * boost::unit_test::tolerance(std::pow(10, -14))) {
     pwm::Triplet<double, int> input_mat;
-    input_mat.loadFromBin("test_input/mycielskian5.bin", 23, true, false); // Symmetric matrix!
+    input_mat.loadFromBin("Test_input/mycielskian5.bin", 23, true, false); // Symmetric matrix!
     int mat_size = input_mat.col_size;
 
     // Precomputed solution using matlab
@@ -207,7 +206,7 @@ BOOST_AUTO_TEST_CASE(mv_mycielskian5_bin, * boost::unit_test::tolerance(std::pow
 
 BOOST_AUTO_TEST_CASE(mv_8_4_bin_no_rand, * boost::unit_test::tolerance(std::pow(10, -14))) {
     pwm::Triplet<double, int> input_mat;
-    input_mat.loadFromBin("test_input/test_mat_8_4.bin", std::pow(2, 8), false, false);
+    input_mat.loadFromBin("Test_input/test_mat_8_4.bin", std::pow(2, 8), false, false);
     int mat_size = input_mat.col_size;
 
     // Precomputed solution using matlab
@@ -255,7 +254,7 @@ BOOST_AUTO_TEST_SUITE(powermethod_input)
 
 BOOST_AUTO_TEST_CASE(powermethod_arc130, * boost::unit_test::tolerance(std::pow(10, -12))) {
     pwm::Triplet<double, int> input_mat;
-    input_mat.loadFromMM("test_input/arc130.mtx", true, false);
+    input_mat.loadFromMM("Test_input/arc130.mtx", true, false);
     int mat_size = input_mat.col_size;
 
     // Precomputed solution using matlab

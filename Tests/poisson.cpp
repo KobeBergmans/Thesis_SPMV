@@ -6,7 +6,6 @@
  * @date 2022-10-24
  */
 
-#define BOOST_TEST_MODULE test_poisson
 #include <boost/test/included/unit_test.hpp>
 
 #include <vector>
