@@ -9,5 +9,5 @@
 #define BOOST_TEST_MAIN
 #include <boost/test/unit_test.hpp>
 
-#include "tests/poisson.cpp"
-#include "tests/input.cpp"
+#include "Tests/poisson.cpp"
+#include "Tests/input.cpp"
