@@ -14,8 +14,8 @@
 #include <vector>
 #include <cmath>
 
-#include "../SparseMatrix.hpp"
-#include "../Triplet.hpp"
+#include "../Matrix/SparseMatrix.hpp"
+#include "../Matrix/Triplet.hpp"
 #include "GetMatrices.hpp"
 
 #include "omp.h"

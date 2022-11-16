@@ -11,7 +11,7 @@
 #include <vector>
 #include <cmath>
 
-#include "../SparseMatrix.hpp"
+#include "../Matrix/SparseMatrix.hpp"
 #include "GetMatrices.hpp"
 
 #include "omp.h"

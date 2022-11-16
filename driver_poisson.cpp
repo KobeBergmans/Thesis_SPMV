@@ -11,14 +11,14 @@
 #include <time.h>
 #include <string>
 
-#include "CRS.hpp"
-#include "CRSOMP.hpp"
-#include "CRSTBB.hpp"
-#include "CRSTBBGraph.hpp"
-#include "CRSTBBGraphPinned.hpp"
-#include "CRSThreadPool.hpp"
-#include "CRSThreadPoolPinned.hpp"
-#include "Utill/VectorUtill.hpp"
+#include "Matrix/CRS.hpp"
+#include "Env_Implementations/CRSOMP.hpp"
+#include "Env_Implementations/CRSTBB.hpp"
+#include "Env_Implementations/CRSTBBGraph.hpp"
+#include "Env_Implementations/CRSTBBGraphPinned.hpp"
+#include "Env_Implementations/CRSThreadPool.hpp"
+#include "Env_Implementations/CRSThreadPoolPinned.hpp"
+#include "Util/VectorUtill.hpp"
 
 #include "omp.h"
 #include "oneapi/tbb.h"

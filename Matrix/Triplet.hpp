@@ -22,7 +22,7 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_real_distribution.hpp>
 
-#include "Utill/VectorUtill.hpp"
+#include "../Util/VectorUtill.hpp"
 
 namespace pwm {
     template<typename T, typename int_type>

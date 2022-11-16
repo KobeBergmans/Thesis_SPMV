@@ -1,15 +1,15 @@
 /**
- * @file CRSTBBGraphPinned.hpp
+ * @file CRSTBBGraph.hpp
  * @author Kobe Bergmans (kobe.bergmans@student.kuleuven.be)
- * @brief Compressed Row Storage matrix class using TBB Graph where each node is pinned to a CPU
+ * @brief Compressed Row Storage matrix class using TBB Graph 
  * @version 0.2
- * @date 2022-10-07
+ * @date 2022-10-03
  * 
  * Includes method to generate CRS matrix obtained from discrete 2D poisson equation
  */
 
-#ifndef PWM_CRSTBBGRAPHPINNED_HPP
-#define PWM_CRSTBBGRAPHPINNED_HPP
+#ifndef PWM_CRSTBBGRAPH_HPP
+#define PWM_CRSTBBGRAPH_HPP
 
 #include <vector>
 #include <iostream>
@@ -18,15 +18,16 @@
 #include <tuple>
 #include <thread>
 
-#include "SparseMatrix.hpp"
-#include "Utill/VectorUtill.hpp"
-#include "Utill/Poisson.hpp"
+#include "../Matrix/SparseMatrix.hpp"
+#include "../Util/VectorUtill.hpp"
+#include "../Util/Poisson.hpp"
+#include "../Util/TripletToCRS.hpp"
 
 #include "oneapi/tbb.h"
 
 namespace pwm {
     template<typename T, typename int_type>
-    class CRSTBBGraphPinned: public pwm::SparseMatrix<T, int_type> {
+    class CRSTBBGraph: public pwm::SparseMatrix<T, int_type> {
         protected:
             // Array of row start arrays for the CRS format. 1 for each thread.
             int_type** row_start;
@@ -36,9 +37,6 @@ namespace pwm {
 
             // Array of data array which stores the actual nonzeros. 1 for each thread.
             T** data_arr;
-
-            // Threads
-            int threads;
 
             // Amount of partitions
             int partitions;
@@ -52,35 +50,19 @@ namespace pwm {
             // Graph for TBB nodes
             oneapi::tbb::flow::graph g;
 
-            // TBB mv nodes list
-            std::vector<oneapi::tbb::flow::function_node<std::tuple<const T*, T*>, int>> mv_func_list;
-
-            // TBB normalize nodes list
-            std::vector<oneapi::tbb::flow::function_node<std::tuple<T*, T>, int>> norm_func_list;
+            // TBB nodes list
+            std::vector<oneapi::tbb::flow::function_node<std::tuple<const T*, T*>, int>> n_list;
 
             // Global threads limit
             oneapi::tbb::global_control global_limit;
 
         private:
             void generateFunctionNodes() {
-                mv_func_list = std::vector<oneapi::tbb::flow::function_node<std::tuple<const T*, T*>, int>>();
-                norm_func_list = std::vector<oneapi::tbb::flow::function_node<std::tuple<T*, T>, int>>();
+                n_list = std::vector<oneapi::tbb::flow::function_node<std::tuple<const T*, T*>, int>>();                
 
-                int cpu_count = std::thread::hardware_concurrency();
-                int max_threads = std::min(threads, cpu_count);
                 for (int i = 0; i < partitions; ++i) {
-                    // Create mv node for this partition
-                    oneapi::tbb::flow::function_node<std::tuple<const T*, T*>, int> mv_node(g, 1, [=](std::tuple<const T*, T*> input) -> int {
-                        // Put the current thread on the right cpu
-                        cpu_set_t *mask;
-                        mask = CPU_ALLOC(1);
-                        auto mask_size = CPU_ALLOC_SIZE(1);
-                        CPU_ZERO_S(mask_size, mask);
-                        CPU_SET_S(i % max_threads, mask_size, mask);
-                        if (sched_setaffinity(0, mask_size, mask)) {
-                            std::cout << "Error in setAffinity" << std::endl;
-                        }
-
+                    // Create node for this thread
+                    oneapi::tbb::flow::function_node<std::tuple<const T*, T*>, int> n(g, 1, [=](std::tuple<const T*, T*> input) -> int {
                         const T* x = std::get<0>(input);
                         T* y = std::get<1>(input);
 
@@ -97,41 +79,16 @@ namespace pwm {
                         return 0;
                     });
 
-                    mv_func_list.push_back(mv_node);
-
-                    // Create normalize node for this partition
-                    oneapi::tbb::flow::function_node<std::tuple<T*, T>, int> norm_node(g, 1, [=](std::tuple<T*, T> input) -> int {
-                        // Put the current thread on the right cpu
-                        cpu_set_t *mask;
-                        mask = CPU_ALLOC(1);
-                        auto mask_size = CPU_ALLOC_SIZE(1);
-                        CPU_ZERO_S(mask_size, mask);
-                        CPU_SET_S(i % max_threads, mask_size, mask);
-                        if (sched_setaffinity(0, mask_size, mask)) {
-                            std::cout << "Error in setAffinity" << std::endl;
-                        }
-
-                        T* x = std::get<0>(input);
-                        T norm = std::get<1>(input);
-
-                        for (int_type l = 0; l < partition_rows[i]; ++l) {
-                            x[l+first_rows[i]] /= norm;
-                        }
-
-                        return 0;
-                    });
-
-                    norm_func_list.push_back(norm_node);
+                    n_list.push_back(n);
                 }
             }
 
         public:
             // Base constructor
-            CRSTBBGraphPinned() {}
+            CRSTBBGraph() {}
 
             // Base constructor
-            CRSTBBGraphPinned(int threads):
-            threads(threads),
+            CRSTBBGraph(int threads):
             global_limit(oneapi::tbb::global_control::max_allowed_parallelism, threads) {}
 
             /**
@@ -177,10 +134,10 @@ namespace pwm {
                     col_ind[i] = new int_type[5*partition_rows[i]];
                     
                     // Fill CRS matrix for given thread
-                    pwm::fillPoisson(data_arr[i], row_start[i], col_ind [i], m, n, first_rows[i], last_row);
+                    pwm::fillPoisson(data_arr[i], row_start[i], col_ind [i], m, n, first_rows[i], last_row);                    
                 }
 
-                // Generate function nodes for each partition
+                // Create function nodes
                 generateFunctionNodes();
             }
 
@@ -221,7 +178,7 @@ namespace pwm {
              */
             void mv(const T* x, T* y) {   
                 for (int i = 0; i < partitions; ++i) {
-                    mv_func_list[i].try_put(std::make_tuple(x,y));
+                    n_list[i].try_put(std::make_tuple(x,y));
                 }
                 
                 g.wait_for_all();
@@ -244,26 +201,22 @@ namespace pwm {
                         this->mv(x, y);
 
                         T norm = pwm::norm2(y, this->nor);
-                        
-                        for (int i = 0; i < partitions; ++i) {
-                            norm_func_list[i].try_put(std::make_tuple(y,norm));
-                        }
-                        
-                        g.wait_for_all();
+
+                        oneapi::tbb::parallel_for(0, this->nor, [=](int_type i) {
+                            y[i] /= norm;
+                        });
                     } else {
                         this->mv(y, x);
 
                         T norm = pwm::norm2(x, this->nor);
-                        
-                        for (int i = 0; i < partitions; ++i) {
-                            norm_func_list[i].try_put(std::make_tuple(x,norm));
-                        }
-                        
-                        g.wait_for_all();
+
+                        oneapi::tbb::parallel_for(0, this->nor, [=](int_type i) {
+                            x[i] /= norm;
+                        });
                     }
                 }
             }
     };
 } // namespace pwm
 
-#endif // PWM_CRSTBBGRAPHPINNED_HPP
+#endif // PWM_CRSTBBGRAPH_HPP

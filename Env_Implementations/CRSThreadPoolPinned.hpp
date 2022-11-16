@@ -1,15 +1,15 @@
 /**
- * @file CRSThreadPool.hpp
+ * @file CRSThreadPoolPinned.hpp
  * @author Kobe Bergmans (kobe.bergmans@student.kuleuven.be)
- * @brief Compressed Row Storage matrix class using Boost thread pool
+ * @brief Compressed Row Storage matrix class using Boost thread pool with threads pinned to a CPU
  * @version 0.2
- * @date 2022-10-03
+ * @date 2022-10-07
  * 
  * Includes method to generate CRS matrix obtained from discrete 2D poisson equation
  */
 
-#ifndef PWM_CRSTHREADPOOL_HPP
-#define PWM_CRSTHREADPOOL_HPP
+#ifndef PWM_CRSTHREADPOOLPINNED_HPP
+#define PWM_CRSTHREADPOOLPINNED_HPP
 
 #define BOOST_THREAD_PROVIDES_FUTURE_WHEN_ALL_WHEN_ANY
 
@@ -19,9 +19,9 @@
 #include <algorithm>
 #include <functional>
 
-#include "SparseMatrix.hpp"
-#include "Utill/VectorUtill.hpp"
-#include "Utill/Poisson.hpp"
+#include "../Matrix/SparseMatrix.hpp"
+#include "../Util/VectorUtill.hpp"
+#include "../Util/Poisson.hpp"
 
 #include <boost/bind/bind.hpp>
 #include <boost/asio.hpp>
@@ -30,7 +30,7 @@
 
 namespace pwm {
     template<typename T, typename int_type>
-    class CRSThreadPool: public pwm::SparseMatrix<T, int_type> {
+    class CRSThreadPoolPinned: public pwm::SparseMatrix<T, int_type> {
         protected:
             // Array of row start arrays for the CRS format. 1 for each thread.
             int_type** row_start;
@@ -40,6 +40,9 @@ namespace pwm {
 
             // Array of data array which stores the actual nonzeros. 1 for each thread.
             T** data_arr;
+
+            // Amount of threads
+            int threads;
 
             // Amount of partitions
             int partitions;
@@ -64,9 +67,21 @@ namespace pwm {
                 mv_function_list = std::vector<std::function<void(const T*, T*)>>();
                 norm_function_list = std::vector<std::function<void(T*, T)>>();
 
+                int cpu_count = std::thread::hardware_concurrency();
+                int max_threads = std::min(threads, cpu_count);
                 for (int i = 0; i < partitions; ++i) {
                     // Create mv lambda function for this thread
                     std::function<void(const T*, T*)> mv_func = [=](const T* x, T* y) -> void {
+                        // Put the current thread on the right cpu
+                        cpu_set_t *mask;
+                        mask = CPU_ALLOC(1);
+                        auto mask_size = CPU_ALLOC_SIZE(1);
+                        CPU_ZERO_S(mask_size, mask);
+                        CPU_SET_S(i % max_threads, mask_size, mask);
+                        if (sched_setaffinity(0, mask_size, mask)) {
+                            std::cout << "Error in setAffinity" << std::endl;
+                        }
+
                         int_type j;
                         for (int_type l = 0; l < partition_rows[i]; ++l) {
                             T sum = 0;
@@ -80,8 +95,19 @@ namespace pwm {
 
                     mv_function_list.push_back(mv_func);
 
+
                     // Create normalize function for this thread
                     std::function<void(T*, T)> norm_func = [=](T* x, T norm) -> void {
+                        // Put the current thread on the right cpu
+                        cpu_set_t *mask;
+                        mask = CPU_ALLOC(1);
+                        auto mask_size = CPU_ALLOC_SIZE(1);
+                        CPU_ZERO_S(mask_size, mask);
+                        CPU_SET_S(i % max_threads, mask_size, mask);
+                        if (sched_setaffinity(0, mask_size, mask)) {
+                            std::cout << "Error in setAffinity" << std::endl;
+                        }
+
                         for (int_type l = 0; l < partition_rows[i]; ++l) {
                             x[l+first_rows[i]] /= norm;
                         }
@@ -93,10 +119,10 @@ namespace pwm {
 
         public:
             // Base constructor
-            CRSThreadPool() {}
+            CRSThreadPoolPinned() {}
 
             // Base constructor
-            CRSThreadPool(int threads): pool(threads) {}
+            CRSThreadPoolPinned(int threads): threads(threads), pool(threads) {}
 
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
@@ -261,4 +287,4 @@ namespace pwm {
     };
 } // namespace pwm
 
-#endif // PWM_CRSTHREADPOOL_HPP
+#endif // PWM_CRSTHREADPOOLPINNED_HPP

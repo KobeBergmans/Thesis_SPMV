@@ -1,33 +1,36 @@
 /**
- * @file CRSTBBGraph.hpp
+ * @file CRSThreadPool.hpp
  * @author Kobe Bergmans (kobe.bergmans@student.kuleuven.be)
- * @brief Compressed Row Storage matrix class using TBB Graph 
+ * @brief Compressed Row Storage matrix class using Boost thread pool
  * @version 0.2
  * @date 2022-10-03
  * 
  * Includes method to generate CRS matrix obtained from discrete 2D poisson equation
  */
 
-#ifndef PWM_CRSTBBGRAPH_HPP
-#define PWM_CRSTBBGRAPH_HPP
+#ifndef PWM_CRSTHREADPOOL_HPP
+#define PWM_CRSTHREADPOOL_HPP
+
+#define BOOST_THREAD_PROVIDES_FUTURE_WHEN_ALL_WHEN_ANY
 
 #include <vector>
 #include <iostream>
 #include <cassert>
 #include <algorithm>
-#include <tuple>
-#include <thread>
+#include <functional>
 
-#include "SparseMatrix.hpp"
-#include "Utill/VectorUtill.hpp"
-#include "Utill/Poisson.hpp"
-#include "Utill/TripletToCRS.hpp"
+#include "../Matrix/SparseMatrix.hpp"
+#include "../Util/VectorUtill.hpp"
+#include "../Util/Poisson.hpp"
 
-#include "oneapi/tbb.h"
+#include <boost/bind/bind.hpp>
+#include <boost/asio.hpp>
+#include <boost/thread.hpp>
+#include <boost/thread/future.hpp>
 
 namespace pwm {
     template<typename T, typename int_type>
-    class CRSTBBGraph: public pwm::SparseMatrix<T, int_type> {
+    class CRSThreadPool: public pwm::SparseMatrix<T, int_type> {
         protected:
             // Array of row start arrays for the CRS format. 1 for each thread.
             int_type** row_start;
@@ -47,25 +50,23 @@ namespace pwm {
             // First row of each partition
             int_type* first_rows;
 
-            // Graph for TBB nodes
-            oneapi::tbb::flow::graph g;
+            // Thread pool
+            boost::asio::thread_pool pool;
 
-            // TBB nodes list
-            std::vector<oneapi::tbb::flow::function_node<std::tuple<const T*, T*>, int>> n_list;
+            // mv Function list
+            std::vector<std::function<void(const T*, T*)>> mv_function_list;
 
-            // Global threads limit
-            oneapi::tbb::global_control global_limit;
+            // Normalize Function list
+            std::vector<std::function<void(T*, T)>> norm_function_list;
 
         private:
-            void generateFunctionNodes() {
-                n_list = std::vector<oneapi::tbb::flow::function_node<std::tuple<const T*, T*>, int>>();                
+            void generateFunctions() {
+                mv_function_list = std::vector<std::function<void(const T*, T*)>>();
+                norm_function_list = std::vector<std::function<void(T*, T)>>();
 
                 for (int i = 0; i < partitions; ++i) {
-                    // Create node for this thread
-                    oneapi::tbb::flow::function_node<std::tuple<const T*, T*>, int> n(g, 1, [=](std::tuple<const T*, T*> input) -> int {
-                        const T* x = std::get<0>(input);
-                        T* y = std::get<1>(input);
-
+                    // Create mv lambda function for this thread
+                    std::function<void(const T*, T*)> mv_func = [=](const T* x, T* y) -> void {
                         int_type j;
                         for (int_type l = 0; l < partition_rows[i]; ++l) {
                             T sum = 0;
@@ -75,21 +76,27 @@ namespace pwm {
                             }
                             y[l+first_rows[i]] = sum;
                         }
+                    };
 
-                        return 0;
-                    });
+                    mv_function_list.push_back(mv_func);
 
-                    n_list.push_back(n);
+                    // Create normalize function for this thread
+                    std::function<void(T*, T)> norm_func = [=](T* x, T norm) -> void {
+                        for (int_type l = 0; l < partition_rows[i]; ++l) {
+                            x[l+first_rows[i]] /= norm;
+                        }
+                    };
+
+                    norm_function_list.push_back(norm_func);
                 }
             }
 
         public:
             // Base constructor
-            CRSTBBGraph() {}
+            CRSThreadPool() {}
 
             // Base constructor
-            CRSTBBGraph(int threads):
-            global_limit(oneapi::tbb::global_control::max_allowed_parallelism, threads) {}
+            CRSThreadPool(int threads): pool(threads) {}
 
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
@@ -97,11 +104,11 @@ namespace pwm {
              * The matrix is partitioned for each thread 
              * This is done by splitting the rows equally, this is only optimal because every row has approximately the same elements.
              * 
-             * Then each Matrix part gets its own TBB function_node which is used to calculate the matrix vector product of the given partition.
+             * Then each Matrix part gets its own mv_function and norm_function 
+             * This is used to calculate the matrix vector product & normalization of the given partition.
              * 
              * @param m The amount of discretization steps in the x direction
              * @param n The amount of discretization steps in the y direction
-             * @param partitions_am The amount of partitions the matrix is partitioned in
              */
             void generatePoissonMatrix(const int_type m, const int_type n, const int partitions_am) {
                 this->noc = m*n;
@@ -121,7 +128,7 @@ namespace pwm {
                 // Generate data for each thread
                 int_type am_rows = std::round(m*n/partitions);
                 int_type last_row = 0;
-                for (int i = 0; i < partitions; ++i) {
+                for (int i = 0; i < partitions_am; ++i) {
                     first_rows[i] = last_row;
 
                     if (i == partitions - 1) last_row = m*n;
@@ -134,11 +141,11 @@ namespace pwm {
                     col_ind[i] = new int_type[5*partition_rows[i]];
                     
                     // Fill CRS matrix for given thread
-                    pwm::fillPoisson(data_arr[i], row_start[i], col_ind [i], m, n, first_rows[i], last_row);                    
+                    pwm::fillPoisson(data_arr[i], row_start[i], col_ind [i], m, n, first_rows[i], last_row);
                 }
-
-                // Create function nodes
-                generateFunctionNodes();
+                
+                // Generate functions for each partition
+                generateFunctions();
             }
 
             /**
@@ -165,29 +172,40 @@ namespace pwm {
                                           partitions, partition_rows, first_rows, this->nnz, this->nor);
 
                 // Generate function nodes per thread
-                generateFunctionNodes();
+                generateFunctions();
             }
 
             /**
              * @brief Matrix vector product Ax = y
              * 
-             * The loop is parallelized using different graph nodes from TBB for each thread.
+             * The loop is parallelized using functions posted to the threadpool
              * 
              * @param x Input vector
              * @param y Output vector
              */
-            void mv(const T* x, T* y) {   
+            void mv(const T* x, T* y) {
+                std::vector<boost::packaged_task<void>> tasks;
+                tasks.reserve(partitions);
+
                 for (int i = 0; i < partitions; ++i) {
-                    n_list[i].try_put(std::make_tuple(x,y));
+                    tasks.emplace_back(boost::bind(mv_function_list[i], x, y));
                 }
-                
-                g.wait_for_all();
+
+                std::vector<boost::unique_future<boost::packaged_task<void>::result_type>> futures;
+                for (auto& t : tasks) {
+                    futures.push_back(t.get_future());
+                    boost::asio::post(pool, std::move(t));
+                }
+
+                for (auto& fut : boost::when_all(futures.begin(), futures.end()).get()) {
+                    fut.get();
+                }
             }
 
             /**
              * @brief Power method: Executes matrix vector product repeatedly to get the dominant eigenvector.
              * 
-             * Loop is parallelized using parallel_for from TBB
+             * Loop is parallelized using functions posted to the threadpool
              * 
              * @param x Input vector to start calculation, contains the output at the end of the algorithm is it is uneven
              * @param y Vector to store calculations, contains the output at the end of the algorithm if it is even
@@ -199,24 +217,48 @@ namespace pwm {
                 for (int it_nb = 0; it_nb < it; ++it_nb) {
                     if (it_nb % 2 == 0) {
                         this->mv(x, y);
-
                         T norm = pwm::norm2(y, this->nor);
+                        
+                        std::vector<boost::packaged_task<void>> tasks;
+                        tasks.reserve(partitions);
 
-                        oneapi::tbb::parallel_for(0, this->nor, [=](int_type i) {
-                            y[i] /= norm;
-                        });
+                        for (int i = 0; i < partitions; ++i) {
+                            tasks.emplace_back(boost::bind(norm_function_list[i], y, norm));
+                        }
+
+                        std::vector<boost::unique_future<boost::packaged_task<void>::result_type>> futures;
+                        for (auto& t : tasks) {
+                            futures.push_back(t.get_future());
+                            boost::asio::post(pool, std::move(t));
+                        }
+
+                        for (auto& fut : boost::when_all(futures.begin(), futures.end()).get()) {
+                            fut.get();
+                        }
                     } else {
                         this->mv(y, x);
-
                         T norm = pwm::norm2(x, this->nor);
+                        
+                        std::vector<boost::packaged_task<void>> tasks;
+                        tasks.reserve(partitions);
 
-                        oneapi::tbb::parallel_for(0, this->nor, [=](int_type i) {
-                            x[i] /= norm;
-                        });
+                        for (int i = 0; i < partitions; ++i) {
+                            tasks.emplace_back(boost::bind(norm_function_list[i], x, norm));
+                        }
+
+                        std::vector<boost::unique_future<boost::packaged_task<void>::result_type>> futures;
+                        for (auto& t : tasks) {
+                            futures.push_back(t.get_future());
+                            boost::asio::post(pool, std::move(t));
+                        }
+
+                        for (auto& fut : boost::when_all(futures.begin(), futures.end()).get()) {
+                            fut.get();
+                        }
                     }
                 }
             }
     };
 } // namespace pwm
 
-#endif // PWM_CRSTBBGRAPH_HPP
+#endif // PWM_CRSTHREADPOOL_HPP
