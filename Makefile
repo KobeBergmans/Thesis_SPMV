@@ -22,5 +22,11 @@ driver_input_vtune:
 driver_input_debug:
 	dpcpp -Wall -Og -fopenmp -o driver_input driver_input.cpp -ltbb_debug -lboost_thread
 
+driver_sniper:
+	dpcpp -Wall -DNDEBUG -O3 -fopenmp -I${SNIPER}/include -o driver_sniper driver_sniper.cpp -ltbb -lboost_thread
+
+sniper:
+	${SNIPER}/run-sniper -n 8 -c gainestown --roi -d ./Sniper_Out/ --viz -- ./driver_sniper "Input/2_wikipedia-20061104.mtx" 1 1 1 1
+
 test:
 	dpcpp -Wall -Og -fopenmp -o test test.cpp -ltbb_debug -lboost_thread
