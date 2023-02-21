@@ -26,7 +26,6 @@
 #include <boost/algorithm/string/predicate.hpp>
 
 #include "omp.h"
-#include "oneapi/tbb.h"
 
 #include <sim_api.h>
 

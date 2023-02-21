@@ -10,7 +10,7 @@
 #define PWM_POISSONUTILL_HPP
 
 #include "omp.h"
-#include "oneapi/tbb.h"
+#include <tbb/parallel_for.h>
 
 namespace pwm {
     /**

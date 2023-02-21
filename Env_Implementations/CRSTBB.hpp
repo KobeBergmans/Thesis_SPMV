@@ -20,7 +20,8 @@
 #include "../Util/VectorUtill.hpp"
 #include "../Util/Poisson.hpp"
 
-#include "oneapi/tbb.h"
+#include <tbb/global_control.h>
+#include <tbb/parallel_for.h>
 
 namespace pwm {
     template<typename T, typename int_type>
@@ -36,14 +37,14 @@ namespace pwm {
             T* data_arr;
 
             // Global threads limit
-            oneapi::tbb::global_control global_limit;
+            tbb::global_control global_limit;
 
         public:
             // Base constructor
             CRSTBB() {}
 
             // Base constructor
-            CRSTBB(int threads): global_limit(oneapi::tbb::global_control::max_allowed_parallelism, threads) {}
+            CRSTBB(int threads): global_limit(tbb::global_control::max_allowed_parallelism, threads) {}
 
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
@@ -93,7 +94,7 @@ namespace pwm {
              * @param y Output vector
              */
             void mv(const T* x, T* y) {   
-                oneapi::tbb::parallel_for(0, this->nor, [=](int_type i) {
+                tbb::parallel_for(0, this->nor, [=](int_type i) {
                     T sum = 0.;
                     int_type j;
                     for (int_type k = row_start[i]; k < row_start[i+1]; ++k) {
@@ -123,7 +124,7 @@ namespace pwm {
 
                         T norm = pwm::norm2(y, this->nor);
 
-                        oneapi::tbb::parallel_for(0, this->nor, [=](int_type i) {
+                        tbb::parallel_for(0, this->nor, [=](int_type i) {
                             y[i] /= norm;
                         });
                     } else {
@@ -131,7 +132,7 @@ namespace pwm {
 
                         T norm = pwm::norm2(x, this->nor);
 
-                        oneapi::tbb::parallel_for(0, this->nor, [=](int_type i) {
+                        tbb::parallel_for(0, this->nor, [=](int_type i) {
                             x[i] /= norm;
                         });
                     }

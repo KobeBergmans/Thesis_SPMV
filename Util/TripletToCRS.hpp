@@ -13,7 +13,7 @@
 
 #include "VectorUtill.hpp"
 
-#include "oneapi/tbb.h"
+#include <tbb/parallel_for.h>
 
 namespace pwm {
     template<typename T, typename int_type>
