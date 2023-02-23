@@ -10,6 +10,7 @@ MPI_driver_poisson
 driver_input
 driver_sniper
 test
+tbb_test
 
 # Sniper output files
 Sniper_Out/
