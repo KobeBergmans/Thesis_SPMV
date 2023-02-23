@@ -1,5 +1,5 @@
 /**
- * @file CRSOMP.hpp
+ * @file CRS_Merge.hpp
  * @author Kobe Bergmans (kobe.bergmans@student.kuleuven.be)
  * @brief Compressed Row Storage matrix class using Merge-based multiplication
  * 
