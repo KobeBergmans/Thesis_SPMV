@@ -2,8 +2,6 @@
  * @file TripletToCRS.hpp
  * @author Kobe Bergmans (kobe.bergmans@student.kuleuven.be)
  * @brief Utility file to transform Triplet format into CRS format
- * @version 0.1
- * @date 2022-10-18
  */
 
 #ifndef PWM_TRIPLETTOCRS_HPP

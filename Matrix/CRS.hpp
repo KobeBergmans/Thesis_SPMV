@@ -2,8 +2,6 @@
  * @file CRS.hpp
  * @author Kobe Bergmans (kobe.bergmans@student.kuleuven.be)
  * @brief Compressed Row Storage matrix class
- * @version 0.2
- * @date 2022-09-29
  * 
  * Includes method to generate CRS matrix obtained from discrete 2D poisson equation
  */

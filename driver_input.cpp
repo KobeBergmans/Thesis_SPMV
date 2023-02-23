@@ -2,8 +2,6 @@
  * @file driver_input.cpp
  * @author Kobe Bergmans (kobe.bergmans@student.kuleuven.be)
  * @brief Main executable for power method comparison with MM input files
- * @version 0.1
- * @date 2022-10-18
  */
 
 #include <iostream>

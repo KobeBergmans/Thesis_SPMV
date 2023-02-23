@@ -2,8 +2,6 @@
  * @file CRSTBB.hpp
  * @author Kobe Bergmans (kobe.bergmans@student.kuleuven.be)
  * @brief Compressed Row Storage matrix class using TBB
- * @version 0.2
- * @date 2022-10-03
  * 
  * Includes method to generate CRS matrix obtained from discrete 2D poisson equation
  */

@@ -2,8 +2,6 @@
  * @file VectorUtill.hpp
  * @author Kobe Bergmans (kobe.bergmans@student.kuleuven.be)
  * @brief Utility functions to perform vector operations 
- * @version 0.2
- * @date 2022-10-01
  */
 
 #ifndef PWM_VECTORUTILL_HPP

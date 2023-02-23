@@ -2,8 +2,6 @@
  * @file poisson.hpp
  * @author Kobe Bergmans (kobe.bergmans@student.kuleuven.be)
  * @brief Test suite for poisson implementation
- * @version 0.1
- * @date 2022-10-24
  */
 
 #include <boost/test/included/unit_test.hpp>

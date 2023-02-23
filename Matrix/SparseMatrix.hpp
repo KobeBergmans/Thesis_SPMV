@@ -2,8 +2,6 @@
  * @file SparseMatrix.hpp
  * @author Kobe Bergmans (kobe.bergmans@student.kuleuven.be)
  * @brief Base interface for all solvers
- * @version 0.1
- * @date 2022-09-30
  */
 
 #ifndef PWM_SPARSEMATRIX_HPP

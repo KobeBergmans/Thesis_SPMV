@@ -2,8 +2,6 @@
  * @file Triplet.hpp
  * @author Kobe Bergmans (kobe.bergmans@student.kuleuven.be)
  * @brief Triplet format of a sparse matrix
- * @version 0.1
- * @date 2022-10-18
  * 
  * Includes a function to import from Matrix Market Format
  * TODO: Includes a function to import from the Kronecker graph generator (https://github.com/RapidsAtHKUST/Graph500KroneckerGraphGenerator)

@@ -2,11 +2,6 @@
  * @file input.cpp
  * @author Kobe Bergmans (kobe.bergmans@student.kuleuven.be)
  * @brief Test file for input matrices in different formats
- * @version 0.1
- * @date 2022-10-24
- * 
- * Requires following files in "/input" folder:
- *   - arc130.mtx
  */
 
 #include <boost/test/included/unit_test.hpp>

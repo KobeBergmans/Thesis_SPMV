@@ -2,8 +2,6 @@
  * @file GetMatrices.hpp
  * @author Kobe Bergmans (kobe.bergmans@student.kuleuven.be)
  * @brief Includes a function to return all possible matrices on this machine
- * @version 0.1
- * @date 2022-10-24
  */
 
 #ifndef PWM_GETMATRICES_HPP

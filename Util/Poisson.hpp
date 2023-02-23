@@ -2,8 +2,6 @@
  * @file Poisson.hpp
  * @author Kobe Bergmans (kobe.bergmans@student.kuleuven.be)
  * @brief Utility functions to fill and generate 2D discretized poisson matrix
- * @version 0.2
- * @date 2022-10-18
  */
 
 #ifndef PWM_POISSONUTILL_HPP
