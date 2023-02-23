@@ -18,6 +18,7 @@
 #include "../Env_Implementations/CRSTBBGraphPinned.hpp"
 #include "../Env_Implementations/CRSThreadPool.hpp"
 #include "../Env_Implementations/CRSThreadPoolPinned.hpp"
+#include "../SOA_Implementations/CRS_Merge.hpp"
 #include "../Matrix/SparseMatrix.hpp"
 
 #include "omp.h"
@@ -34,6 +35,7 @@ namespace pwm {
             matrices.push_back(new pwm::CRSTBBGraphPinned<double, int>(i));
             matrices.push_back(new pwm::CRSThreadPool<double, int>(i));
             matrices.push_back(new pwm::CRSThreadPoolPinned<double, int>(i));
+            matrices.push_back(new pwm::CRS_Merge<double, int>(i));
         }
         return matrices;
     }
