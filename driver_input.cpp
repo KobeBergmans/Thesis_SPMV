@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
     int method = std::stoi(argv[5]);
     int threads = 0;
     int partitions = 0;
-    if (method > 1 && argc < 6) {
+    if (method > 1 && argc < 7) {
         // No amount of threads specified
         printErrorMsg();
         return -1;
@@ -116,7 +116,7 @@ int main(int argc, char** argv) {
         threads = std::stoi(argv[6]);
     }
 
-    if ((method == 4 || method == 5 || method == 6 || method == 7) && argc < 7) {
+    if ((method == 4 || method == 5 || method == 6 || method == 7) && argc < 8) {
         printErrorMsg();
         return -1;
     } else if (method == 4 || method == 5 || method == 6 || method == 7) {
