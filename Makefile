@@ -22,5 +22,14 @@ driver_input_vtune:
 driver_input_debug:
 	dpcpp -Wall -Og -fopenmp -o driver_input driver_input.cpp -ltbb_debug -lboost_thread
 
+driver_spmv_input:
+	dpcpp -Wall -DNDEBUG -O3 -fopenmp -o driver_spmv_input driver_spmv_input.cpp -ltbb -lboost_thread
+
+driver_spmv_input_vtune:
+	dpcpp -Wall -DNDEBUG -O3 -g -fopenmp -o driver_spmv_input driver_spmv_input.cpp -ltbb -lboost_thread
+
+driver_spmv_input_debug:
+	dpcpp -Wall -Og -fopenmp -o driver_spmv_input driver_spmv_input.cpp -ltbb_debug -lboost_thread
+
 test:
 	dpcpp -Wall -Og -fopenmp -o test test.cpp -ltbb_debug -lboost_thread
