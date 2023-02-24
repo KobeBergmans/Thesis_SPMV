@@ -15,10 +15,6 @@
 #include <tuple>
 #include <algorithm>
 
-#include "../Matrix/SparseMatrix.hpp"
-#include "../Util/VectorUtill.hpp"
-#include "../Util/Poisson.hpp"
-
 #include "../Env_Implementations/CRSOMP.hpp"
 
 #include <omp.h>
