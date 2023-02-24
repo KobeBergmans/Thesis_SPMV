@@ -4,11 +4,9 @@
  * @brief Compressed Row Storage matrix class using Merge-based multiplication
  * 
  * Based on:
- * D. Merrill and M. Garland. Merge-based parallel sparse matrix-vector multiplication. 
- * In SC ’16: Proceedings of the International Conference for High
- * Performance Computing, Networking, Storage and Analysis, pages 678–689, 2016.
- * 
- * Includes method to generate CRS matrix obtained from discrete 2D poisson equation
+ *   D. Merrill and M. Garland. Merge-based parallel sparse matrix-vector multiplication. 
+ *   In SC ’16: Proceedings of the International Conference for High
+ *   Performance Computing, Networking, Storage and Analysis, pages 678–689, 2016.
  */
 
 #ifndef PWM_CRS_MERGE_HPP
