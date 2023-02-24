@@ -95,8 +95,8 @@ namespace pwm {
                     // Loop over all indices in triplet structure which are part of this block row
                     while (input.row_coord[triplet_index] < (block_row+1)*BETA && triplet_index < this->nnz) {
                         int_type block_index = input.col_coord[triplet_index] / BETA;
-                        block_row_ind[block_index].push_back(input.row_coord[triplet_index]);
-                        block_col_ind[block_index].push_back(input.col_coord[triplet_index]);
+                        block_row_ind[block_index].push_back(input.row_coord[triplet_index]-block_row*BETA);
+                        block_col_ind[block_index].push_back(input.col_coord[triplet_index]-block_index*BETA);
                         block_data[block_index].push_back(input.data[triplet_index]);
 
                         triplet_index++;
@@ -116,6 +116,9 @@ namespace pwm {
                         blk_ptr_index++;
                     }
                 }
+
+                pwm::printVector(row_ind, this->nnz);
+                pwm::printVector(col_ind, this->nnz);
             }
 
             /**
