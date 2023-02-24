@@ -18,6 +18,7 @@
 #include "Env_Implementations/CRSThreadPool.hpp"
 #include "Env_Implementations/CRSThreadPoolPinned.hpp"
 #include "SOA_Implementations/CRS_Merge.hpp"
+#include "SOA_Implementations/CSB.hpp"
 #include "Util/VectorUtill.hpp"
 #include "Util/TripletToCRS.hpp"
 #include "Matrix/Triplet.hpp"
@@ -52,6 +53,7 @@ void printErrorMsg() {
     std::cout << "     6) CRS parallelized using Boost Thread Pool" << std::endl;
     std::cout << "     7) CRS parallelized using Boost Thread Pool with functions pinned to a CPU" << std::endl;
     std::cout << "     8) CRS parallelized using the merge-sort method" << std::endl;
+    std::cout << "     9) CSB parallelized using TBB tasks" << std::endl;
     std::cout << "  5° Amount of threads (only for a parallel method).";
     std::cout << " -1 lets the program choose the amount of threads arbitrarily" << std::endl;
     std::cout << "  6° Amount of partitions the matrix is split up into (only for method 4, 5, 6 and 7)" << std::endl;
@@ -83,6 +85,9 @@ pwm::SparseMatrix<T, int_type>* selectType(int method, int threads) {
         
         case 8:
             return new pwm::CRS_Merge<T, int_type>(threads);
+
+        case 9:
+            return new pwm::CSB<T, int_type>(threads);
         
         default:
             return NULL;
