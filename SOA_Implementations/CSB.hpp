@@ -116,9 +116,6 @@ namespace pwm {
                         blk_ptr_index++;
                     }
                 }
-
-                pwm::printVector(row_ind, this->nnz);
-                pwm::printVector(col_ind, this->nnz);
             }
 
             /**
