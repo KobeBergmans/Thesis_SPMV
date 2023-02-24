@@ -124,12 +124,17 @@ namespace pwm {
                         
                         index++;
 
-                        if (symmetric) {
+                        if (symmetric && row_coord[index-1] != col_coord[index-1]) {
                             row_coord[index] = col_coord[index-1];
                             col_coord[index] = row_coord[index-1];
                             data[index] = data[index-1];
                             index++;
                         }
+                    }
+
+                    // Correction for diagonal entries for symmetric matrices
+                    if (symmetric) {
+                        nnz = index;
                     }
                 }
             }
@@ -180,12 +185,17 @@ namespace pwm {
 
                     i++;
 
-                    if (symmetric) {
+                    if (symmetric && row_coord[i-1] != col_coord[i-1]) {
                         row_coord[i] = col_coord[i-1];
                         col_coord[i] = row_coord[i-1];
                         data[i] = data[i-1];
                         i++;
                     }
+                }
+
+                // Correction for diagonal entries for symmetric matrices
+                if (symmetric) {
+                    nnz = i;
                 }
             }
     };
