@@ -10,8 +10,8 @@
  * 
  * TODO: Make blocksize dependent on matrix
  * TODO: Integer compression
- * TODO: Morton-Z ordering
  * TODO: Poisson matrix input
+ * TODO: Avoid first touch
  */
 
 
@@ -19,6 +19,7 @@
 #define PWM_CSB_HPP
 
 #define BETA 8
+#define COORD_BITS 3
 
 #include "../Matrix/SparseMatrix.hpp"
 
@@ -39,6 +40,68 @@ namespace pwm {
 
             // Pointer to the start of each block
             int_type* blk_ptr;
+
+        private:
+            /**
+             * @brief Compares 2 coordinates to obtain a Z-Morton ordering
+             * 
+             * For now we expect that the int_type is an unsigned type
+             * 
+             * Z-Morton ordering is equal to sorting the bit-interleaved pattern y(k) x(k) y(k-1) x(k-1) ... y(0) x(0):
+             * So we first check if the first "needed" bit of y, then the one of x.
+             * This is done until we find a discrepancy between both values
+             * 
+             * @param x1 X-coord of first element
+             * @param y1 Y-coord of first element
+             * @param x2 X-coord of second element
+             * @param y2 Y-coord of second element
+             * @return true if the first element is smaller than or equal to the second element
+             * @return false if the first element is larger than the second element
+             */
+            bool zMortonCompare(const int_type x1, const int_type y1, const int_type x2, const int_type y2) {
+                bool set_1, set_2;
+                for (int bit_nb = COORD_BITS-1; bit_nb >= 0; --bit_nb) {
+                    // Check y bit
+                    set_1 = (y1 >> bit_nb) & 1;
+                    set_2 = (y2 >> bit_nb) & 1;
+
+                    if (set_2 && !set_1) { // 1 < 2
+                        return true;
+                    } else if (set_1 && !set_2) { // 1 > 2
+                        return false;
+                    }
+
+                    // Check x bit
+                    set_1 = (x1 >> bit_nb) & 1;
+                    set_2 = (x2 >> bit_nb) & 1;
+
+                    if (set_2 && !set_1) { // 1 < 2
+                        return true;
+                    } else if (set_1 && !set_2) { // 1 > 2
+                        return false;
+                    }
+                }
+
+                // 1 == 2
+                return true;
+            }
+
+            /**
+             * @brief Sorts the given block using Z-Morton ordering
+             * 
+             * @param coords Array consisting of 2 pointers, pointing to the column and row indices respectively
+             * @param data data of given block indices
+             */
+            void sortBlock(int_type** coords, std::vector<T> data) {
+                // Simple bubble sort implementation
+                for (size_t j = 0; j < data.size(); ++j) {
+                    for (size_t i = 1; i < data.size() - j; ++i) {
+                        if (!zMortonCompare(coords[0][i-1], coords[1][i-1], coords[0][i], coords[1][i])) {
+                            pwm::swapArrayElems<T, int_type>(coords, data.data(), 2, i-1, i);
+                        }
+                    }
+                }
+            }
 
         public:
             // Base constructor
@@ -80,7 +143,7 @@ namespace pwm {
                 int_type** coords = new int_type*[2];
                 coords[0] = input.row_coord;
                 coords[1] = input.col_coord;
-                sortCoordsForCRS(coords, input.data, 2, 0, this->nnz-1);
+                sortCoordsForCRS<T, int_type>(coords, input.data, 2, 0, this->nnz-1);
 
                 // Generate CSB structure per block row
                 int_type triplet_index = 0;
@@ -100,6 +163,13 @@ namespace pwm {
                         block_data[block_index].push_back(input.data[triplet_index]);
 
                         triplet_index++;
+                    }
+
+                    // Sort blocks in Morton-Z order
+                    for (int_type block_column = 0; block_column < horizontal_blocks; ++block_column) {
+                        coords[0] = block_col_ind[block_column].data();
+                        coords[1] = block_row_ind[block_column].data();
+                        sortBlock(coords, block_data[block_column]);
                     }
 
                     // Initialize CSB datastructures
