@@ -38,12 +38,12 @@ namespace pwm {
             if (coords[0][j] <= pivot) {
                 // If element is smaller than pivot swap it with i+1
                 i++;
-                swapArrayElems(coords, data, am_coords, i, j);
+                swapArrayElems<T, int_type>(coords, data, am_coords, i, j);
             }
         }
 
         // Swap pivot with the greatest element at i+1
-        swapArrayElems(coords, data, am_coords, i+1, high);
+        swapArrayElems<T, int_type>(coords, data, am_coords, i+1, high);
 
         // return the partitioning point
         return i+1;
@@ -92,7 +92,7 @@ namespace pwm {
         int_type** coords = new int_type*[2];
         coords[0] = row_coord;
         coords[1] = col_coord;
-        sortCoordsForCRS(coords, data, 2, 0, nnz-1);
+        sortCoordsForCRS<T, int_type>(coords, data, 2, 0, nnz-1);
 
         // Fill CRS datastructures
         row_start[0] = 0;
@@ -116,7 +116,7 @@ namespace pwm {
         // Sort columns of CRS data
         coords[0] = col_ind;
         for (int row = 0; row <= row_coord[nnz-1]; ++row) {
-            sortCoordsForCRS(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
+            sortCoordsForCRS<T, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
         }
     }
 
@@ -141,7 +141,7 @@ namespace pwm {
         int_type** coords = new int_type*[2];
         coords[0] = row_coord;
         coords[1] = col_coord;
-        sortCoordsForCRS(coords, data, 2, 0, nnz-1);
+        sortCoordsForCRS<T, int_type>(coords, data, 2, 0, nnz-1);
 
         // Fill CRS data with omp to avoid first touch
         #pragma omp parallel for shared(col_ind, col_coord, CRS_data, data, row_coord, row_start) schedule(dynamic, 8)
@@ -170,7 +170,7 @@ namespace pwm {
         coords[0] = col_ind;
         #pragma omp parallel for shared(col_ind, CRS_data, row_start) schedule(dynamic)
         for (int row = 0; row <= row_coord[nnz-1]; ++row) {
-            sortCoordsForCRS(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
+            sortCoordsForCRS<T, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
         }
     }
 
@@ -195,10 +195,10 @@ namespace pwm {
         int_type** coords = new int_type*[2];
         coords[0] = row_coord;
         coords[1] = col_coord;
-        sortCoordsForCRS(coords, data, 2, 0, nnz-1);
+        sortCoordsForCRS<T, int_type>(coords, data, 2, 0, nnz-1);
 
         // Fill CRS data with omp to avoid first touch
-        tbb::parallel_for(0, nnz, [=](int_type i) {
+        tbb::parallel_for((int_type)0, nnz, [=](int_type i) {
             col_ind[i] = col_coord[i];
             CRS_data[i] = data[i];
         });
@@ -221,8 +221,8 @@ namespace pwm {
 
         // Sort columns of CRS data
         coords[0] = col_ind;
-        tbb::parallel_for(0, row_coord[nnz-1]+1, [=](int_type row) {
-            sortCoordsForCRS(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
+        tbb::parallel_for((int_type)0, row_coord[nnz-1]+1, [=](int_type row) {
+            sortCoordsForCRS<T, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
         });
     }
 
@@ -248,7 +248,7 @@ namespace pwm {
         int_type** coords = new int_type*[2];
         coords[0] = row_coord;
         coords[1] = col_coord;
-        sortCoordsForCRS(coords, data, 2, 0, nnz-1);
+        sortCoordsForCRS<T, int_type>(coords, data, 2, 0, nnz-1);
 
         // Fill CRS datastructures
         int_type am_rows = std::round(nor/partitions);
@@ -309,7 +309,7 @@ namespace pwm {
             // Sort columns of CRS data
             coords[0] = col_ind[i];
             for (int row = 0; row < thread_rows[i]; ++row) {
-                sortCoordsForCRS(coords, CRS_data[i], 1, row_start[i][row], row_start[i][row+1]-1);
+                sortCoordsForCRS<T, int_type>(coords, CRS_data[i], 1, row_start[i][row], row_start[i][row+1]-1);
             }
         }        
     }

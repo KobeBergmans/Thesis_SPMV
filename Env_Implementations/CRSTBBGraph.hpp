@@ -200,7 +200,7 @@ namespace pwm {
 
                         T norm = pwm::norm2(y, this->nor);
 
-                        oneapi::tbb::parallel_for(0, this->nor, [=](int_type i) {
+                        oneapi::tbb::parallel_for((int_type)0, this->nor, [=](int_type i) {
                             y[i] /= norm;
                         });
                     } else {
@@ -208,7 +208,7 @@ namespace pwm {
 
                         T norm = pwm::norm2(x, this->nor);
 
-                        oneapi::tbb::parallel_for(0, this->nor, [=](int_type i) {
+                        oneapi::tbb::parallel_for((int_type)0, this->nor, [=](int_type i) {
                             x[i] /= norm;
                         });
                     }

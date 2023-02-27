@@ -125,7 +125,7 @@ int main(int argc, char** argv) {
     }
     
     // Select method
-    pwm::SparseMatrix<double, int>* test_mat = selectType<double, int>(method, threads);
+    pwm::SparseMatrix<double, unsigned int>* test_mat = selectType<double, unsigned int>(method, threads);
 
     if (test_mat == NULL) {
         printErrorMsg();
@@ -134,7 +134,7 @@ int main(int argc, char** argv) {
 
     // Input matrix & initialize vectors
     start = omp_get_wtime();
-    pwm::Triplet<double, int> input_mat;
+    pwm::Triplet<double, unsigned int> input_mat;
 
     int file_start = input_file.find("/");
     if (boost::algorithm::ends_with(input_file, ".mtx")) {

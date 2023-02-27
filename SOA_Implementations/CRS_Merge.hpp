@@ -34,8 +34,11 @@ namespace pwm {
              */
             std::tuple<int_type, int_type> searchPathOnDiag(int_type diagonal, int_type* list_A) {
                 // Search range for A list
-                int a_coord_min = std::max(diagonal - this->nnz, 0);
-                int a_coord_max = std::min(diagonal, this->nor);
+                int_type a_coord_min = 0;
+                if (diagonal > this->nnz) {
+                    a_coord_min = diagonal - this->nnz;
+                }
+                int_type a_coord_max = std::min(diagonal, this->nor);
 
                 // Binary-search along the diagonal
                 while (a_coord_min < a_coord_max) {

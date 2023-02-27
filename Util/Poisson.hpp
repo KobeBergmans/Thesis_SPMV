@@ -106,7 +106,9 @@ namespace pwm {
             // Calculate nnz_index (this is needed because this variable can't be shared anymore).
             int_type nnz_index = 0;
             if (row > 0) {
-                nnz_index += std::max(0, row - m);
+                if (row > m) {
+                    nnz_index += row - m;
+                }
                 nnz_index += (row/m)*(m-1) + row%m;
                 nnz_index += row;
                 nnz_index += (row/m)*(m-1) + row%m;
@@ -178,11 +180,13 @@ namespace pwm {
         row_start[0] = 0;
 
         // Fill data rows using TBB to avoid first touch
-        tbb::parallel_for(0, last_row, [=](int_type row) {
+        tbb::parallel_for((int_type)0, last_row, [=](int_type row) {
             // Calculate nnz_index (this is needed because this variable can't be shared anymore).
             int_type nnz_index = 0;
             if (row > 0) {
-                nnz_index += std::max(0, row - m);
+                if (row > m) {
+                    nnz_index += row - m;
+                }
                 nnz_index += (row/m)*(m-1) + row%m;
                 nnz_index += row;
                 nnz_index += (row/m)*(m-1) + row%m;
