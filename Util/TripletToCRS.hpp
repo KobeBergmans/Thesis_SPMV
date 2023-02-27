@@ -33,20 +33,20 @@ namespace pwm {
         int_type pivot = coords[0][high];
 
         // Points to biggest element
-        int_type i = (low - 1);
+        int_type i = low;
         for (int j = low; j < high; ++j) {
             if (coords[0][j] <= pivot) {
                 // If element is smaller than pivot swap it with i+1
-                i++;
                 swapArrayElems<T, int_type>(coords, data, am_coords, i, j);
+                i++;
             }
         }
 
         // Swap pivot with the greatest element at i+1
-        swapArrayElems<T, int_type>(coords, data, am_coords, i+1, high);
+        swapArrayElems<T, int_type>(coords, data, am_coords, i, high);
 
         // return the partitioning point
-        return i+1;
+        return i;
     }
 
     /**
@@ -65,10 +65,12 @@ namespace pwm {
     template<typename T, typename int_type>
     void sortCoordsForCRS(int_type** coords, T* data, int am_coords, int_type low, int_type high) {
         if (low < high) {
-            swapArrayElems(coords, data, am_coords, (rand() % (high-low)) + low, high); // Random permutation of rightmost element
+            swapArrayElems(coords, data, am_coords, (((int_type)rand()) % (high-low)) + low, high); // Random permutation of rightmost element
             int_type middle = partitionArrays(coords, data, am_coords, low, high);
 
-            sortCoordsForCRS(coords, data, am_coords, low, middle - 1);
+            if (middle > 0) {
+                sortCoordsForCRS(coords, data, am_coords, low, middle - 1);
+            }
             sortCoordsForCRS(coords, data, am_coords, middle + 1, high);
         }
     }
@@ -97,7 +99,7 @@ namespace pwm {
         // Fill CRS datastructures
         row_start[0] = 0;
         int_type row_index = 0;
-        for (int i = 0; i < nnz; ++i) {
+        for (int_type i = 0; i < nnz; ++i) {
             col_ind[i] = col_coord[i];
             CRS_data[i] = data[i];
 
@@ -116,7 +118,9 @@ namespace pwm {
         // Sort columns of CRS data
         coords[0] = col_ind;
         for (int row = 0; row <= row_coord[nnz-1]; ++row) {
-            sortCoordsForCRS<T, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
+            if (row_start[row+1] != 0) { // Needed for when the first row is empty and unsigned integers are used
+                sortCoordsForCRS<T, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
+            }
         }
     }
 
@@ -153,7 +157,7 @@ namespace pwm {
         // Fill CRS row_start
         row_start[0] = 0;
         int_type row_index = 0;
-        for (int i = 0; i < nnz; ++i) {
+        for (int_type i = 0; i < nnz; ++i) {
             while (row_coord[i] != row_index) {
                 row_index++;
                 row_start[row_index] = i;
@@ -169,8 +173,10 @@ namespace pwm {
         // Sort columns of CRS data
         coords[0] = col_ind;
         #pragma omp parallel for shared(col_ind, CRS_data, row_start) schedule(dynamic)
-        for (int row = 0; row <= row_coord[nnz-1]; ++row) {
-            sortCoordsForCRS<T, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
+        for (int_type row = 0; row <= row_coord[nnz-1]; ++row) {
+            if (row_start[row+1] != 0) { // Needed for when the first row is empty and unsigned integers are used
+                sortCoordsForCRS<T, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
+            }
         }
     }
 
@@ -206,7 +212,7 @@ namespace pwm {
         // Fill CRS row_start
         row_start[0] = 0;
         int_type row_index = 0;
-        for (int i = 0; i < nnz; ++i) {
+        for (int_type i = 0; i < nnz; ++i) {
             while (row_coord[i] != row_index) {
                 row_index++;
                 row_start[row_index] = i;
@@ -222,7 +228,9 @@ namespace pwm {
         // Sort columns of CRS data
         coords[0] = col_ind;
         tbb::parallel_for((int_type)0, row_coord[nnz-1]+1, [=](int_type row) {
-            sortCoordsForCRS<T, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
+            if (row_start[row+1] != 0) { // Needed for when the first row is empty and unsigned integers are used
+                sortCoordsForCRS<T, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
+            }
         });
     }
 
@@ -256,7 +264,7 @@ namespace pwm {
         int_type nnz_index = 0;
         int_type part_index = 0;
         int_type row_index;
-        for (int i = 0; i < partitions; ++i) {
+        for (int_type i = 0; i < partitions; ++i) {
             // Calculate first and last row (last row is exclusive)
             first_rows[i] = last_row;
             if (i == partitions - 1) last_row = nor;
@@ -308,8 +316,10 @@ namespace pwm {
             
             // Sort columns of CRS data
             coords[0] = col_ind[i];
-            for (int row = 0; row < thread_rows[i]; ++row) {
-                sortCoordsForCRS<T, int_type>(coords, CRS_data[i], 1, row_start[i][row], row_start[i][row+1]-1);
+            for (int_type row = 0; row < thread_rows[i]; ++row) {
+                if (row_start[i][row+1] != 0) { // Needed for when the first row is empty and unsigned integers are used
+                    sortCoordsForCRS<T, int_type>(coords, CRS_data[i], 1, row_start[i][row], row_start[i][row+1]-1);
+                }
             }
         }        
     }

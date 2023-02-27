@@ -24,16 +24,16 @@
 namespace pwm {
     template<typename T, typename int_type>
     std::vector<pwm::SparseMatrix<T, int_type>*> get_all_matrices() {
-        std::vector<pwm::SparseMatrix<double, int>*> matrices;
-        matrices.push_back(new pwm::CRS<double, int>(1));
+        std::vector<pwm::SparseMatrix<T, int_type>*> matrices;
+        matrices.push_back(new pwm::CRS<T, int_type>(1));
         for (int i = 1; i <= omp_get_max_threads(); ++i) {
-            matrices.push_back(new pwm::CRSOMP<double, int>(i));
-            matrices.push_back(new pwm::CRSTBB<double, int>(i));
-            matrices.push_back(new pwm::CRSTBBGraph<double, int>(i));
-            matrices.push_back(new pwm::CRSTBBGraphPinned<double, int>(i));
-            matrices.push_back(new pwm::CRSThreadPool<double, int>(i));
-            matrices.push_back(new pwm::CRSThreadPoolPinned<double, int>(i));
-            matrices.push_back(new pwm::CRS_Merge<double, int>(i));
+            matrices.push_back(new pwm::CRSOMP<T, int_type>(i));
+            matrices.push_back(new pwm::CRSTBB<T, int_type>(i));
+            matrices.push_back(new pwm::CRSTBBGraph<T, int_type>(i));
+            matrices.push_back(new pwm::CRSTBBGraphPinned<T, int_type>(i));
+            matrices.push_back(new pwm::CRSThreadPool<T, int_type>(i));
+            matrices.push_back(new pwm::CRSThreadPoolPinned<T, int_type>(i));
+            matrices.push_back(new pwm::CRS_Merge<T, int_type>(i));
         }
         return matrices;
     }
