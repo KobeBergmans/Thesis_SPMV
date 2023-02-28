@@ -198,6 +198,60 @@ namespace pwm {
                     nnz = i;
                 }
             }
+
+            void generatePoisson(const int_type m, const int_type n) {
+                row_size = m*n;
+                col_size = m*n;
+                nnz = n*(m+2*(m-1)) + 2*(n-1)*m;
+
+                row_coord = new int_type[nnz];
+                col_coord = new int_type[nnz];
+                data = new T[nnz];
+
+                int_type index = 0;
+
+                // Add main diagonal
+                for (int_type i = 0; i < row_size; ++i) {
+                    row_coord[index] = i;
+                    col_coord[index] = i;
+                    data[index] = 4.;
+                    index++;
+                }
+
+                // Add sub and super diagonal
+                for (int_type i = 0; i < row_size; ++i) {
+                    // sub diagonal
+                    if (i % m != 0) {
+                        row_coord[index] = i;
+                        col_coord[index] = i+1;
+                        data[index] = -1.;
+                        index++;
+                    }
+
+                    // super diagonal
+                    if (i % m != m-1) {
+                        row_coord[index] = i+1;
+                        col_coord[index] = i;
+                        data[index] = -1.;
+                        index++;
+                    }
+                }
+
+                // Add last two smaller diagonals
+                for (int_type i = 0; i < row_size - m; ++i) {
+                    row_coord[index] = i+m;
+                    col_coord[index] = i;
+                    data[index] = -1.;
+                    index++;
+
+                    row_coord[index] = i;
+                    col_coord[index] = i+m;
+                    data[index] = -1.;
+                    index++;
+                }
+
+                assert(index == nnz);
+            }
     };
 } // namespace pwm
 
