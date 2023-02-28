@@ -47,7 +47,7 @@ namespace pwm
      * @param size Vector size
      */
     template<typename T, typename int_type>
-    void printVector(T* x, int_type size) {
+    void printVector(const T* x, int_type size) {
         for (int_type i = 0; i < size; ++i) {
             std::cout << x[i] << ", ";
         }

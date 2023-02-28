@@ -200,6 +200,9 @@ int main(int argc, char** argv) {
     std::cout << "Result for checking measures: " << std::endl;
     pwm::printVector(y, mat_size);
 #endif
+
+    delete [] y;
+    delete [] x;
     
     return 0;
 }

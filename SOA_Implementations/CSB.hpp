@@ -4,14 +4,19 @@
  * @brief Implementation of CSB scheme
  * 
  * Based on:
- *   A. Buluc, J. Gilbert, and V. B. Shah. 13. Implementing Sparse Matrices
- *   for Graph Algorithms, pages 287–313. Society for Industrial and Applied
- *   Mathematics, 2011
+ *   A. Buluç, J. T. Fineman, M. Frigo, J. R. Gilbert, and C. E. Leiserson. Parallel
+ *   sparse matrix-vector and matrix-transpose-vector multiplication using compressed sparse blocks. 
+ *   In Proceedings of the Twenty-First Annual Symposium
+ *   on Parallelism in Algorithms and Architectures, SPAA ’09, pages 233–244, New
+ *   York, NY, USA, 2009. Association for Computing Machinery.
  * 
  * TODO: Make blocksize dependent on matrix
  * TODO: Integer compression
  * TODO: Poisson matrix input
  * TODO: Avoid first touch
+ * TODO: Check what the O_DIM_CONST should be
+ * TODO: Add parallelism
+ * TODO: Check if chunk array can be made quicker
  */
 
 
@@ -20,10 +25,16 @@
 
 #define BETA 8
 #define COORD_BITS 3
+#define O_DIM_CONST 3
+#define O_BETA_CONST 3
+
+#include <cassert>
+#include <algorithm>
 
 #include "../Matrix/SparseMatrix.hpp"
 
 #include "../Util/VectorUtill.hpp"
+#include "../Util/Math.hpp"
 
 namespace pwm {
     template<typename T, typename int_type>
@@ -41,7 +52,22 @@ namespace pwm {
             // Pointer to the start of each block
             int_type* blk_ptr;
 
+            // Amount of horizontal blocks
+            int_type horizontal_blocks;
+
+            // Amount of vertical blocks
+            int_type vertical_blocks;
+
         private:
+            int_type blockColumnRowToIndex(const int_type block_row, const int_type block_column) {
+                assert(0 <= block_row);
+                assert(block_row < vertical_blocks);
+                assert(0 <= block_column);
+                assert(block_column < horizontal_blocks);
+
+                return block_row*vertical_blocks + block_column;
+            }
+
             /**
              * @brief Compares 2 coordinates to obtain a Z-Morton ordering
              * 
@@ -103,6 +129,139 @@ namespace pwm {
                 }
             }
 
+            /**
+             * @brief Binary search for the division point as explained in the paper
+             * 
+             * @param indices Row or column indices for which the division point is calculated
+             * @param dim dimension of the original matrix
+             * @param start starting index for binary search
+             * @param end ending index for binary search
+             * @return int_type smallest index s for which (indices[s] & dim/2) != 0
+             */
+            int_type binarySearchDivisionPoint(const int_type* indices, const int_type half_dim, int_type start, int_type end) {
+                while (start < end) {
+                    int_type middle = (start+end)/2;
+                    
+                    if ((indices[middle] & half_dim) == 0) {
+                        start = middle + 1;
+                    } else {
+                        end = middle;
+                    }
+                }
+
+                return start;
+            }
+
+            /**
+             * @brief Multiply dense subblock with input vector by performing a splitting of the block if there are too many nonzeros
+             * 
+             * @param start Starting index of data in matrix
+             * @param end Ending index of data in matrix
+             * @param dim Dimension of subblock
+             * @param x Part of input vector corresponding to the given block
+             * @param y Part of output vector corresponding to the given block
+             */
+            void blockMult(const int_type start, const int_type end, const int_type dim, const T* x, T* y) {
+                // Perform serial computation if there are not too many nonzeros
+                if (end - start <= dim*O_DIM_CONST) {
+                    for (int_type i = start; i < end; ++i) {
+                        y[row_ind[i]] = y[row_ind[i]] + data[i]*x[col_ind[i]];
+                    }
+
+                    return;
+                }
+
+                // There are too much nonzeros so we do a recursive subdivision (M00, M01, M10, M11)
+                int_type half_dim = dim / 2;
+
+                // Calculate splitting points
+                int_type s2 = binarySearchDivisionPoint(row_ind, half_dim, start, end); // Split between M00, M01 and M10, M11
+                int_type s1 = binarySearchDivisionPoint(col_ind, half_dim, start, s2-1); // Split between M00 and M01
+                int_type s3 = binarySearchDivisionPoint(col_ind, half_dim, s2, end); // Split between M10 and M11
+
+                // In parallel do:
+                blockMult(start, s1-1, half_dim, x, y); // M00
+                blockMult(s3, end, half_dim, x, y); // M11
+
+                // In parallel do:
+                blockMult(s1, s2-1, half_dim, x, y); // M01
+                blockMult(s2, s3-1, half_dim, x, y); // M10
+            }
+
+            /**
+             * @brief Multiply sparse block row
+             * 
+             * @param block_row Block row index
+             * @param block_column_start Column index of first block to be multiplied
+             * @param block_column_end Column index of last block to be multiplied
+             * @param x Input vector
+             * @param y Part of output vector corresponding to the current block row
+             */
+            void sparseRowMult(const int_type block_row, const int_type block_column_start, const int_type block_column_end, const T* x, T* y) {
+                int_type first_block_index = blockColumnRowToIndex(block_row, block_column_start);
+                int_type am_blocks = (block_column_end - block_column_start);
+                int_type block_index, x_offset;
+
+                for (int_type block_nb = 0; block_nb <= am_blocks; ++block_nb) {
+                    block_index = first_block_index + block_nb;
+                    x_offset = block_nb*BETA;
+
+                    for (int_type i = blk_ptr[block_index]; i < blk_ptr[block_index+1]; ++i) {
+                        y[row_ind[i]] = y[row_ind[i]] + data[i]*x[x_offset + col_ind[i]];
+                    }
+                }
+            }
+            
+            /**
+             * @brief Multiplies a chunk of a blockrow or subdivides a blockrow if it contains more than 1 chunk
+             * 
+             * @param block_row_index Index of the given blockrow
+             * @param chunks Array which indicates the different chunks in the current blockrow
+             * @param chunks_length Length of chunks array
+             * @param x Input vector
+             * @param y Output vector corresponding to the given blockrow
+             */
+            void blockRowMult(const int_type block_row, const int* chunks, const int_type chunks_length, const T* x, T* y) {
+                // Check if the blockrow is a single chunk
+                if (chunks_length == 2) {
+                    int_type left_chunk = chunks[0]+1;
+                    int_type right_chunk = chunks[1];
+
+                    if (left_chunk == right_chunk) {
+                        // Chunk is a single block
+                        int_type block_index = blockColumnRowToIndex(block_row, left_chunk);
+                        int_type start = blk_ptr[block_index];
+                        int_type end = blk_ptr[block_index+1];
+
+                        blockMult(start, end, BETA, x, y);
+                    } else {
+                        // The chunk consists of multiple blocks and thus is sparse
+                        sparseRowMult(block_row, left_chunk, right_chunk, x, y);
+                    }
+                    
+                    return;
+                }
+
+                // Blockrow contains multiple chunks thus we subdivide
+                int_type middle = integerCeil<int_type>(chunks_length, 2) - 1; // Middle chunk index
+                int_type x_middle = BETA*(chunks[middle] - chunks[0]); // Middle of x vector
+
+                // Initialize vector for temporary results
+                T* temp_res = new T[BETA];
+                std::fill(temp_res, temp_res+BETA, 0.);
+
+                // In parallel do:
+                blockRowMult(block_row, chunks, middle+1, x, y);
+                blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, temp_res);
+
+                // Add temporary result serially
+                for (int_type i = 0; i < BETA; ++i) {
+                    y[i] = y[i] + temp_res[i];
+                }
+
+                delete [] temp_res;
+            }
+
         public:
             // Base constructor
             CSB() {}
@@ -131,13 +290,14 @@ namespace pwm {
                 this->nor = input.row_size;
                 this->nnz = input.nnz;
 
-                int_type horizontal_blocks = this->noc/BETA + (this->noc % BETA != 0);
-                int_type vertical_blocks = this->nor/BETA + (this->nor % BETA != 0);
+                horizontal_blocks = pwm::integerCeil<int_type>(this->noc, BETA);
+                vertical_blocks = pwm::integerCeil<int_type>(this->nor, BETA);
 
                 row_ind = new int_type[this->nnz];
                 col_ind = new int_type[this->nnz];
                 data = new T[this->nnz];
-                blk_ptr = new int_type[horizontal_blocks*vertical_blocks];
+                blk_ptr = new int_type[horizontal_blocks*vertical_blocks+1];
+                blk_ptr[0] = 0;
 
                 // Sort triplets on row value
                 int_type** coords = new int_type*[2];
@@ -148,7 +308,7 @@ namespace pwm {
                 // Generate CSB structure per block row
                 int_type triplet_index = 0;
                 int_type csb_index = 0;
-                int_type blk_ptr_index = 0;
+                int_type blk_ptr_index = 1;
                 for (int_type block_row = 0; block_row < vertical_blocks; ++block_row) {
                     // Data structures which keep track of indices and data in each block
                     std::vector<std::vector<int_type>> block_row_ind(horizontal_blocks, std::vector<int_type>());
@@ -156,10 +316,10 @@ namespace pwm {
                     std::vector<std::vector<T>> block_data(horizontal_blocks, std::vector<T>());
 
                     // Loop over all indices in triplet structure which are part of this block row
-                    while (input.row_coord[triplet_index] < (block_row+1)*BETA && triplet_index < this->nnz) {
+                    while (triplet_index < this->nnz && input.row_coord[triplet_index] < (block_row+1)*BETA) {
                         int_type block_index = input.col_coord[triplet_index] / BETA;
-                        block_row_ind[block_index].push_back(input.row_coord[triplet_index]-block_row*BETA);
-                        block_col_ind[block_index].push_back(input.col_coord[triplet_index]-block_index*BETA);
+                        block_row_ind[block_index].push_back(input.row_coord[triplet_index] % BETA);
+                        block_col_ind[block_index].push_back(input.col_coord[triplet_index] % BETA);
                         block_data[block_index].push_back(input.data[triplet_index]);
 
                         triplet_index++;
@@ -173,7 +333,7 @@ namespace pwm {
                     }
 
                     // Initialize CSB datastructures
-                    for (int_type block_col = 0; block_col < horizontal_blocks; ++ block_col) {
+                    for (int_type block_col = 0; block_col < horizontal_blocks; ++block_col) {
                         for (size_t i = 0; i < block_row_ind[block_col].size(); ++i) {
                             row_ind[csb_index] = block_row_ind[block_col][i];
                             col_ind[csb_index] = block_col_ind[block_col][i];
@@ -186,6 +346,8 @@ namespace pwm {
                         blk_ptr_index++;
                     }
                 }
+
+                delete [] coords;
             }
 
             /**
@@ -194,13 +356,40 @@ namespace pwm {
              * Uses work-stealing scheduling of TBB
              * Tasks are block rows which can be split up as described in the CSB paper
              * 
-             * @param x Vector to be modified with the matrix
-             * @return T* Result vector
+             * @param x Vector to be multiplied with the matrix
+             * @param y Result vector
              */
             void mv(const T* x, T* y) {
                 std::fill(y, y+this->nor, 0.);
 
-                return;
+                // Parallel for:
+                for (int_type block_row = 0; block_row < vertical_blocks; ++block_row) {
+                    int* chunks = new int[horizontal_blocks]; // Worst case that all blocks are a separate chunk
+                    int_type chunk_index = 0;
+                    chunks[chunk_index++] = -1;
+
+                    int_type first_block_index = blockColumnRowToIndex(block_row, 0);
+
+                    int_type count = 0;
+                    for (int_type block_col = 0; block_col <= horizontal_blocks - 2; ++block_col) {
+                        // Add elements of current block to count
+                        count = count + blk_ptr[first_block_index+block_col+1]-blk_ptr[first_block_index+block_col];
+
+                        // Check if next block will exceed the maximum number of nz
+                        if (count + blk_ptr[first_block_index+block_col+2]-blk_ptr[first_block_index+block_col+1] > BETA*O_BETA_CONST) {
+                            chunks[chunk_index++] = block_col;
+                            count = 0;
+                        }
+                    }
+
+                    // Add last block to end the last chunk
+                    chunks[chunk_index++] = vertical_blocks-1; 
+
+                    // Perform block row multiplication
+                    blockRowMult(block_row, chunks, chunk_index, x, y+block_row*BETA);
+
+                    delete [] chunks;
+                }
             }
 
             /**
