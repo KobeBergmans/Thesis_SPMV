@@ -270,17 +270,6 @@ namespace pwm {
             CSB(int threads) {}
 
             /**
-             * @brief Input the CSB matrix as a poisson matrix
-             * 
-             * @param m The amount of discretization steps in the x direction
-             * @param n The amount of discretization steps in the y direction
-             * @param partitions Not used
-             */
-            void generatePoissonMatrix(const int_type m, const int_type n, const int partitions) {
-                return;
-            }
-
-            /**
              * @brief Input the CSB matrix from a Triplet format
              * 
              * @param input Triplet format matrix used to convert to CRS
@@ -348,6 +337,26 @@ namespace pwm {
                 }
 
                 delete [] coords;
+            }
+
+            /**
+             * @brief Input the CSB matrix as a poisson matrix
+             * 
+             * @param m The amount of discretization steps in the x direction
+             * @param n The amount of discretization steps in the y direction
+             * @param partitions Not used
+             */
+            void generatePoissonMatrix(const int_type m, const int_type n, const int partitions) {
+                // This is a quick and dirty way
+                pwm::Triplet<T, int_type> temp_mat;
+                temp_mat.generatePoisson(m, n);
+
+                std::cout << "m: " << m << ", n: " << n << std::endl;
+                pwm::printVector(temp_mat.row_coord, temp_mat.nnz);
+                pwm::printVector(temp_mat.col_coord, temp_mat.nnz);
+                pwm::printVector(temp_mat.data, temp_mat.nnz);
+
+                loadFromTriplets(temp_mat, partitions);
             }
 
             /**
