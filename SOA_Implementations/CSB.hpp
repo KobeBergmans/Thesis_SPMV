@@ -409,7 +409,17 @@ namespace pwm {
              * @return T* Resulting vector
              */
             void powerMethod(T* x, T* y, const int_type it) {
-                return;
+                assert(this->nor == this->noc); //Power method only works on square matrices
+                
+                for (int i = 0; i < it; ++i) {
+                    if (i % 2 == 0) {
+                        this->mv(x,y);
+                        pwm::normalize(y, this->nor);
+                    } else {
+                        this->mv(y,x);
+                        pwm::normalize(x, this->nor);
+                    }
+                }
             }
     };
 } // namespace pwm
