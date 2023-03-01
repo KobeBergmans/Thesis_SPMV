@@ -10,13 +10,12 @@
  *   on Parallelism in Algorithms and Architectures, SPAA ’09, pages 233–244, New
  *   York, NY, USA, 2009. Association for Computing Machinery.
  * 
- * TODO: Make blocksize dependent on matrix
+ * TODO: Make blocksize dependent on matrix: only initial implementation for now
  * TODO: Integer compression
  * TODO: Poisson matrix input
  * TODO: Avoid first touch
  * TODO: Check what the O_DIM_CONST should be
  * TODO: Add parallelism
- * TODO: Check if chunk array can be made quicker
  */
 
 
