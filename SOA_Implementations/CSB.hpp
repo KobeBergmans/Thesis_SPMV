@@ -241,13 +241,23 @@ namespace pwm {
                 int_type s1 = binarySearchDivisionPoint(col_ind, half_dim, start, s2-1); // Split between M00 and M01
                 int_type s3 = binarySearchDivisionPoint(col_ind, half_dim, s2, end); // Split between M10 and M11
 
-                // In parallel do:
-                if (s1-1 >= start) blockMult(start, s1-1, half_dim, x, y); // M00
-                if (end >= s3) blockMult(s3, end, half_dim, x, y); // M11
+                #pragma omp parallel
+                #pragma omp single nowait
+                {
+                    #pragma omp task
+                    if (s1-1 >= start) blockMult(start, s1-1, half_dim, x, y); // M00
 
-                // In parallel do:
-                if (s2-1 >= s1) blockMult(s1, s2-1, half_dim, x, y); // M01
-                if (s3-1 >= s2) blockMult(s2, s3-1, half_dim, x, y); // M10
+                    #pragma omp task
+                    if (end >= s3) blockMult(s3, end, half_dim, x, y); // M11
+
+                    #pragma omp taskwait
+
+                    #pragma omp task
+                    if (s2-1 >= s1) blockMult(s1, s2-1, half_dim, x, y); // M01
+
+                    #pragma omp task
+                    if (s3-1 >= s2) blockMult(s2, s3-1, half_dim, x, y); // M10
+                }
             }
 
             /**
@@ -312,16 +322,24 @@ namespace pwm {
                 T* temp_res = new T[beta];
                 std::fill(temp_res, temp_res+beta, 0.);
 
-                // In parallel do:
-                blockRowMult(block_row, chunks, middle+1, x, y);
-                blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, temp_res);
+                #pragma omp parallel
+                #pragma omp single nowait
+                {
+                    #pragma omp task
+                    blockRowMult(block_row, chunks, middle+1, x, y);
 
-                // Add temporary result serially
-                for (int_type i = 0; i < beta; ++i) {
-                    y[i] = y[i] + temp_res[i];
+                    #pragma omp task
+                    blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, temp_res);
+
+                    #pragma omp taskwait
+
+                    // Add temporary result serially
+                    for (int_type i = 0; i < beta; ++i) {
+                        y[i] = y[i] + temp_res[i];
+                    }
+
+                    delete [] temp_res;
                 }
-
-                delete [] temp_res;
             }
 
         public:
@@ -337,6 +355,8 @@ namespace pwm {
              * @param input Triplet format matrix used to convert to CRS
              */
             void loadFromTriplets(pwm::Triplet<T, int_type> input, const int partitions_am) {
+                omp_set_num_threads(threads);
+
                 this->noc = input.col_size;
                 this->nor = input.row_size;
                 this->nnz = input.nnz;
@@ -436,33 +456,37 @@ namespace pwm {
             void mv(const T* x, T* y) {
                 std::fill(y, y+this->nor, 0.);
 
-                // Parallel for:
+                #pragma omp parallel
+                #pragma omp single
                 for (int_type block_row = 0; block_row < vertical_blocks; ++block_row) {
-                    int* chunks = new int[horizontal_blocks]; // Worst case that all blocks are a separate chunk
-                    int_type chunk_index = 0;
-                    chunks[chunk_index++] = -1;
+                    #pragma omp task
+                    {
+                        int* chunks = new int[horizontal_blocks]; // Worst case that all blocks are a separate chunk
+                        int_type chunk_index = 0;
+                        chunks[chunk_index++] = -1;
 
-                    int_type first_block_index = blockCoordToIndex(block_row, 0);
+                        int_type first_block_index = blockCoordToIndex(block_row, 0);
 
-                    int_type count = 0;
-                    for (int_type block_col = 0; block_col <= horizontal_blocks - 2; ++block_col) {
-                        // Add elements of current block to count
-                        count = count + blk_ptr[first_block_index+block_col+1]-blk_ptr[first_block_index+block_col];
+                        int_type count = 0;
+                        for (int_type block_col = 0; block_col <= horizontal_blocks - 2; ++block_col) {
+                            // Add elements of current block to count
+                            count = count + blk_ptr[first_block_index+block_col+1]-blk_ptr[first_block_index+block_col];
 
-                        // Check if next block will exceed the maximum number of nz
-                        if (count + blk_ptr[first_block_index+block_col+2]-blk_ptr[first_block_index+block_col+1] > beta*O_BETA_CONST) {
-                            chunks[chunk_index++] = block_col;
-                            count = 0;
+                            // Check if next block will exceed the maximum number of nz
+                            if (count + blk_ptr[first_block_index+block_col+2]-blk_ptr[first_block_index+block_col+1] > beta*O_BETA_CONST) {
+                                chunks[chunk_index++] = block_col;
+                                count = 0;
+                            }
                         }
+
+                        // Add last block to end the last chunk
+                        chunks[chunk_index++] = horizontal_blocks-1; 
+
+                        // Perform block row multiplication
+                        blockRowMult(block_row, chunks, chunk_index, x, y+block_row*beta);
+
+                        delete [] chunks;
                     }
-
-                    // Add last block to end the last chunk
-                    chunks[chunk_index++] = horizontal_blocks-1; 
-
-                    // Perform block row multiplication
-                    blockRowMult(block_row, chunks, chunk_index, x, y+block_row*beta);
-
-                    delete [] chunks;
                 }
             }
 
