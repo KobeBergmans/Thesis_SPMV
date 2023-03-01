@@ -11,17 +11,10 @@
 #include <cmath>
 
 #include "Matrix/CRS.hpp"
-#include "Env_Implementations/CRSOMP.hpp"
-#include "Env_Implementations/CRSTBB.hpp"
-#include "Env_Implementations/CRSTBBGraph.hpp"
-#include "Env_Implementations/CRSTBBGraphPinned.hpp"
-#include "Env_Implementations/CRSThreadPool.hpp"
-#include "Env_Implementations/CRSThreadPoolPinned.hpp"
-#include "SOA_Implementations/CRS_Merge.hpp"
-#include "SOA_Implementations/CSB.hpp"
-#include "Util/VectorUtill.hpp"
-#include "Util/TripletToCRS.hpp"
 #include "Matrix/Triplet.hpp"
+#include "Util/VectorUtill.hpp"
+#include "Util/DriverUtil.hpp"
+
 
 #include <boost/algorithm/string/predicate.hpp>
 
@@ -59,41 +52,6 @@ void printErrorMsg() {
     std::cout << "  6° Amount of partitions the matrix is split up into (only for method 4, 5, 6 and 7)" << std::endl;
 }
 
-template<typename T, typename int_type>
-pwm::SparseMatrix<T, int_type>* selectType(int method, int threads) {
-    switch (method) {
-        case 1:
-            return new pwm::CRS<T, int_type>(threads);
-
-        case 2:
-            return new pwm::CRSOMP<T, int_type>(threads);
-
-        case 3:
-            return new pwm::CRSTBB<T, int_type>(threads);
-
-        case 4:
-            return new pwm::CRSTBBGraph<T, int_type>(threads);
-
-        case 5:
-            return new pwm::CRSTBBGraphPinned<T, int_type>(threads);
-
-        case 6:
-            return new pwm::CRSThreadPool<T, int_type>(threads);
-
-        case 7:
-            return new pwm::CRSThreadPoolPinned<T, int_type>(threads);
-        
-        case 8:
-            return new pwm::CRS_Merge<T, int_type>(threads);
-
-        case 9:
-            return new pwm::CSB<T, int_type>(threads);
-        
-        default:
-            return NULL;
-    }
-}
-
 int main(int argc, char** argv) {
     double start, stop, time; 
 
@@ -125,7 +83,7 @@ int main(int argc, char** argv) {
     }
     
     // Select method
-    pwm::SparseMatrix<double, unsigned int>* test_mat = selectType<double, unsigned int>(method, threads);
+    pwm::SparseMatrix<double, unsigned int>* test_mat = pwm::selectType<double, unsigned int>(method, threads);
 
     if (test_mat == NULL) {
         printErrorMsg();

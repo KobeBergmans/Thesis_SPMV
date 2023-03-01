@@ -10,13 +10,8 @@
 #include <string>
 
 #include "Matrix/CRS.hpp"
-#include "Env_Implementations/CRSOMP.hpp"
-#include "Env_Implementations/CRSTBB.hpp"
-#include "Env_Implementations/CRSTBBGraph.hpp"
-#include "Env_Implementations/CRSTBBGraphPinned.hpp"
-#include "Env_Implementations/CRSThreadPool.hpp"
-#include "Env_Implementations/CRSThreadPoolPinned.hpp"
 #include "Util/VectorUtill.hpp"
+#include "Util/DriverUtil.hpp"
 
 #include "omp.h"
 #include "oneapi/tbb.h"
@@ -35,38 +30,11 @@ void printErrorMsg() {
     std::cout << "     5) CRS parallelized using TBB graphs with each node pinned to a CPU" << std::endl;
     std::cout << "     6) CRS parallelized using Boost Thread Pool" << std::endl;
     std::cout << "     7) CRS parallelized using Boost Thread Pool with functions pinned to a CPU" << std::endl;
+    std::cout << "     8) CRS parallelized using the merge-sort method" << std::endl;
+    std::cout << "     9) CSB parallelized using TBB tasks" << std::endl;
     std::cout << "  6° Amount of threads (only for a parallel method).";
     std::cout << " -1 lets the program choose the amount of threads arbitrarily" << std::endl;
     std::cout << "  7° Amount of partitions the matrix is split up into (only for method 4, 5, 6 and 7)" << std::endl;
-}
-
-template<typename T, typename int_type>
-pwm::SparseMatrix<T, int_type>* selectType(int method, int threads) {
-    switch (method) {
-        case 1:
-            return new pwm::CRS<T, int_type>(threads);
-
-        case 2:
-            return new pwm::CRSOMP<T, int_type>(threads);
-
-        case 3:
-            return new pwm::CRSTBB<T, int_type>(threads);
-
-        case 4:
-            return new pwm::CRSTBBGraph<T, int_type>(threads);
-
-        case 5:
-            return new pwm::CRSTBBGraphPinned<T, int_type>(threads);
-
-        case 6:
-            return new pwm::CRSThreadPool<T, int_type>(threads);
-
-        case 7:
-            return new pwm::CRSThreadPoolPinned<T, int_type>(threads);
-        
-        default:
-            return NULL;
-    }
 }
 
 int main(int argc, char** argv) {
@@ -102,7 +70,7 @@ int main(int argc, char** argv) {
     }
     
     //Select method
-    pwm::SparseMatrix<double, int>* test_mat = selectType<double, int>(method, threads);
+    pwm::SparseMatrix<double, int>* test_mat = pwm::selectType<double, int>(method, threads);
 
     if (test_mat == NULL) {
         printErrorMsg();
