@@ -23,13 +23,12 @@
 #ifndef PWM_CSB_HPP
 #define PWM_CSB_HPP
 
-#define BETA 8
-#define COORD_BITS 3
 #define O_DIM_CONST 3
 #define O_BETA_CONST 3
 
 #include <cassert>
 #include <algorithm>
+#include <cmath>
 
 #include "../Matrix/SparseMatrix.hpp"
 
@@ -61,7 +60,22 @@ namespace pwm {
             // Amount of threads to be used
             int threads;
 
+            // Blocksize
+            int_type beta;
+
+            // Amount of bits for block indices
+            int_type block_bits;
+
         private:
+            /**
+             * @brief Sets the blocksize and block bits for the imported matrix
+             */
+            void setBlockSizeParam() {
+                int_type minimal_size = std::min(this->nor, this->noc);
+                block_bits = (int_type)(std::ceil(std::log2(std::sqrt((double)minimal_size))));
+                beta = (int_type)(std::pow(2, block_bits));
+            }
+
             /**
              * @brief Transforms block coordinate to index for blk_ptr array
              * 
@@ -96,7 +110,7 @@ namespace pwm {
              */
             bool zMortonCompare(const int_type x1, const int_type y1, const int_type x2, const int_type y2) {
                 bool set_1, set_2;
-                for (int bit_nb = COORD_BITS-1; bit_nb >= 0; --bit_nb) {
+                for (int bit_nb = block_bits-1; bit_nb >= 0; --bit_nb) {
                     // Check y bit
                     set_1 = (y1 >> bit_nb) & 1;
                     set_2 = (y2 >> bit_nb) & 1;
@@ -216,7 +230,7 @@ namespace pwm {
 
                 for (int_type block_nb = 0; block_nb < am_blocks; ++block_nb) {
                     block_index = first_block_index + block_nb;
-                    x_offset = block_nb*BETA;
+                    x_offset = block_nb*beta;
 
                     for (int_type i = blk_ptr[block_index]; i < blk_ptr[block_index+1]; ++i) {
                         y[row_ind[i]] = y[row_ind[i]] + data[i]*x[x_offset + col_ind[i]];
@@ -245,7 +259,7 @@ namespace pwm {
                         int_type start = blk_ptr[block_index];
                         int_type end = blk_ptr[block_index+1]-1;
 
-                        blockMult(start, end, BETA, x, y);
+                        blockMult(start, end, beta, x, y);
                     } else {
                         // The chunk consists of multiple blocks and thus is sparse
                         sparseRowMult(block_row, left_chunk, right_chunk, x, y);
@@ -256,18 +270,18 @@ namespace pwm {
 
                 // Blockrow contains multiple chunks thus we subdivide
                 int_type middle = integerCeil<int_type>(chunks_length, 2) - 1; // Middle chunk index
-                int_type x_middle = BETA*(chunks[middle] - chunks[0]); // Middle of x vector
+                int_type x_middle = beta*(chunks[middle] - chunks[0]); // Middle of x vector
 
                 // Initialize vector for temporary results
-                T* temp_res = new T[BETA];
-                std::fill(temp_res, temp_res+BETA, 0.);
+                T* temp_res = new T[beta];
+                std::fill(temp_res, temp_res+beta, 0.);
 
                 // In parallel do:
                 blockRowMult(block_row, chunks, middle+1, x, y);
                 blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, temp_res);
 
                 // Add temporary result serially
-                for (int_type i = 0; i < BETA; ++i) {
+                for (int_type i = 0; i < beta; ++i) {
                     y[i] = y[i] + temp_res[i];
                 }
 
@@ -291,8 +305,10 @@ namespace pwm {
                 this->nor = input.row_size;
                 this->nnz = input.nnz;
 
-                horizontal_blocks = pwm::integerCeil<int_type>(this->noc, BETA);
-                vertical_blocks = pwm::integerCeil<int_type>(this->nor, BETA);
+                setBlockSizeParam();
+
+                horizontal_blocks = pwm::integerCeil<int_type>(this->noc, beta);
+                vertical_blocks = pwm::integerCeil<int_type>(this->nor, beta);
 
                 row_ind = new int_type[this->nnz];
                 col_ind = new int_type[this->nnz];
@@ -317,10 +333,10 @@ namespace pwm {
                     std::vector<std::vector<T>> block_data(horizontal_blocks, std::vector<T>());
 
                     // Loop over all indices in triplet structure which are part of this block row
-                    while (triplet_index < this->nnz && input.row_coord[triplet_index] < (block_row+1)*BETA) {
-                        int_type block_index = input.col_coord[triplet_index] / BETA;
-                        block_row_ind[block_index].push_back(input.row_coord[triplet_index] % BETA);
-                        block_col_ind[block_index].push_back(input.col_coord[triplet_index] % BETA);
+                    while (triplet_index < this->nnz && input.row_coord[triplet_index] < (block_row+1)*beta) {
+                        int_type block_index = input.col_coord[triplet_index] / beta;
+                        block_row_ind[block_index].push_back(input.row_coord[triplet_index] % beta);
+                        block_col_ind[block_index].push_back(input.col_coord[triplet_index] % beta);
                         block_data[block_index].push_back(input.data[triplet_index]);
 
                         triplet_index++;
@@ -392,7 +408,7 @@ namespace pwm {
                         count = count + blk_ptr[first_block_index+block_col+1]-blk_ptr[first_block_index+block_col];
 
                         // Check if next block will exceed the maximum number of nz
-                        if (count + blk_ptr[first_block_index+block_col+2]-blk_ptr[first_block_index+block_col+1] > BETA*O_BETA_CONST) {
+                        if (count + blk_ptr[first_block_index+block_col+2]-blk_ptr[first_block_index+block_col+1] > beta*O_BETA_CONST) {
                             chunks[chunk_index++] = block_col;
                             count = 0;
                         }
@@ -402,7 +418,7 @@ namespace pwm {
                     chunks[chunk_index++] = horizontal_blocks-1; 
 
                     // Perform block row multiplication
-                    blockRowMult(block_row, chunks, chunk_index, x, y+block_row*BETA);
+                    blockRowMult(block_row, chunks, chunk_index, x, y+block_row*beta);
 
                     delete [] chunks;
                 }
