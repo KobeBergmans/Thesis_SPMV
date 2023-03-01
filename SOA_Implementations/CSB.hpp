@@ -15,7 +15,6 @@
  * TODO: Poisson matrix input
  * TODO: Avoid first touch
  * TODO: Check what the O_DIM_CONST should be
- * TODO: Add parallelism
  */
 
 
