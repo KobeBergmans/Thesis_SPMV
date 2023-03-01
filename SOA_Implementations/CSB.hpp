@@ -34,6 +34,7 @@
 
 #include "../Util/VectorUtill.hpp"
 #include "../Util/Math.hpp"
+#include "../Util/TripletToCRS.hpp"
 
 namespace pwm {
     template<typename T, typename int_type>
@@ -137,19 +138,55 @@ namespace pwm {
             }
 
             /**
+             * @brief Partition function of quicksort
+             * 
+             * @param coords Array which contains 2 pointers, pointing to the column and row indices respectively
+             * @param data data of the block which needs to be partitioned
+             * @param low Starting index of data
+             * @param high Ending index of data
+             * @return int_type Returns partitioning point
+             */
+            int_type partitionBlock(int_type** coords, std::vector<T>& data, int_type low, int_type high) {
+                // Select pivot (rightmost element)
+                int_type pivotX = coords[0][high];
+                int_type pivotY = coords[1][high];
+
+                // Points to biggest element
+                int_type i = low;
+                for (int j = low; j < high; ++j) {
+                    if (zMortonCompare(coords[0][j], coords[1][j], pivotX, pivotY)) {
+                        // If element is smaller than pivot swap it with i+1
+                        pwm::swapArrayElems<T, int_type>(coords, data, 2, i, j);
+                        i++;
+                    }
+                }
+
+                // Swap pivot with the greatest element at i+1
+                pwm::swapArrayElems<T, int_type>(coords, data, 2, i, high);
+
+                // return the partitioning point
+                return i;
+            }
+
+            /**
              * @brief Sorts the given block using Z-Morton ordering
+             * 
+             * Makes use of quicksort implementation (see sortOnCoord in Util/TripletToCRS.hpp)
              * 
              * @param coords Array consisting of 2 pointers, pointing to the column and row indices respectively
              * @param data data of given block indices
+             * @param low starting index of data to be sorted
+             * @param high ending index of data to be sorted
              */
-            void sortBlock(int_type** coords, std::vector<T>& data) {
-                // Simple bubble sort implementation
-                for (size_t j = 0; j < data.size(); ++j) {
-                    for (size_t i = 1; i < data.size() - j; ++i) {
-                        if (!zMortonCompare(coords[0][i-1], coords[1][i-1], coords[0][i], coords[1][i])) {
-                            pwm::swapArrayElems<T, int_type>(coords, data.data(), 2, i-1, i);
-                        }
+            void sortBlock(int_type** coords, std::vector<T>& data, int_type low, int_type high) {
+                if (low < high) {
+                    pwm::swapArrayElems<T, int_type>(coords, data, 2, (((int_type)rand()) % (high-low)) + low, high); // Random permutation of rightmost element
+                    int_type middle = partitionBlock(coords, data, low, high);
+
+                    if (middle > 0) {
+                        sortBlock(coords, data, low, middle - 1);
                     }
+                    sortBlock(coords, data, middle + 1, high);
                 }
             }
 
@@ -326,11 +363,15 @@ namespace pwm {
                 int_type triplet_index = 0;
                 int_type csb_index = 0;
                 int_type blk_ptr_index = 1;
+
+                // Data structures which keep track of indices and data in each block
+                std::vector<std::vector<int_type>> block_row_ind(horizontal_blocks);
+                std::vector<std::vector<int_type>> block_col_ind(horizontal_blocks);
+                std::vector<std::vector<T>> block_data(horizontal_blocks);
                 for (int_type block_row = 0; block_row < vertical_blocks; ++block_row) {
-                    // Data structures which keep track of indices and data in each block
-                    std::vector<std::vector<int_type>> block_row_ind(horizontal_blocks, std::vector<int_type>());
-                    std::vector<std::vector<int_type>> block_col_ind(horizontal_blocks, std::vector<int_type>());
-                    std::vector<std::vector<T>> block_data(horizontal_blocks, std::vector<T>());
+                    std::fill(block_row_ind.begin(), block_row_ind.end(), std::vector<int_type>());
+                    std::fill(block_col_ind.begin(), block_col_ind.end(), std::vector<int_type>());
+                    std::fill(block_data.begin(), block_data.end(), std::vector<T>());
 
                     // Loop over all indices in triplet structure which are part of this block row
                     while (triplet_index < this->nnz && input.row_coord[triplet_index] < (block_row+1)*beta) {
@@ -344,9 +385,11 @@ namespace pwm {
 
                     // Sort blocks in Morton-Z order
                     for (int_type block_column = 0; block_column < horizontal_blocks; ++block_column) {
-                        coords[0] = block_col_ind[block_column].data();
-                        coords[1] = block_row_ind[block_column].data();
-                        sortBlock(coords, block_data[block_column]);
+                        if (block_col_ind[block_column].size() > 0) {
+                            coords[0] = block_col_ind[block_column].data();
+                            coords[1] = block_row_ind[block_column].data();
+                            sortBlock(coords, block_data[block_column], 0, block_col_ind[block_column].size()-1);
+                        }                        
                     }
 
                     // Initialize CSB datastructures

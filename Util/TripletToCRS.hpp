@@ -28,6 +28,19 @@ namespace pwm {
     }
 
     template<typename T, typename int_type>
+    void swapArrayElems(int_type** coords, std::vector<T>& data, int am_coords, int_type index_1, int_type index_2) {
+        for (int i = 0; i < am_coords; ++i) {
+            int_type temp = coords[i][index_1];
+            coords[i][index_1] = coords[i][index_2];
+            coords[i][index_2] = temp;
+        }
+
+        T data_temp = data[index_1];
+        data[index_1] = data[index_2];
+        data[index_2] = data_temp;
+    }
+
+    template<typename T, typename int_type>
     int_type partitionArrays(int_type** coords, T* data, int am_coords, int_type low, int_type high) {
         // Select pivot (rightmost element)
         int_type pivot = coords[0][high];
