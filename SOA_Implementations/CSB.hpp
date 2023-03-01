@@ -58,6 +58,9 @@ namespace pwm {
             // Amount of vertical blocks
             int_type vertical_blocks;
 
+            // Amount of threads to be used
+            int threads;
+
         private:
             /**
              * @brief Transforms block coordinate to index for blk_ptr array
@@ -276,7 +279,7 @@ namespace pwm {
             CSB() {}
 
             // Base constructor
-            CSB(int threads) {}
+            CSB(int threads): threads(threads) {}
 
             /**
              * @brief Input the CSB matrix from a Triplet format
