@@ -23,7 +23,7 @@
 #ifndef PWM_CSB_HPP
 #define PWM_CSB_HPP
 
-#define BETA 1024
+#define BETA 8
 #define COORD_BITS 3
 #define O_DIM_CONST 3
 #define O_BETA_CONST 3
