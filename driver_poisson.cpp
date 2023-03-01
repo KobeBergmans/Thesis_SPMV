@@ -22,19 +22,8 @@ void printErrorMsg() {
     std::cout << "  2° Amount of warm up runs for the power algorithm (not timed)" << std::endl;
     std::cout << "  3° Amount of iterations in the power method algorithm" << std::endl;
     std::cout << "  4° Poisson equation discretization steps" << std::endl;
-    std::cout << "  5° Method to use:" << std::endl;
-    std::cout << "     1) Standard CRS (sequential)" << std::endl;
-    std::cout << "     2) CRS parallelized using OpenMP" << std::endl;
-    std::cout << "     3) CRS parallelized using TBB" << std::endl;
-    std::cout << "     4) CRS parallelized using TBB graphs" << std::endl;
-    std::cout << "     5) CRS parallelized using TBB graphs with each node pinned to a CPU" << std::endl;
-    std::cout << "     6) CRS parallelized using Boost Thread Pool" << std::endl;
-    std::cout << "     7) CRS parallelized using Boost Thread Pool with functions pinned to a CPU" << std::endl;
-    std::cout << "     8) CRS parallelized using the merge-sort method" << std::endl;
-    std::cout << "     9) CSB parallelized using TBB tasks" << std::endl;
-    std::cout << "  6° Amount of threads (only for a parallel method).";
-    std::cout << " -1 lets the program choose the amount of threads arbitrarily" << std::endl;
-    std::cout << "  7° Amount of partitions the matrix is split up into (only for method 4, 5, 6 and 7)" << std::endl;
+
+    pwm::printAvailableMethods(5);
 }
 
 int main(int argc, char** argv) {
