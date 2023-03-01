@@ -12,7 +12,7 @@
 
 namespace pwm {
     /**
-     * @brief Fill the 2D discretized Poisson matrix.
+     * @brief Fill the 2D discretized Poisson matrix in CRS format.
      * 
      * https://en.wikipedia.org/wiki/Discrete_Poisson_equation
      * 

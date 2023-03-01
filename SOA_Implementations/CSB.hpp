@@ -59,7 +59,14 @@ namespace pwm {
             int_type vertical_blocks;
 
         private:
-            int_type blockColumnRowToIndex(const int_type block_row, const int_type block_column) {
+            /**
+             * @brief Transforms block coordinate to index for blk_ptr array
+             * 
+             * @param block_row Row index of block
+             * @param block_column Column index of block
+             * @return int_type index of given block in blk_ptr array
+             */
+            int_type blockCoordToIndex(const int_type block_row, const int_type block_column) {
                 assert(0 <= block_row);
                 assert(block_row < vertical_blocks);
                 assert(0 <= block_column);
@@ -118,7 +125,7 @@ namespace pwm {
              * @param coords Array consisting of 2 pointers, pointing to the column and row indices respectively
              * @param data data of given block indices
              */
-            void sortBlock(int_type** coords, std::vector<T> data) {
+            void sortBlock(int_type** coords, std::vector<T>& data) {
                 // Simple bubble sort implementation
                 for (size_t j = 0; j < data.size(); ++j) {
                     for (size_t i = 1; i < data.size() - j; ++i) {
@@ -161,10 +168,12 @@ namespace pwm {
              * @param x Part of input vector corresponding to the given block
              * @param y Part of output vector corresponding to the given block
              */
-            void blockMult(const int_type start, const int_type end, const int_type dim, const T* x, T* y) {
+            void blockMult(const int_type start, const int_type end, const int_type dim, const T* x, T* y) {              
+                assert(end >= start);
+
                 // Perform serial computation if there are not too many nonzeros
                 if (end - start <= dim*O_DIM_CONST) {
-                    for (int_type i = start; i < end; ++i) {
+                    for (int_type i = start; i <= end; ++i) {
                         y[row_ind[i]] = y[row_ind[i]] + data[i]*x[col_ind[i]];
                     }
 
@@ -180,12 +189,12 @@ namespace pwm {
                 int_type s3 = binarySearchDivisionPoint(col_ind, half_dim, s2, end); // Split between M10 and M11
 
                 // In parallel do:
-                blockMult(start, s1-1, half_dim, x, y); // M00
-                blockMult(s3, end, half_dim, x, y); // M11
+                if (s1-1 >= start) blockMult(start, s1-1, half_dim, x, y); // M00
+                if (end >= s3) blockMult(s3, end, half_dim, x, y); // M11
 
                 // In parallel do:
-                blockMult(s1, s2-1, half_dim, x, y); // M01
-                blockMult(s2, s3-1, half_dim, x, y); // M10
+                if (s2-1 >= s1) blockMult(s1, s2-1, half_dim, x, y); // M01
+                if (s3-1 >= s2) blockMult(s2, s3-1, half_dim, x, y); // M10
             }
 
             /**
@@ -198,11 +207,11 @@ namespace pwm {
              * @param y Part of output vector corresponding to the current block row
              */
             void sparseRowMult(const int_type block_row, const int_type block_column_start, const int_type block_column_end, const T* x, T* y) {
-                int_type first_block_index = blockColumnRowToIndex(block_row, block_column_start);
-                int_type am_blocks = (block_column_end - block_column_start);
+                int_type first_block_index = blockCoordToIndex(block_row, block_column_start);
+                int_type am_blocks = (block_column_end - block_column_start)+1;
                 int_type block_index, x_offset;
 
-                for (int_type block_nb = 0; block_nb <= am_blocks; ++block_nb) {
+                for (int_type block_nb = 0; block_nb < am_blocks; ++block_nb) {
                     block_index = first_block_index + block_nb;
                     x_offset = block_nb*BETA;
 
@@ -229,16 +238,16 @@ namespace pwm {
 
                     if (left_chunk == right_chunk) {
                         // Chunk is a single block
-                        int_type block_index = blockColumnRowToIndex(block_row, left_chunk);
+                        int_type block_index = blockCoordToIndex(block_row, left_chunk);
                         int_type start = blk_ptr[block_index];
-                        int_type end = blk_ptr[block_index+1];
+                        int_type end = blk_ptr[block_index+1]-1;
 
                         blockMult(start, end, BETA, x, y);
                     } else {
                         // The chunk consists of multiple blocks and thus is sparse
                         sparseRowMult(block_row, left_chunk, right_chunk, x, y);
                     }
-                    
+                                        
                     return;
                 }
 
@@ -292,7 +301,7 @@ namespace pwm {
                 int_type** coords = new int_type*[2];
                 coords[0] = input.row_coord;
                 coords[1] = input.col_coord;
-                sortCoordsForCRS<T, int_type>(coords, input.data, 2, 0, this->nnz-1);
+                sortOnCoord<T, int_type>(coords, input.data, 2, 0, this->nnz-1);
 
                 // Generate CSB structure per block row
                 int_type triplet_index = 0;
@@ -351,11 +360,6 @@ namespace pwm {
                 pwm::Triplet<T, int_type> temp_mat;
                 temp_mat.generatePoisson(m, n);
 
-                std::cout << "m: " << m << ", n: " << n << std::endl;
-                pwm::printVector(temp_mat.row_coord, temp_mat.nnz);
-                pwm::printVector(temp_mat.col_coord, temp_mat.nnz);
-                pwm::printVector(temp_mat.data, temp_mat.nnz);
-
                 loadFromTriplets(temp_mat, partitions);
             }
 
@@ -377,7 +381,7 @@ namespace pwm {
                     int_type chunk_index = 0;
                     chunks[chunk_index++] = -1;
 
-                    int_type first_block_index = blockColumnRowToIndex(block_row, 0);
+                    int_type first_block_index = blockCoordToIndex(block_row, 0);
 
                     int_type count = 0;
                     for (int_type block_col = 0; block_col <= horizontal_blocks - 2; ++block_col) {
@@ -392,7 +396,7 @@ namespace pwm {
                     }
 
                     // Add last block to end the last chunk
-                    chunks[chunk_index++] = vertical_blocks-1; 
+                    chunks[chunk_index++] = horizontal_blocks-1; 
 
                     // Perform block row multiplication
                     blockRowMult(block_row, chunks, chunk_index, x, y+block_row*BETA);

@@ -199,6 +199,14 @@ namespace pwm {
                 }
             }
 
+            /**
+             * @brief Fill this matrix as 2D discretized Poisson matrix.
+             * 
+             * https://en.wikipedia.org/wiki/Discrete_Poisson_equation
+             * 
+             * @param m The amount of discretization steps in the x direction
+             * @param n The amount of discretization steps in the y direction
+             */
             void generatePoisson(const int_type m, const int_type n) {
                 row_size = m*n;
                 col_size = m*n;
@@ -219,17 +227,17 @@ namespace pwm {
                 }
 
                 // Add sub and super diagonal
-                for (int_type i = 0; i < row_size; ++i) {
-                    // sub diagonal
-                    if (i % m != 0) {
+                for (int_type i = 0; i < row_size - 1; ++i) {
+                    // super diagonal
+                    if (i % m != m-1) {
                         row_coord[index] = i;
                         col_coord[index] = i+1;
                         data[index] = -1.;
                         index++;
                     }
 
-                    // super diagonal
-                    if (i % m != m-1) {
+                    // sub diagonal
+                    if ((i+1) % m != 0) {
                         row_coord[index] = i+1;
                         col_coord[index] = i;
                         data[index] = -1.;

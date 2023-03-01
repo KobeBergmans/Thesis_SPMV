@@ -63,15 +63,15 @@ namespace pwm {
      * @param high End index of quicksort
      */
     template<typename T, typename int_type>
-    void sortCoordsForCRS(int_type** coords, T* data, int am_coords, int_type low, int_type high) {
+    void sortOnCoord(int_type** coords, T* data, int am_coords, int_type low, int_type high) {
         if (low < high) {
             swapArrayElems(coords, data, am_coords, (((int_type)rand()) % (high-low)) + low, high); // Random permutation of rightmost element
             int_type middle = partitionArrays(coords, data, am_coords, low, high);
 
             if (middle > 0) {
-                sortCoordsForCRS(coords, data, am_coords, low, middle - 1);
+                sortOnCoord(coords, data, am_coords, low, middle - 1);
             }
-            sortCoordsForCRS(coords, data, am_coords, middle + 1, high);
+            sortOnCoord(coords, data, am_coords, middle + 1, high);
         }
     }
 
@@ -94,7 +94,7 @@ namespace pwm {
         int_type** coords = new int_type*[2];
         coords[0] = row_coord;
         coords[1] = col_coord;
-        sortCoordsForCRS<T, int_type>(coords, data, 2, 0, nnz-1);
+        sortOnCoord<T, int_type>(coords, data, 2, 0, nnz-1);
 
         // Fill CRS datastructures
         row_start[0] = 0;
@@ -119,7 +119,7 @@ namespace pwm {
         coords[0] = col_ind;
         for (int row = 0; row <= row_coord[nnz-1]; ++row) {
             if (row_start[row+1] != 0) { // Needed for when the first row is empty and unsigned integers are used
-                sortCoordsForCRS<T, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
+                sortOnCoord<T, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
             }
         }
     }
@@ -145,7 +145,7 @@ namespace pwm {
         int_type** coords = new int_type*[2];
         coords[0] = row_coord;
         coords[1] = col_coord;
-        sortCoordsForCRS<T, int_type>(coords, data, 2, 0, nnz-1);
+        sortOnCoord<T, int_type>(coords, data, 2, 0, nnz-1);
 
         // Fill CRS data with omp to avoid first touch
         #pragma omp parallel for shared(col_ind, col_coord, CRS_data, data, row_coord, row_start) schedule(dynamic, 8)
@@ -175,7 +175,7 @@ namespace pwm {
         #pragma omp parallel for shared(col_ind, CRS_data, row_start) schedule(dynamic)
         for (int_type row = 0; row <= row_coord[nnz-1]; ++row) {
             if (row_start[row+1] != 0) { // Needed for when the first row is empty and unsigned integers are used
-                sortCoordsForCRS<T, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
+                sortOnCoord<T, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
             }
         }
     }
@@ -201,7 +201,7 @@ namespace pwm {
         int_type** coords = new int_type*[2];
         coords[0] = row_coord;
         coords[1] = col_coord;
-        sortCoordsForCRS<T, int_type>(coords, data, 2, 0, nnz-1);
+        sortOnCoord<T, int_type>(coords, data, 2, 0, nnz-1);
 
         // Fill CRS data with omp to avoid first touch
         tbb::parallel_for((int_type)0, nnz, [=](int_type i) {
@@ -229,7 +229,7 @@ namespace pwm {
         coords[0] = col_ind;
         tbb::parallel_for((int_type)0, row_coord[nnz-1]+1, [=](int_type row) {
             if (row_start[row+1] != 0) { // Needed for when the first row is empty and unsigned integers are used
-                sortCoordsForCRS<T, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
+                sortOnCoord<T, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
             }
         });
     }
@@ -256,7 +256,7 @@ namespace pwm {
         int_type** coords = new int_type*[2];
         coords[0] = row_coord;
         coords[1] = col_coord;
-        sortCoordsForCRS<T, int_type>(coords, data, 2, 0, nnz-1);
+        sortOnCoord<T, int_type>(coords, data, 2, 0, nnz-1);
 
         // Fill CRS datastructures
         int_type am_rows = std::round(nor/partitions);
@@ -318,7 +318,7 @@ namespace pwm {
             coords[0] = col_ind[i];
             for (int_type row = 0; row < thread_rows[i]; ++row) {
                 if (row_start[i][row+1] != 0) { // Needed for when the first row is empty and unsigned integers are used
-                    sortCoordsForCRS<T, int_type>(coords, CRS_data[i], 1, row_start[i][row], row_start[i][row+1]-1);
+                    sortOnCoord<T, int_type>(coords, CRS_data[i], 1, row_start[i][row], row_start[i][row+1]-1);
                 }
             }
         }        
