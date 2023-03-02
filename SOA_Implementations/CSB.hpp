@@ -25,7 +25,6 @@
 #include <cassert>
 #include <algorithm>
 #include <cmath>
-#include <tuple>
 
 #include "../Matrix/SparseMatrix.hpp"
 
@@ -70,16 +69,23 @@ namespace pwm {
 
         private:
             /**
-             * @brief Transforms compressed index to tuple of real indices
+             * @brief Transforms compressed index to the corresponding row index
              * 
-             * @param input Compressed index to be transformed
-             * @return std::tuple<index_t, index_t> Pair which consist of the row and column index
+             * @param input Compressed input parameter
+             * @return index_t Corresponding row index
              */
-            std::tuple<index_t, index_t> fromCompressedToIndices(const compress_t input) {
-                index_t row = (index_t)((input & HIGH_BITMASK) >> COORD_BITS);
-                index_t col = (index_t)(input & LOW_BITMASK);
+            index_t fromCompressedToRow(const compress_t input) {
+                return (index_t)((input & HIGH_BITMASK) >> COORD_BITS);
+            }
 
-                return std::make_tuple(row, col);
+            /**
+             * @brief Transforms compressed index to the corresponding column index
+             * 
+             * @param input Compressed input parameter
+             * @return index_t Corresponding column index
+             */
+            index_t fromCompressedToCol(const compress_t input) {
+                return (index_t)(input & LOW_BITMASK);
             }
             
             /**
@@ -175,14 +181,13 @@ namespace pwm {
              */
             int_type partitionBlock(compress_t* coords, std::vector<T>& data, int_type low, int_type high) {
                 // Select pivot (rightmost element)
-                std::tuple<index_t, index_t> pivot = fromCompressedToIndices(coords[high]);
+                index_t pivotRow = fromCompressedToRow(coords[high]);
+                index_t pivotCol = fromCompressedToCol(coords[high]);
 
                 // Points to biggest element
                 int_type i = low;
-                std::tuple<index_t, index_t> check_coord;
                 for (int j = low; j < high; ++j) {
-                    check_coord = fromCompressedToIndices(coords[j]); 
-                    if (zMortonCompare(std::get<0>(check_coord), std::get<1>(check_coord), std::get<0>(pivot), std::get<1>(pivot))) {
+                    if (zMortonCompare(fromCompressedToCol(coords[j]), fromCompressedToRow(coords[j]), pivotCol, pivotRow)) {
                         // If element is smaller than pivot swap it with i+1
                         pwm::swapArrayElems<T, compress_t, int_type>(coords, data, i, j);
                         i++;
@@ -231,7 +236,7 @@ namespace pwm {
                 while (start < end) {
                     int_type middle = (start+end)/2;
                     
-                    index_t middle_index = std::get<0>(fromCompressedToIndices(ind[middle]));
+                    index_t middle_index = fromCompressedToRow(ind[middle]);
                     if ((middle_index & (index_t)half_dim) == 0) {
                         start = middle + 1;
                     } else {
@@ -254,7 +259,7 @@ namespace pwm {
                 while (start < end) {
                     int_type middle = (start+end)/2;
                     
-                    index_t middle_index = std::get<1>(fromCompressedToIndices(ind[middle]));
+                    index_t middle_index = fromCompressedToCol(ind[middle]);
                     if ((middle_index & (index_t)half_dim) == 0) {
                         start = middle + 1;
                     } else {
@@ -278,14 +283,12 @@ namespace pwm {
                 assert(end >= start);
 
                 index_t row_ind, col_ind;
-                std::tuple<index_t, index_t> index;
 
                 // Perform serial computation if there are not too many nonzeros
                 if (end - start <= dim*O_DIM_CONST) {
                     for (int_type i = start; i <= end; ++i) {
-                        index = fromCompressedToIndices(ind[i]);
-                        row_ind = std::get<0>(index);
-                        col_ind = std::get<1>(index);
+                        row_ind = fromCompressedToRow(ind[i]);
+                        col_ind = fromCompressedToCol(ind[i]);
                         y[row_ind] = y[row_ind] + data[i]*x[col_ind];
                     }
 
@@ -335,15 +338,13 @@ namespace pwm {
                 int_type block_index, x_offset;
 
                 index_t row_ind, col_ind;
-                std::tuple<index_t, index_t> index;
                 for (int_type block_nb = 0; block_nb < am_blocks; ++block_nb) {
                     block_index = first_block_index + block_nb;
                     x_offset = block_nb*beta;
 
                     for (int_type i = blk_ptr[block_index]; i < blk_ptr[block_index+1]; ++i) {
-                        index = fromCompressedToIndices(ind[i]);
-                        row_ind = std::get<0>(index);
-                        col_ind = std::get<1>(index);
+                        row_ind = fromCompressedToRow(ind[i]);
+                        col_ind = fromCompressedToCol(ind[i]);
                         y[row_ind] = y[row_ind] + data[i]*x[x_offset + col_ind];
                     }
                 }
