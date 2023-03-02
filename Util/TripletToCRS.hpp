@@ -14,8 +14,8 @@
 #include "oneapi/tbb.h"
 
 namespace pwm {
-    template<typename T, typename int_type>
-    void swapArrayElems(int_type** coords, T* data, int am_coords, int_type index_1, int_type index_2) {
+    template<typename T, typename int_type, typename index_type>
+    void swapArrayElems(int_type** coords, T* data, int am_coords, index_type index_1, index_type index_2) {
         for (int i = 0; i < am_coords; ++i) {
             int_type temp = coords[i][index_1];
             coords[i][index_1] = coords[i][index_2];
@@ -27,8 +27,8 @@ namespace pwm {
         data[index_2] = data_temp;
     }
 
-    template<typename T, typename int_type>
-    void swapArrayElems(int_type** coords, std::vector<T>& data, int am_coords, int_type index_1, int_type index_2) {
+    template<typename T, typename int_type, typename index_type>
+    void swapArrayElems(int_type** coords, std::vector<T>& data, int am_coords, index_type index_1, index_type index_2) {
         for (int i = 0; i < am_coords; ++i) {
             int_type temp = coords[i][index_1];
             coords[i][index_1] = coords[i][index_2];
@@ -50,13 +50,13 @@ namespace pwm {
         for (int j = low; j < high; ++j) {
             if (coords[0][j] <= pivot) {
                 // If element is smaller than pivot swap it with i+1
-                swapArrayElems<T, int_type>(coords, data, am_coords, i, j);
+                swapArrayElems<T, int_type, int_type>(coords, data, am_coords, i, j);
                 i++;
             }
         }
 
         // Swap pivot with the greatest element at i+1
-        swapArrayElems<T, int_type>(coords, data, am_coords, i, high);
+        swapArrayElems<T, int_type, int_type>(coords, data, am_coords, i, high);
 
         // return the partitioning point
         return i;

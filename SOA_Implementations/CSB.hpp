@@ -11,7 +11,7 @@
  *   York, NY, USA, 2009. Association for Computing Machinery.
  * 
  * TODO: Make blocksize dependent on matrix: only initial implementation for now
- * TODO: Integer compression
+ * TODO: Integer compression: We have initial compression into 2 arrays, still needs to be compressed into 1 array
  * TODO: Poisson matrix input
  * TODO: Avoid first touch
  * TODO: Check what the O_DIM_CONST should be
@@ -34,15 +34,17 @@
 #include "../Util/Math.hpp"
 #include "../Util/TripletToCRS.hpp"
 
+typedef uint16_t compress_t;
+
 namespace pwm {
     template<typename T, typename int_type>
     class CSB: public pwm::SparseMatrix<T, int_type> {
         protected:
             // Row indices for matrix entries
-            int_type* row_ind;
+            compress_t* row_ind;
 
             // Column indices for matrix entries
-            int_type* col_ind;
+            compress_t* col_ind;
 
             // Values corresponding to row and column indices
             T* data;
@@ -71,7 +73,9 @@ namespace pwm {
              */
             void setBlockSizeParam() {
                 int_type minimal_size = std::min(this->nor, this->noc);
-                block_bits = (int_type)(std::ceil(std::log2(std::sqrt((double)minimal_size))));
+
+                // Maximum of 16 is specified because row and column indices are stored as uint16_t
+                block_bits = std::max<int_type>(16, (int_type)(std::ceil(std::log2(std::sqrt((double)minimal_size)))));
                 beta = (int_type)(std::pow(2, block_bits));
             }
 
@@ -107,7 +111,7 @@ namespace pwm {
              * @return true if the first element is smaller than or equal to the second element
              * @return false if the first element is larger than the second element
              */
-            bool zMortonCompare(const int_type x1, const int_type y1, const int_type x2, const int_type y2) {
+            bool zMortonCompare(const compress_t x1, const compress_t y1, const compress_t x2, const compress_t y2) {
                 bool set_1, set_2;
                 for (int bit_nb = block_bits-1; bit_nb >= 0; --bit_nb) {
                     // Check y bit
@@ -144,23 +148,23 @@ namespace pwm {
              * @param high Ending index of data
              * @return int_type Returns partitioning point
              */
-            int_type partitionBlock(int_type** coords, std::vector<T>& data, int_type low, int_type high) {
+            int_type partitionBlock(compress_t** coords, std::vector<T>& data, int_type low, int_type high) {
                 // Select pivot (rightmost element)
-                int_type pivotX = coords[0][high];
-                int_type pivotY = coords[1][high];
+                compress_t pivotX = coords[0][high];
+                compress_t pivotY = coords[1][high];
 
                 // Points to biggest element
                 int_type i = low;
                 for (int j = low; j < high; ++j) {
                     if (zMortonCompare(coords[0][j], coords[1][j], pivotX, pivotY)) {
                         // If element is smaller than pivot swap it with i+1
-                        pwm::swapArrayElems<T, int_type>(coords, data, 2, i, j);
+                        pwm::swapArrayElems<T, compress_t, int_type>(coords, data, 2, i, j);
                         i++;
                     }
                 }
 
                 // Swap pivot with the greatest element at i+1
-                pwm::swapArrayElems<T, int_type>(coords, data, 2, i, high);
+                pwm::swapArrayElems<T, compress_t, int_type>(coords, data, 2, i, high);
 
                 // return the partitioning point
                 return i;
@@ -176,9 +180,9 @@ namespace pwm {
              * @param low starting index of data to be sorted
              * @param high ending index of data to be sorted
              */
-            void sortBlock(int_type** coords, std::vector<T>& data, int_type low, int_type high) {
+            void sortBlock(compress_t** coords, std::vector<T>& data, int_type low, int_type high) {
                 if (low < high) {
-                    pwm::swapArrayElems<T, int_type>(coords, data, 2, (((int_type)rand()) % (high-low)) + low, high); // Random permutation of rightmost element
+                    pwm::swapArrayElems<T, compress_t, int_type>(coords, data, 2, (((int_type)rand()) % (high-low)) + low, high); // Random permutation of rightmost element
                     int_type middle = partitionBlock(coords, data, low, high);
 
                     if (middle > 0) {
@@ -197,7 +201,7 @@ namespace pwm {
              * @param end ending index for binary search
              * @return int_type smallest index s for which (indices[s] & dim/2) != 0
              */
-            int_type binarySearchDivisionPoint(const int_type* indices, const int_type half_dim, int_type start, int_type end) {
+            int_type binarySearchDivisionPoint(const compress_t* indices, const int_type half_dim, int_type start, int_type end) {
                 while (start < end) {
                     int_type middle = (start+end)/2;
                     
@@ -367,8 +371,8 @@ namespace pwm {
                 horizontal_blocks = pwm::integerCeil<int_type>(this->noc, beta);
                 vertical_blocks = pwm::integerCeil<int_type>(this->nor, beta);
 
-                row_ind = new int_type[this->nnz];
-                col_ind = new int_type[this->nnz];
+                row_ind = new compress_t[this->nnz];
+                col_ind = new compress_t[this->nnz];
                 data = new T[this->nnz];
                 blk_ptr = new int_type[horizontal_blocks*vertical_blocks+1];
                 blk_ptr[0] = 0;
@@ -378,6 +382,7 @@ namespace pwm {
                 coords[0] = input.row_coord;
                 coords[1] = input.col_coord;
                 sortOnCoord<T, int_type>(coords, input.data, 2, 0, this->nnz-1);
+                delete [] coords;
 
                 // Generate CSB structure per block row
                 int_type triplet_index = 0;
@@ -385,25 +390,26 @@ namespace pwm {
                 int_type blk_ptr_index = 1;
 
                 // Data structures which keep track of indices and data in each block
-                std::vector<std::vector<int_type>> block_row_ind(horizontal_blocks);
-                std::vector<std::vector<int_type>> block_col_ind(horizontal_blocks);
+                std::vector<std::vector<compress_t>> block_row_ind(horizontal_blocks);
+                std::vector<std::vector<compress_t>> block_col_ind(horizontal_blocks);
                 std::vector<std::vector<T>> block_data(horizontal_blocks);
                 for (int_type block_row = 0; block_row < vertical_blocks; ++block_row) {
-                    std::fill(block_row_ind.begin(), block_row_ind.end(), std::vector<int_type>());
-                    std::fill(block_col_ind.begin(), block_col_ind.end(), std::vector<int_type>());
+                    std::fill(block_row_ind.begin(), block_row_ind.end(), std::vector<compress_t>());
+                    std::fill(block_col_ind.begin(), block_col_ind.end(), std::vector<compress_t>());
                     std::fill(block_data.begin(), block_data.end(), std::vector<T>());
 
                     // Loop over all indices in triplet structure which are part of this block row
                     while (triplet_index < this->nnz && input.row_coord[triplet_index] < (block_row+1)*beta) {
                         int_type block_index = input.col_coord[triplet_index] / beta;
-                        block_row_ind[block_index].push_back(input.row_coord[triplet_index] % beta);
-                        block_col_ind[block_index].push_back(input.col_coord[triplet_index] % beta);
+                        block_row_ind[block_index].push_back((compress_t)input.row_coord[triplet_index] % beta);
+                        block_col_ind[block_index].push_back((compress_t)input.col_coord[triplet_index] % beta);
                         block_data[block_index].push_back(input.data[triplet_index]);
 
                         triplet_index++;
                     }
 
                     // Sort blocks in Morton-Z order
+                    compress_t** coords = new compress_t*[2];
                     for (int_type block_column = 0; block_column < horizontal_blocks; ++block_column) {
                         if (block_col_ind[block_column].size() > 0) {
                             coords[0] = block_col_ind[block_column].data();
@@ -411,6 +417,7 @@ namespace pwm {
                             sortBlock(coords, block_data[block_column], 0, block_col_ind[block_column].size()-1);
                         }                        
                     }
+                    delete [] coords;
 
                     // Initialize CSB datastructures
                     for (int_type block_col = 0; block_col < horizontal_blocks; ++block_col) {
@@ -426,8 +433,6 @@ namespace pwm {
                         blk_ptr_index++;
                     }
                 }
-
-                delete [] coords;
             }
 
             /**
