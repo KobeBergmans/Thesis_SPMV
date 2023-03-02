@@ -39,6 +39,9 @@ typedef uint16_t index_t;
 #define HIGH_BITMASK 0b11111111111111110000000000000000
 #define COORD_BITS 16
 
+#define L2_CACHE_SIZE_MB 1
+#define L2_CACHE_MULT 0.85
+
 namespace pwm {
     template<typename T, typename int_type>
     class CSB: public pwm::SparseMatrix<T, int_type> {
@@ -105,9 +108,22 @@ namespace pwm {
             void setBlockSizeParam() {
                 int_type minimal_size = std::min(this->nor, this->noc);
 
-                // Maximum of 16 is specified because row and column indices are stored as uint16_t
-                block_bits = std::min<int_type>(16, (int_type)(std::ceil(std::log2(std::sqrt((double)minimal_size)))));
+                // Maximum of 16 is specified because row and column indices should fit in 4 bytes
+                int_type lg_sqrt_size = (int_type)(std::ceil(std::log2(std::sqrt((double)minimal_size))));
+                block_bits = std::min<int_type>(16, 3+lg_sqrt_size);
                 beta = (int_type)(std::pow(2, block_bits));
+
+                while (block_bits > lg_sqrt_size) {
+                    // Check if x and y fit in the L2 cache per block
+                    if (sizeof(T)*CHAR_BIT*beta*2 > L2_CACHE_SIZE_MB*L2_CACHE_MULT*1e6*8) {
+                        block_bits -= 1;
+                        beta = (int_type)(std::pow(2, block_bits));
+                    } else {
+                        break;
+                    }
+                }
+
+                std::cout << "block_bits: " << block_bits << ", beta: " << beta << std::endl;
             }
 
             /**
@@ -279,7 +295,7 @@ namespace pwm {
              * @param x Part of input vector corresponding to the given block
              * @param y Part of output vector corresponding to the given block
              */
-            void blockMult(const int_type start, const int_type end, const int_type dim, const T* x, T* y) {              
+            void blockMult(const int_type start, const int_type end, const int_type dim, const T* x, T* y) {
                 assert(end >= start);
 
                 index_t row_ind, col_ind;
@@ -303,23 +319,23 @@ namespace pwm {
                 int_type s1 = binarySearchDivisionPointColumn(half_dim, start, s2-1); // Split between M00 and M01
                 int_type s3 = binarySearchDivisionPointColumn(half_dim, s2, end); // Split between M10 and M11
 
-                #pragma omp parallel
+                #pragma omp parallel shared(x, y) firstprivate(s1, s2, s3, start, half_dim)
                 #pragma omp single nowait
                 {
                     #pragma omp taskgroup
                     {
-                        #pragma omp task
-                        if (s1-1 >= start) blockMult(start, s1-1, half_dim, x, y); // M00
+                        #pragma omp task shared(x, y) firstprivate(s1, start, half_dim)
+                        {if (s1-1 >= start) blockMult(start, s1-1, half_dim, x, y);} // M00
 
-                        #pragma omp task
-                        if (end >= s3) blockMult(s3, end, half_dim, x, y); // M11
+                        #pragma omp task shared(x, y) firstprivate(s3, end, half_dim)
+                        {if (end >= s3) blockMult(s3, end, half_dim, x, y);} // M11
                     }
                     
-                    #pragma omp task
-                    if (s2-1 >= s1) blockMult(s1, s2-1, half_dim, x, y); // M01
+                    #pragma omp task shared(x, y) firstprivate(s1, s2, half_dim)
+                    {if (s2-1 >= s1) blockMult(s1, s2-1, half_dim, x, y);} // M01
 
-                    #pragma omp task
-                    if (s3-1 >= s2) blockMult(s2, s3-1, half_dim, x, y); // M10
+                    #pragma omp task shared(x, y) firstprivate(s2, s3, half_dim)
+                    {if (s3-1 >= s2) blockMult(s2, s3-1, half_dim, x, y);} // M10
                 }
             }
 
@@ -380,7 +396,7 @@ namespace pwm {
                     return;
                 }
                 
-                #pragma omp parallel
+                #pragma omp parallel shared(x, y, chunks) firstprivate(block_row)
                 #pragma omp single nowait
                 {
                     // Blockrow contains multiple chunks thus we subdivide
@@ -393,11 +409,11 @@ namespace pwm {
 
                     #pragma omp taskgroup
                     {
-                        #pragma omp task
-                        blockRowMult(block_row, chunks, middle+1, x, y);
+                        #pragma omp task shared(x, y, chunks), firstprivate(middle, block_row)
+                        {blockRowMult(block_row, chunks, middle+1, x, y);}
 
-                        #pragma omp task
-                        blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, temp_res);
+                        #pragma omp task shared(x, chunks, temp_res) firstprivate(middle, block_row, x_middle)
+                        {blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, temp_res);}
                     }
                         
                     // Add temporary result serially
@@ -405,7 +421,7 @@ namespace pwm {
                         y[i] = y[i] + temp_res[i];
                     }
 
-                    delete [] temp_res;
+                    // delete [] temp_res;
                 }
             }
 
@@ -433,6 +449,8 @@ namespace pwm {
                 horizontal_blocks = pwm::integerCeil<int_type>(this->noc, beta);
                 vertical_blocks = pwm::integerCeil<int_type>(this->nor, beta);
 
+                std::cout << horizontal_blocks << ", " << vertical_blocks << std::endl;
+
                 ind = new compress_t[this->nnz];
                 data = new T[this->nnz];
                 blk_ptr = new int_type[horizontal_blocks*vertical_blocks+1];
@@ -450,6 +468,9 @@ namespace pwm {
                 int_type csb_index = 0;
                 int_type blk_ptr_index = 1;
 
+                compress_t index;
+                index_t row_comp, col_comp;
+
                 // Data structures which keep track of indices and data in each block
                 std::vector<std::vector<compress_t>> block_ind(horizontal_blocks);
                 std::vector<std::vector<T>> block_data(horizontal_blocks);
@@ -461,7 +482,9 @@ namespace pwm {
                     while (triplet_index < this->nnz && input.row_coord[triplet_index] < (block_row+1)*beta) {
                         int_type block_index = input.col_coord[triplet_index] / beta;
 
-                        compress_t index = fromIndicesToCompressed(input.row_coord[triplet_index] % beta, input.col_coord[triplet_index] % beta);
+                        row_comp = (index_t)(input.row_coord[triplet_index] % beta);
+                        col_comp = (index_t)(input.col_coord[triplet_index] % beta);
+                        index = fromIndicesToCompressed(row_comp, col_comp);
                         block_ind[block_index].push_back(index);
                         block_data[block_index].push_back(input.data[triplet_index]);
 
@@ -517,10 +540,10 @@ namespace pwm {
             void mv(const T* x, T* y) {
                 std::fill(y, y+this->nor, 0.);
 
-                #pragma omp parallel
+                #pragma omp parallel shared(x, y)
                 #pragma omp single
                 for (int_type block_row = 0; block_row < vertical_blocks; ++block_row) {
-                    #pragma omp task
+                    #pragma omp task shared(x, y) firstprivate(block_row)
                     {
                         int* chunks = new int[horizontal_blocks]; // Worst case that all blocks are a separate chunk
                         int_type chunk_index = 0;
@@ -529,7 +552,7 @@ namespace pwm {
                         int_type first_block_index = blockCoordToIndex(block_row, 0);
 
                         int_type count = 0;
-                        for (int_type block_col = 0; block_col <= horizontal_blocks - 2; ++block_col) {
+                        for (int_type block_col = 0; block_col < horizontal_blocks - 1; ++block_col) {
                             // Add elements of current block to count
                             count = count + blk_ptr[first_block_index+block_col+1]-blk_ptr[first_block_index+block_col];
 
@@ -546,7 +569,7 @@ namespace pwm {
                         // Perform block row multiplication
                         blockRowMult(block_row, chunks, chunk_index, x, y+block_row*beta);
 
-                        delete [] chunks;
+                        // delete [] chunks;
                     }
                 }
             }
