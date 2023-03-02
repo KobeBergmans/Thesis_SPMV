@@ -74,7 +74,7 @@ namespace pwm {
              * @param input Compressed input parameter
              * @return index_t Corresponding row index
              */
-            index_t fromCompressedToRow(const compress_t input) {
+            inline index_t fromCompressedToRow(const compress_t input) {
                 return (index_t)((input & HIGH_BITMASK) >> COORD_BITS);
             }
 
@@ -84,7 +84,7 @@ namespace pwm {
              * @param input Compressed input parameter
              * @return index_t Corresponding column index
              */
-            index_t fromCompressedToCol(const compress_t input) {
+            inline index_t fromCompressedToCol(const compress_t input) {
                 return (index_t)(input & LOW_BITMASK);
             }
             
@@ -95,7 +95,7 @@ namespace pwm {
              * @param col Column index to be compressed
              * @return compress_t Compressed integer
              */
-            compress_t fromIndicesToCompressed(const index_t row, const index_t col) {
+            inline compress_t fromIndicesToCompressed(const index_t row, const index_t col) {
                 return ((compress_t)row << COORD_BITS) | (compress_t)col;
             }
 
@@ -117,7 +117,7 @@ namespace pwm {
              * @param block_column Column index of block
              * @return int_type index of given block in blk_ptr array
              */
-            int_type blockCoordToIndex(const int_type block_row, const int_type block_column) {
+            inline int_type blockCoordToIndex(const int_type block_row, const int_type block_column) {
                 assert(0 <= block_row);
                 assert(block_row < vertical_blocks);
                 assert(0 <= block_column);
