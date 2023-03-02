@@ -243,14 +243,15 @@ namespace pwm {
                 #pragma omp parallel
                 #pragma omp single nowait
                 {
-                    #pragma omp task
-                    if (s1-1 >= start) blockMult(start, s1-1, half_dim, x, y); // M00
+                    #pragma omp taskgroup
+                    {
+                        #pragma omp task
+                        if (s1-1 >= start) blockMult(start, s1-1, half_dim, x, y); // M00
 
-                    #pragma omp task
-                    if (end >= s3) blockMult(s3, end, half_dim, x, y); // M11
-
-                    #pragma omp taskwait
-
+                        #pragma omp task
+                        if (end >= s3) blockMult(s3, end, half_dim, x, y); // M11
+                    }
+                    
                     #pragma omp task
                     if (s2-1 >= s1) blockMult(s1, s2-1, half_dim, x, y); // M01
 
@@ -312,26 +313,27 @@ namespace pwm {
                                         
                     return;
                 }
-
-                // Blockrow contains multiple chunks thus we subdivide
-                int_type middle = integerCeil<int_type>(chunks_length, 2) - 1; // Middle chunk index
-                int_type x_middle = beta*(chunks[middle] - chunks[0]); // Middle of x vector
-
-                // Initialize vector for temporary results
-                T* temp_res = new T[beta];
-                std::fill(temp_res, temp_res+beta, 0.);
-
+                
                 #pragma omp parallel
                 #pragma omp single nowait
                 {
-                    #pragma omp task
-                    blockRowMult(block_row, chunks, middle+1, x, y);
+                    // Blockrow contains multiple chunks thus we subdivide
+                    int_type middle = integerCeil<int_type>(chunks_length, 2) - 1; // Middle chunk index
+                    int_type x_middle = beta*(chunks[middle] - chunks[0]); // Middle of x vector
 
-                    #pragma omp task
-                    blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, temp_res);
+                    // Initialize vector for temporary results
+                    T* temp_res = new T[beta];
+                    std::fill(temp_res, temp_res+beta, 0.);
 
-                    #pragma omp taskwait
+                    #pragma omp taskgroup
+                    {
+                        #pragma omp task
+                        blockRowMult(block_row, chunks, middle+1, x, y);
 
+                        #pragma omp task
+                        blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, temp_res);
+                    }
+                        
                     // Add temporary result serially
                     for (int_type i = 0; i < beta; ++i) {
                         y[i] = y[i] + temp_res[i];
