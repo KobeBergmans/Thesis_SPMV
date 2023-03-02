@@ -11,8 +11,6 @@
  *   York, NY, USA, 2009. Association for Computing Machinery.
  * 
  * TODO: Make blocksize dependent on matrix: only initial implementation for now
- * TODO: Integer compression: We have initial compression into 2 arrays, still needs to be compressed into 1 array
- * TODO: Poisson matrix input
  * TODO: Avoid first touch
  * TODO: Check what the O_DIM_CONST should be
  */
@@ -27,6 +25,7 @@
 #include <cassert>
 #include <algorithm>
 #include <cmath>
+#include <tuple>
 
 #include "../Matrix/SparseMatrix.hpp"
 
@@ -34,17 +33,19 @@
 #include "../Util/Math.hpp"
 #include "../Util/TripletToCRS.hpp"
 
-typedef uint16_t compress_t;
+typedef uint32_t compress_t;
+typedef uint16_t index_t;
+
+#define LOW_BITMASK  0b00000000000000001111111111111111
+#define HIGH_BITMASK 0b11111111111111110000000000000000
+#define COORD_BITS 16
 
 namespace pwm {
     template<typename T, typename int_type>
     class CSB: public pwm::SparseMatrix<T, int_type> {
         protected:
-            // Row indices for matrix entries
-            compress_t* row_ind;
-
-            // Column indices for matrix entries
-            compress_t* col_ind;
+            // Array of compressed indices, highest 16 bits correspond to the row and the lowest 16 bits to the column
+            compress_t* ind;
 
             // Values corresponding to row and column indices
             T* data;
@@ -69,13 +70,37 @@ namespace pwm {
 
         private:
             /**
+             * @brief Transforms compressed index to tuple of real indices
+             * 
+             * @param input Compressed index to be transformed
+             * @return std::tuple<index_t, index_t> Pair which consist of the row and column index
+             */
+            std::tuple<index_t, index_t> fromCompressedToIndices(const compress_t input) {
+                index_t row = (index_t)((input & HIGH_BITMASK) >> COORD_BITS);
+                index_t col = (index_t)(input & LOW_BITMASK);
+
+                return std::make_tuple(row, col);
+            }
+            
+            /**
+             * @brief Transforms row and column index to compressed index
+             * 
+             * @param row Row index to be compressed
+             * @param col Column index to be compressed
+             * @return compress_t Compressed integer
+             */
+            compress_t fromIndicesToCompressed(const index_t row, const index_t col) {
+                return ((compress_t)row << COORD_BITS) | (compress_t)col;
+            }
+
+            /**
              * @brief Sets the blocksize and block bits for the imported matrix
              */
             void setBlockSizeParam() {
                 int_type minimal_size = std::min(this->nor, this->noc);
 
                 // Maximum of 16 is specified because row and column indices are stored as uint16_t
-                block_bits = std::max<int_type>(16, (int_type)(std::ceil(std::log2(std::sqrt((double)minimal_size)))));
+                block_bits = std::min<int_type>(16, (int_type)(std::ceil(std::log2(std::sqrt((double)minimal_size)))));
                 beta = (int_type)(std::pow(2, block_bits));
             }
 
@@ -111,7 +136,7 @@ namespace pwm {
              * @return true if the first element is smaller than or equal to the second element
              * @return false if the first element is larger than the second element
              */
-            bool zMortonCompare(const compress_t x1, const compress_t y1, const compress_t x2, const compress_t y2) {
+            bool zMortonCompare(const index_t x1, const index_t y1, const index_t x2, const index_t y2) {
                 bool set_1, set_2;
                 for (int bit_nb = block_bits-1; bit_nb >= 0; --bit_nb) {
                     // Check y bit
@@ -148,23 +173,24 @@ namespace pwm {
              * @param high Ending index of data
              * @return int_type Returns partitioning point
              */
-            int_type partitionBlock(compress_t** coords, std::vector<T>& data, int_type low, int_type high) {
+            int_type partitionBlock(compress_t* coords, std::vector<T>& data, int_type low, int_type high) {
                 // Select pivot (rightmost element)
-                compress_t pivotX = coords[0][high];
-                compress_t pivotY = coords[1][high];
+                std::tuple<index_t, index_t> pivot = fromCompressedToIndices(coords[high]);
 
                 // Points to biggest element
                 int_type i = low;
+                std::tuple<index_t, index_t> check_coord;
                 for (int j = low; j < high; ++j) {
-                    if (zMortonCompare(coords[0][j], coords[1][j], pivotX, pivotY)) {
+                    check_coord = fromCompressedToIndices(coords[j]); 
+                    if (zMortonCompare(std::get<0>(check_coord), std::get<1>(check_coord), std::get<0>(pivot), std::get<1>(pivot))) {
                         // If element is smaller than pivot swap it with i+1
-                        pwm::swapArrayElems<T, compress_t, int_type>(coords, data, 2, i, j);
+                        pwm::swapArrayElems<T, compress_t, int_type>(coords, data, i, j);
                         i++;
                     }
                 }
 
                 // Swap pivot with the greatest element at i+1
-                pwm::swapArrayElems<T, compress_t, int_type>(coords, data, 2, i, high);
+                pwm::swapArrayElems<T, compress_t, int_type>(coords, data, i, high);
 
                 // return the partitioning point
                 return i;
@@ -180,9 +206,10 @@ namespace pwm {
              * @param low starting index of data to be sorted
              * @param high ending index of data to be sorted
              */
-            void sortBlock(compress_t** coords, std::vector<T>& data, int_type low, int_type high) {
+            void sortBlock(compress_t* coords, std::vector<T>& data, int_type low, int_type high) {
                 if (low < high) {
-                    pwm::swapArrayElems<T, compress_t, int_type>(coords, data, 2, (((int_type)rand()) % (high-low)) + low, high); // Random permutation of rightmost element
+                    // Random permutation of rightmost element
+                    pwm::swapArrayElems<T, compress_t, int_type>(coords, data, (((int_type)rand()) % (high-low)) + low, high); 
                     int_type middle = partitionBlock(coords, data, low, high);
 
                     if (middle > 0) {
@@ -193,19 +220,42 @@ namespace pwm {
             }
 
             /**
-             * @brief Binary search for the division point as explained in the paper
+             * @brief Binary search for the division point as explained in row
              * 
-             * @param indices Row or column indices for which the division point is calculated
              * @param dim dimension of the original matrix
              * @param start starting index for binary search
              * @param end ending index for binary search
              * @return int_type smallest index s for which (indices[s] & dim/2) != 0
              */
-            int_type binarySearchDivisionPoint(const compress_t* indices, const int_type half_dim, int_type start, int_type end) {
+            int_type binarySearchDivisionPointRow(const int_type half_dim, int_type start, int_type end) {
                 while (start < end) {
                     int_type middle = (start+end)/2;
                     
-                    if ((indices[middle] & half_dim) == 0) {
+                    index_t middle_index = std::get<0>(fromCompressedToIndices(ind[middle]));
+                    if ((middle_index & (index_t)half_dim) == 0) {
+                        start = middle + 1;
+                    } else {
+                        end = middle;
+                    }
+                }
+
+                return start;
+            }
+
+            /**
+             * @brief Binary search for the division point in column
+             * 
+             * @param dim dimension of the original matrix
+             * @param start starting index for binary search
+             * @param end ending index for binary search
+             * @return int_type smallest index s for which (indices[s] & dim/2) != 0
+             */
+            int_type binarySearchDivisionPointColumn(const int_type half_dim, int_type start, int_type end) {
+                while (start < end) {
+                    int_type middle = (start+end)/2;
+                    
+                    index_t middle_index = std::get<1>(fromCompressedToIndices(ind[middle]));
+                    if ((middle_index & (index_t)half_dim) == 0) {
                         start = middle + 1;
                     } else {
                         end = middle;
@@ -227,22 +277,28 @@ namespace pwm {
             void blockMult(const int_type start, const int_type end, const int_type dim, const T* x, T* y) {              
                 assert(end >= start);
 
+                index_t row_ind, col_ind;
+                std::tuple<index_t, index_t> index;
+
                 // Perform serial computation if there are not too many nonzeros
                 if (end - start <= dim*O_DIM_CONST) {
                     for (int_type i = start; i <= end; ++i) {
-                        y[row_ind[i]] = y[row_ind[i]] + data[i]*x[col_ind[i]];
+                        index = fromCompressedToIndices(ind[i]);
+                        row_ind = std::get<0>(index);
+                        col_ind = std::get<1>(index);
+                        y[row_ind] = y[row_ind] + data[i]*x[col_ind];
                     }
 
                     return;
                 }
 
                 // There are too much nonzeros so we do a recursive subdivision (M00, M01, M10, M11)
-                int_type half_dim = dim / 2;
+                index_t half_dim = dim / 2;
 
                 // Calculate splitting points
-                int_type s2 = binarySearchDivisionPoint(row_ind, half_dim, start, end); // Split between M00, M01 and M10, M11
-                int_type s1 = binarySearchDivisionPoint(col_ind, half_dim, start, s2-1); // Split between M00 and M01
-                int_type s3 = binarySearchDivisionPoint(col_ind, half_dim, s2, end); // Split between M10 and M11
+                int_type s2 = binarySearchDivisionPointRow(half_dim, start, end); // Split between M00, M01 and M10, M11
+                int_type s1 = binarySearchDivisionPointColumn(half_dim, start, s2-1); // Split between M00 and M01
+                int_type s3 = binarySearchDivisionPointColumn(half_dim, s2, end); // Split between M10 and M11
 
                 #pragma omp parallel
                 #pragma omp single nowait
@@ -278,12 +334,17 @@ namespace pwm {
                 int_type am_blocks = (block_column_end - block_column_start)+1;
                 int_type block_index, x_offset;
 
+                index_t row_ind, col_ind;
+                std::tuple<index_t, index_t> index;
                 for (int_type block_nb = 0; block_nb < am_blocks; ++block_nb) {
                     block_index = first_block_index + block_nb;
                     x_offset = block_nb*beta;
 
                     for (int_type i = blk_ptr[block_index]; i < blk_ptr[block_index+1]; ++i) {
-                        y[row_ind[i]] = y[row_ind[i]] + data[i]*x[x_offset + col_ind[i]];
+                        index = fromCompressedToIndices(ind[i]);
+                        row_ind = std::get<0>(index);
+                        col_ind = std::get<1>(index);
+                        y[row_ind] = y[row_ind] + data[i]*x[x_offset + col_ind];
                     }
                 }
             }
@@ -371,8 +432,7 @@ namespace pwm {
                 horizontal_blocks = pwm::integerCeil<int_type>(this->noc, beta);
                 vertical_blocks = pwm::integerCeil<int_type>(this->nor, beta);
 
-                row_ind = new compress_t[this->nnz];
-                col_ind = new compress_t[this->nnz];
+                ind = new compress_t[this->nnz];
                 data = new T[this->nnz];
                 blk_ptr = new int_type[horizontal_blocks*vertical_blocks+1];
                 blk_ptr[0] = 0;
@@ -390,40 +450,34 @@ namespace pwm {
                 int_type blk_ptr_index = 1;
 
                 // Data structures which keep track of indices and data in each block
-                std::vector<std::vector<compress_t>> block_row_ind(horizontal_blocks);
-                std::vector<std::vector<compress_t>> block_col_ind(horizontal_blocks);
+                std::vector<std::vector<compress_t>> block_ind(horizontal_blocks);
                 std::vector<std::vector<T>> block_data(horizontal_blocks);
                 for (int_type block_row = 0; block_row < vertical_blocks; ++block_row) {
-                    std::fill(block_row_ind.begin(), block_row_ind.end(), std::vector<compress_t>());
-                    std::fill(block_col_ind.begin(), block_col_ind.end(), std::vector<compress_t>());
+                    std::fill(block_ind.begin(), block_ind.end(), std::vector<compress_t>());
                     std::fill(block_data.begin(), block_data.end(), std::vector<T>());
 
                     // Loop over all indices in triplet structure which are part of this block row
                     while (triplet_index < this->nnz && input.row_coord[triplet_index] < (block_row+1)*beta) {
                         int_type block_index = input.col_coord[triplet_index] / beta;
-                        block_row_ind[block_index].push_back((compress_t)input.row_coord[triplet_index] % beta);
-                        block_col_ind[block_index].push_back((compress_t)input.col_coord[triplet_index] % beta);
+
+                        compress_t index = fromIndicesToCompressed(input.row_coord[triplet_index] % beta, input.col_coord[triplet_index] % beta);
+                        block_ind[block_index].push_back(index);
                         block_data[block_index].push_back(input.data[triplet_index]);
 
                         triplet_index++;
                     }
 
                     // Sort blocks in Morton-Z order
-                    compress_t** coords = new compress_t*[2];
                     for (int_type block_column = 0; block_column < horizontal_blocks; ++block_column) {
-                        if (block_col_ind[block_column].size() > 0) {
-                            coords[0] = block_col_ind[block_column].data();
-                            coords[1] = block_row_ind[block_column].data();
-                            sortBlock(coords, block_data[block_column], 0, block_col_ind[block_column].size()-1);
+                        if (block_ind[block_column].size() > 0) {
+                            sortBlock(block_ind[block_column].data(), block_data[block_column], 0, block_ind[block_column].size()-1);
                         }                        
                     }
-                    delete [] coords;
 
                     // Initialize CSB datastructures
                     for (int_type block_col = 0; block_col < horizontal_blocks; ++block_col) {
-                        for (size_t i = 0; i < block_row_ind[block_col].size(); ++i) {
-                            row_ind[csb_index] = block_row_ind[block_col][i];
-                            col_ind[csb_index] = block_col_ind[block_col][i];
+                        for (size_t i = 0; i < block_ind[block_col].size(); ++i) {
+                            ind[csb_index] = block_ind[block_col][i];
                             data[csb_index] = block_data[block_col][i];
 
                             csb_index++;
