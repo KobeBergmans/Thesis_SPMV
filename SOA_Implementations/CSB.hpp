@@ -10,7 +10,6 @@
  *   on Parallelism in Algorithms and Architectures, SPAA ’09, pages 233–244, New
  *   York, NY, USA, 2009. Association for Computing Machinery.
  * 
- * TODO: Make blocksize dependent on matrix: only initial implementation for now
  * TODO: Avoid first touch
  * TODO: Check what the O_DIM_CONST should be
  */
@@ -38,6 +37,9 @@ typedef uint16_t index_t;
 #define LOW_BITMASK  0b00000000000000001111111111111111
 #define HIGH_BITMASK 0b11111111111111110000000000000000
 #define COORD_BITS 16
+
+#define L2_CACHE_SIZE_MB 1
+#define L2_CACHE_MULT 0.85
 
 namespace pwm {
     template<typename T, typename int_type>
@@ -105,9 +107,22 @@ namespace pwm {
             void setBlockSizeParam() {
                 int_type minimal_size = std::min(this->nor, this->noc);
 
-                // Maximum of 16 is specified because row and column indices are stored as uint16_t
-                block_bits = std::min<int_type>(16, (int_type)(std::ceil(std::log2(std::sqrt((double)minimal_size)))));
+                // Maximum of 16 is specified because row and column indices should fit in 4 bytes
+                int_type lg_sqrt_size = (int_type)(std::ceil(std::log2(std::sqrt((double)minimal_size))));
+                block_bits = std::min<int_type>(16, 3+lg_sqrt_size);
                 beta = (int_type)(std::pow(2, block_bits));
+
+                while (block_bits > lg_sqrt_size) {
+                    // Check if x and y fit in the L2 cache per block
+                    if (sizeof(T)*CHAR_BIT*beta*2 > L2_CACHE_SIZE_MB*L2_CACHE_MULT*1e6*8) {
+                        block_bits -= 1;
+                        beta = (int_type)(std::pow(2, block_bits));
+                    } else {
+                        break;
+                    }
+                }
+
+                std::cout << "block_bits: " << block_bits << ", beta: " << beta << std::endl;
             }
 
             /**
@@ -529,7 +544,7 @@ namespace pwm {
                         int_type first_block_index = blockCoordToIndex(block_row, 0);
 
                         int_type count = 0;
-                        for (int_type block_col = 0; block_col <= horizontal_blocks - 2; ++block_col) {
+                        for (int_type block_col = 0; block_col < horizontal_blocks - 1; ++block_col) {
                             // Add elements of current block to count
                             count = count + blk_ptr[first_block_index+block_col+1]-blk_ptr[first_block_index+block_col];
 
