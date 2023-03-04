@@ -42,6 +42,8 @@ typedef uint16_t index_t;
 #define L2_CACHE_SIZE_MB 1
 #define L2_CACHE_MULT 0.85
 
+#define MAX_DIM_REDUCTIONS 6
+
 namespace pwm {
     template<typename T, typename int_type>
     class CSB: public pwm::SparseMatrix<T, int_type> {
@@ -78,7 +80,7 @@ namespace pwm {
              * @return index_t Corresponding row index
              */
             inline index_t fromCompressedToRow(const compress_t input) {
-                return (index_t)((input & HIGH_BITMASK) >> COORD_BITS);
+                return (index_t)((input & (compress_t)HIGH_BITMASK) >> COORD_BITS);
             }
 
             /**
@@ -88,7 +90,7 @@ namespace pwm {
              * @return index_t Corresponding column index
              */
             inline index_t fromCompressedToCol(const compress_t input) {
-                return (index_t)(input & LOW_BITMASK);
+                return (index_t)(input & (compress_t)LOW_BITMASK);
             }
             
             /**
@@ -295,13 +297,13 @@ namespace pwm {
              * @param x Part of input vector corresponding to the given block
              * @param y Part of output vector corresponding to the given block
              */
-            void blockMult(const int_type start, const int_type end, const int_type dim, const T* x, T* y) {
+            void blockMult(const int_type start, const int_type end, const int_type dim, const T* x, T* y, int level = 0) {
                 assert(end >= start);
 
                 index_t row_ind, col_ind;
 
                 // Perform serial computation if there are not too many nonzeros
-                if (end - start <= dim*O_DIM_CONST) {
+                // if (end - start <= dim*O_DIM_CONST || level >= MAX_DIM_REDUCTIONS || dim <= 2) {
                     for (int_type i = start; i <= end; ++i) {
                         row_ind = fromCompressedToRow(ind[i]);
                         col_ind = fromCompressedToCol(ind[i]);
@@ -309,34 +311,35 @@ namespace pwm {
                     }
 
                     return;
-                }
+                // }
 
-                // There are too much nonzeros so we do a recursive subdivision (M00, M01, M10, M11)
-                index_t half_dim = dim / 2;
+                // // There are too much nonzeros so we do a recursive subdivision (M00, M01, M10, M11)
+                // int_type half_dim = dim / 2;
 
-                // Calculate splitting points
-                int_type s2 = binarySearchDivisionPointRow(half_dim, start, end); // Split between M00, M01 and M10, M11
-                int_type s1 = binarySearchDivisionPointColumn(half_dim, start, s2-1); // Split between M00 and M01
-                int_type s3 = binarySearchDivisionPointColumn(half_dim, s2, end); // Split between M10 and M11
+                // // Calculate splitting points
+                // int_type s2 = binarySearchDivisionPointRow(half_dim, start, end); // Split between M00, M01 and M10, M11
+                // int_type s1 = binarySearchDivisionPointColumn(half_dim, start, s2-1); // Split between M00 and M01
+                // int_type s3 = binarySearchDivisionPointColumn(half_dim, s2, end); // Split between M10 and M11
 
-                #pragma omp parallel shared(x, y) firstprivate(s1, s2, s3, start, half_dim)
-                #pragma omp single nowait
-                {
-                    #pragma omp taskgroup
-                    {
-                        #pragma omp task shared(x, y) firstprivate(s1, start, half_dim)
-                        {if (s1-1 >= start) blockMult(start, s1-1, half_dim, x, y);} // M00
 
-                        #pragma omp task shared(x, y) firstprivate(s3, end, half_dim)
-                        {if (end >= s3) blockMult(s3, end, half_dim, x, y);} // M11
-                    }
-                    
-                    #pragma omp task shared(x, y) firstprivate(s1, s2, half_dim)
-                    {if (s2-1 >= s1) blockMult(s1, s2-1, half_dim, x, y);} // M01
+                // #pragma omp taskgroup
+                // {
+                //     #pragma omp task
+                //     {if (s1-1 >= start) blockMult(start, s1-1, half_dim, x, y, level + 1);} // M00
 
-                    #pragma omp task shared(x, y) firstprivate(s2, s3, half_dim)
-                    {if (s3-1 >= s2) blockMult(s2, s3-1, half_dim, x, y);} // M10
-                }
+                //     #pragma omp task
+                //     {if (end >= s3) blockMult(s3, end, half_dim, x, y, level + 1);} // M11
+                // }
+
+
+                // #pragma omp taskgroup
+                // {
+                //     #pragma omp task
+                //     {if (s2-1 >= s1) blockMult(s1, s2-1, half_dim, x, y, level + 1);} // M01
+
+                //     #pragma omp task
+                //     {if (s3-1 >= s2) blockMult(s2, s3-1, half_dim, x, y, level + 1);} // M10
+                // }    
             }
 
             /**
@@ -396,33 +399,32 @@ namespace pwm {
                     return;
                 }
                 
-                #pragma omp parallel shared(x, y, chunks) firstprivate(block_row)
-                #pragma omp single nowait
-                {
-                    // Blockrow contains multiple chunks thus we subdivide
-                    int_type middle = integerCeil<int_type>(chunks_length, 2) - 1; // Middle chunk index
-                    int_type x_middle = beta*(chunks[middle] - chunks[0]); // Middle of x vector
+                // Blockrow contains multiple chunks thus we subdivide
+                int_type middle = integerCeil<int_type>(chunks_length, 2) - 1; // Middle chunk index
+                int_type x_middle = beta*(chunks[middle] - chunks[0]); // Middle of x vector
 
-                    // Initialize vector for temporary results
-                    T* temp_res = new T[beta];
-                    std::fill(temp_res, temp_res+beta, 0.);
+                // Initialize vector for temporary results
+                T* temp_res = new T[beta];
+                std::fill(temp_res, temp_res+beta, 0.);
 
-                    #pragma omp taskgroup
-                    {
-                        #pragma omp task shared(x, y, chunks), firstprivate(middle, block_row)
-                        {blockRowMult(block_row, chunks, middle+1, x, y);}
+                // #pragma omp taskgroup
+                // {
+                //     #pragma omp task 
+                //     {blockRowMult(block_row, chunks, middle+1, x, y);}
 
-                        #pragma omp task shared(x, chunks, temp_res) firstprivate(middle, block_row, x_middle)
-                        {blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, temp_res);}
-                    }
-                        
-                    // Add temporary result serially
-                    for (int_type i = 0; i < beta; ++i) {
-                        y[i] = y[i] + temp_res[i];
-                    }
+                //     #pragma omp task
+                //     {blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, temp_res);}
+                // }
 
-                    // delete [] temp_res;
+                blockRowMult(block_row, chunks, middle+1, x, y);
+                blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, temp_res);
+                            
+                // Add temporary result serially
+                for (int_type i = 0; i < beta; ++i) {
+                    y[i] = y[i] + temp_res[i];
                 }
+
+                // delete [] temp_res;
             }
 
         public:
@@ -461,7 +463,7 @@ namespace pwm {
                 coords[0] = input.row_coord;
                 coords[1] = input.col_coord;
                 sortOnCoord<T, int_type>(coords, input.data, 2, 0, this->nnz-1);
-                delete [] coords;
+                // delete [] coords;
 
                 // Generate CSB structure per block row
                 int_type triplet_index = 0;
@@ -472,11 +474,9 @@ namespace pwm {
                 index_t row_comp, col_comp;
 
                 // Data structures which keep track of indices and data in each block
-                std::vector<std::vector<compress_t>> block_ind(horizontal_blocks);
-                std::vector<std::vector<T>> block_data(horizontal_blocks);
                 for (int_type block_row = 0; block_row < vertical_blocks; ++block_row) {
-                    std::fill(block_ind.begin(), block_ind.end(), std::vector<compress_t>());
-                    std::fill(block_data.begin(), block_data.end(), std::vector<T>());
+                    std::vector<std::vector<compress_t>> block_ind(horizontal_blocks, std::vector<compress_t>());
+                    std::vector<std::vector<T>> block_data(horizontal_blocks, std::vector<T>());
 
                     // Loop over all indices in triplet structure which are part of this block row
                     while (triplet_index < this->nnz && input.row_coord[triplet_index] < (block_row+1)*beta) {
@@ -540,11 +540,7 @@ namespace pwm {
             void mv(const T* x, T* y) {
                 std::fill(y, y+this->nor, 0.);
 
-                #pragma omp parallel shared(x, y)
-                #pragma omp single
                 for (int_type block_row = 0; block_row < vertical_blocks; ++block_row) {
-                    #pragma omp task shared(x, y) firstprivate(block_row)
-                    {
                         int* chunks = new int[horizontal_blocks]; // Worst case that all blocks are a separate chunk
                         int_type chunk_index = 0;
                         chunks[chunk_index++] = -1;
@@ -570,7 +566,6 @@ namespace pwm {
                         blockRowMult(block_row, chunks, chunk_index, x, y+block_row*beta);
 
                         // delete [] chunks;
-                    }
                 }
             }
 

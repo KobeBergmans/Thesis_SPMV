@@ -138,6 +138,11 @@ int main(int argc, char** argv) {
         test_mat->mv(x, y);
         stop = omp_get_wtime();
         timings[i] = (stop - start) * 1000;
+
+        pwm::printVector(x, mat_size);
+        std::cout << " Print done! " << std::endl;
+        pwm::printVector(y, mat_size);
+        std::cout << "Print done! " << std::endl;
     }
 
     pwm::printVector(timings, iter);
