@@ -14,6 +14,7 @@
  * TODO: Check what the O_DIM_CONST should be
  * TODO: Make parallelism faster by tweaking OpenMP
  * TODO: Check problems with in-2004 matrix
+ * TODO: Add mutex implementation for temporary vector implementation
  */
 
 
@@ -397,33 +398,42 @@ namespace pwm {
                                         
                     return;
                 }
+
+                bool first_mult_finished = false; // This is probably faster using a Mutex?
                 
-                #pragma omp parallel
+                #pragma omp parallel shared(first_mult_finished)
                 #pragma omp single nowait
                 {
                     // Blockrow contains multiple chunks thus we subdivide
                     int_type middle = integerCeil<int_type>(chunks_length, 2) - 1; // Middle chunk index
                     int_type x_middle = beta*(chunks[middle] - chunks[0]); // Middle of x vector
 
-                    // Initialize vector for temporary results
-                    T* temp_res = new T[beta];
-                    std::fill(temp_res, temp_res+beta, 0.);
-
-                    #pragma omp taskgroup
+                    #pragma omp task
                     {
-                        #pragma omp task
                         blockRowMult(block_row, chunks, middle+1, x, y);
-
-                        #pragma omp task
-                        blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, temp_res);
+                        first_mult_finished = true;
                     }
                         
-                    // Add temporary result serially
-                    for (int_type i = 0; i < beta; ++i) {
-                        y[i] = y[i] + temp_res[i];
-                    }
 
-                    delete [] temp_res;
+                    #pragma omp task
+                    {
+                        if (first_mult_finished) {
+                            blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, y);
+                        } else {
+                            // Initialize vector for temporary results
+                            T* temp_res = new T[beta];
+                            std::fill(temp_res, temp_res+beta, 0.);
+
+                            blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, temp_res);
+
+                            // Add temporary result serially
+                            for (int_type i = 0; i < beta; ++i) {
+                                y[i] = y[i] + temp_res[i];
+                            }
+
+                            delete [] temp_res;
+                        }
+                    }
                 }
             }
 
