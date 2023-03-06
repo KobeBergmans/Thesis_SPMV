@@ -89,6 +89,7 @@ namespace pwm {
             CRSTBBGraph(int threads):
             global_limit(oneapi::tbb::global_control::max_allowed_parallelism, threads) {}
 
+            // Deconstructor
             ~CRSTBBGraph() {
                 for (int i = 0; i < partitions; ++i) {
                     delete [] row_start[i];

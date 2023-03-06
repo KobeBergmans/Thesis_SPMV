@@ -43,6 +43,7 @@ namespace pwm {
             // Base constructor
             CRSTBB(int threads): global_limit(oneapi::tbb::global_control::max_allowed_parallelism, threads) {}
 
+            // Deconstructor
             ~CRSTBB() {
                 delete [] row_start;
                 delete [] col_ind;
