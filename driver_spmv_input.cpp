@@ -150,6 +150,8 @@ int main(int argc, char** argv) {
 
     delete [] y;
     delete [] x;
+
+    delete test_mat;
     
     return 0;
 }

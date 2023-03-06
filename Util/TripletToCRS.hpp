@@ -157,6 +157,8 @@ namespace pwm {
                 sortOnCoord<T, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
             }
         }
+
+        delete [] coords;
     }
 
     /**
