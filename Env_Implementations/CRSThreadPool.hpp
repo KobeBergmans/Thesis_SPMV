@@ -96,6 +96,31 @@ namespace pwm {
             // Base constructor
             CRSThreadPool(int threads): pool(threads) {}
 
+            // Deconstructor
+            ~CRSThreadPool() {
+                for (int i = 0; i < partitions; ++i) {
+                    delete [] row_start[i];
+                    delete [] col_ind[i];
+                    delete [] data_arr[i];
+
+                    row_start[i] = NULL;
+                    col_ind[i] = NULL;
+                    data_arr[i] = NULL;
+                }
+
+                delete [] row_start;
+                delete [] col_ind;
+                delete [] data_arr;
+                delete [] partition_rows;
+                delete [] first_rows;
+
+                row_start = NULL;
+                col_ind = NULL;
+                data_arr = NULL;
+                partition_rows = NULL;
+                first_rows = NULL;
+            }
+
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
              * 
