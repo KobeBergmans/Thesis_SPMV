@@ -71,6 +71,9 @@ namespace pwm {
             // Amount of bits for block indices
             int_type block_bits;
 
+            // If the matrix has balanced blockrows we can provide a further optimization (see mv)
+            bool balanced_block_rows;
+
         private:
             /**
              * @brief Transforms compressed index to the corresponding row index
@@ -123,8 +126,6 @@ namespace pwm {
                         break;
                     }
                 }
-
-                std::cout << "block_bits: " << block_bits << ", beta: " << beta << std::endl;
             }
 
             /**
@@ -455,6 +456,10 @@ namespace pwm {
                 blk_ptr = new int_type[horizontal_blocks*vertical_blocks+1];
                 blk_ptr[0] = 0;
 
+                // Keep track of nnz's in each blockrow
+                double* blockrow_nnz = new double[vertical_blocks];
+                double temp_nnz;
+
                 // Sort triplets on row value
                 int_type** coords = new int_type*[2];
                 coords[0] = input.row_coord;
@@ -471,6 +476,8 @@ namespace pwm {
                 std::vector<std::vector<compress_t>> block_ind(horizontal_blocks);
                 std::vector<std::vector<T>> block_data(horizontal_blocks);
                 for (int_type block_row = 0; block_row < vertical_blocks; ++block_row) {
+                    temp_nnz = 0.;
+
                     std::fill(block_ind.begin(), block_ind.end(), std::vector<compress_t>());
                     std::fill(block_data.begin(), block_data.end(), std::vector<T>());
 
@@ -483,7 +490,10 @@ namespace pwm {
                         block_data[block_index].push_back(input.data[triplet_index]);
 
                         triplet_index++;
+                        temp_nnz += 1.;
                     }
+
+                    blockrow_nnz[block_row] = temp_nnz;
 
                     // Sort blocks in Morton-Z order
                     for (int_type block_column = 0; block_column < horizontal_blocks; ++block_column) {
@@ -505,6 +515,20 @@ namespace pwm {
                         blk_ptr_index++;
                     }
                 }
+
+                // Check if matrix is balanced
+                // This happens if no blockrow has twice the nnz on a blockrow than the average nnz per blockrow
+                balanced_block_rows = true;
+
+                double block_row_avg = std::accumulate(blockrow_nnz, blockrow_nnz+vertical_blocks, 0.0) / vertical_blocks;
+                for (int_type i = 0; i < vertical_blocks; ++i) {
+                    if (blockrow_nnz[i] > 2*block_row_avg) {
+                        balanced_block_rows = false;
+                        break;
+                    }
+                }
+
+                delete [] blockrow_nnz;
             }
 
             /**
@@ -561,7 +585,11 @@ namespace pwm {
                         chunks[chunk_index++] = horizontal_blocks-1; 
 
                         // Perform block row multiplication
-                        blockRowMult(block_row, chunks, chunk_index, x, y+block_row*beta);
+                        if (balanced_block_rows) {
+                            sparseRowMult(block_row, 0, horizontal_blocks-1, x, y+block_row*beta);
+                        } else {
+                            blockRowMult(block_row, chunks, chunk_index, x, y+block_row*beta);
+                        }
 
                         delete [] chunks;
                     }
