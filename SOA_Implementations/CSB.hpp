@@ -12,6 +12,8 @@
  * 
  * TODO: Avoid first touch
  * TODO: Check what the O_DIM_CONST should be
+ * TODO: Make parallelism faster by tweaking OpenMP
+ * TODO: Check problems with in-2004 matrix
  */
 
 
