@@ -12,7 +12,6 @@
  * 
  * TODO: Avoid first touch
  * TODO: Make parallelism faster by tweaking OpenMP
- * TODO: Add mutex implementation for temporary vector implementation
  * TODO: Make such that the amount of vertical and horizontal blocks can't bee too small
  */
 
@@ -401,26 +400,29 @@ namespace pwm {
                                         
                     return;
                 }
-
-                bool first_mult_finished = false; // This is probably faster using a Mutex?
                 
-                #pragma omp parallel shared(first_mult_finished)
+                #pragma omp parallel
                 #pragma omp single nowait
                 {
                     // Blockrow contains multiple chunks thus we subdivide
                     int_type middle = integerCeil<int_type>(chunks_length, 2) - 1; // Middle chunk index
                     int_type x_middle = beta*(chunks[middle] - chunks[0]); // Middle of x vector
 
-                    #pragma omp task
+                    // Use a Mutex to check if the first mult is already finished
+                    omp_lock_t temp_lock;
+                    omp_init_lock(&temp_lock);
+                    omp_set_lock(&temp_lock);
+
+                    #pragma omp task shared(temp_lock)
                     {
                         blockRowMult(block_row, chunks, middle+1, x, y);
-                        first_mult_finished = true;
+                        omp_unset_lock(&temp_lock);
                     }
                         
 
-                    #pragma omp task
+                    #pragma omp task shared(temp_lock)
                     {
-                        if (first_mult_finished) {
+                        if (omp_test_lock(&temp_lock)) {
                             blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, y);
                         } else {
                             // Initialize vector for temporary results
@@ -437,6 +439,8 @@ namespace pwm {
                             delete [] temp_res;
                         }
                     }
+
+                    omp_destroy_lock(&temp_lock);
                 }
             }
 
