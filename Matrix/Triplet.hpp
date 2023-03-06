@@ -4,7 +4,7 @@
  * @brief Triplet format of a sparse matrix
  * 
  * Includes a function to import from Matrix Market Format
- * TODO: Includes a function to import from the Kronecker graph generator (https://github.com/RapidsAtHKUST/Graph500KroneckerGraphGenerator)
+ * Includes a function to import from the Kronecker graph generator (https://github.com/RapidsAtHKUST/Graph500KroneckerGraphGenerator)
  */
 
 #ifndef PWM_TRIPLET_HPP
@@ -116,6 +116,10 @@ namespace pwm {
                         if (has_data) {
                             line >> word;
                             data[index] = boost::lexical_cast<T>(word);
+
+                            if (data[index] == (T)0) { // Data can be zero thus then we don't store the value
+                                continue;
+                            }
                         } else if (random_fill) {
                             data[index] = dist(gen);
                         } else {
@@ -132,10 +136,8 @@ namespace pwm {
                         }
                     }
 
-                    // Correction for diagonal entries for symmetric matrices
-                    if (symmetric) {
-                        nnz = index;
-                    }
+                    // Correction for diagonal entries for symmetric matrices and when there are explicit zero's
+                    nnz = index;
                 }
             }
 
