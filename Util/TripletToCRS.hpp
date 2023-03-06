@@ -362,7 +362,9 @@ namespace pwm {
                     sortOnCoord<T, int_type>(coords, CRS_data[i], 1, row_start[i][row], row_start[i][row+1]-1);
                 }
             }
-        }        
+        }
+
+        delete [] coords;        
     }
 } // namespace pwm
 
