@@ -456,12 +456,12 @@ namespace pwm {
              * 
              * @param input Triplet format matrix used to convert to CRS
              */
-            void loadFromTriplets(pwm::Triplet<T, int_type> input, const int partitions_am) {
+            void loadFromTriplets(pwm::Triplet<T, int_type>* input, const int partitions_am) {
                 omp_set_num_threads(threads);
 
-                this->noc = input.col_size;
-                this->nor = input.row_size;
-                this->nnz = input.nnz;
+                this->noc = input->col_size;
+                this->nor = input->row_size;
+                this->nnz = input->nnz;
 
                 setBlockSizeParam();
 
@@ -479,9 +479,9 @@ namespace pwm {
 
                 // Sort triplets on row value
                 int_type** coords = new int_type*[2];
-                coords[0] = input.row_coord;
-                coords[1] = input.col_coord;
-                sortOnCoord<T, int_type>(coords, input.data, 2, 0, this->nnz-1);
+                coords[0] = input->row_coord;
+                coords[1] = input->col_coord;
+                sortOnCoord<T, int_type>(coords, input->data, 2, 0, this->nnz-1);
                 delete [] coords;
 
                 // Generate CSB structure per block row
@@ -499,12 +499,12 @@ namespace pwm {
                     std::fill(block_data.begin(), block_data.end(), std::vector<T>());
 
                     // Loop over all indices in triplet structure which are part of this block row
-                    while (triplet_index < this->nnz && input.row_coord[triplet_index] < (block_row+1)*beta) {
-                        int_type block_index = input.col_coord[triplet_index] / beta;
+                    while (triplet_index < this->nnz && input->row_coord[triplet_index] < (block_row+1)*beta) {
+                        int_type block_index = input->col_coord[triplet_index] / beta;
 
-                        compress_t index = fromIndicesToCompressed(input.row_coord[triplet_index] % beta, input.col_coord[triplet_index] % beta);
+                        compress_t index = fromIndicesToCompressed(input->row_coord[triplet_index] % beta, input->col_coord[triplet_index] % beta);
                         block_ind[block_index].push_back(index);
-                        block_data[block_index].push_back(input.data[triplet_index]);
+                        block_data[block_index].push_back(input->data[triplet_index]);
 
                         triplet_index++;
                         temp_nnz += 1.;
@@ -560,7 +560,7 @@ namespace pwm {
                 pwm::Triplet<T, int_type> temp_mat;
                 temp_mat.generatePoisson(m, n);
 
-                loadFromTriplets(temp_mat, partitions);
+                loadFromTriplets(&temp_mat, partitions);
             }
 
             /**

@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE(mv_arc130, * boost::unit_test::tolerance(std::pow(10, -14))
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
         
         for (int partitions = 1; partitions <= std::min(max_threads*2, mat_size); ++partitions) {
-            mat->loadFromTriplets(input_mat, partitions);
+            mat->loadFromTriplets(&input_mat, partitions);
             std::fill(x, x+mat_size, 1.);
             mat->mv(x,y);
 
@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(mv_gre_1107, * boost::unit_test::tolerance(std::pow(10, -14
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
         
         for (int partitions = 1; partitions <= std::min(max_threads*2, mat_size); ++partitions) {
-            mat->loadFromTriplets(input_mat, partitions);
+            mat->loadFromTriplets(&input_mat, partitions);
             std::fill(x, x+mat_size, 1.);
             mat->mv(x,y);
 
@@ -134,7 +134,7 @@ BOOST_AUTO_TEST_CASE(mv_mycielskian5, * boost::unit_test::tolerance(std::pow(10,
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
         
         for (int partitions = 1; partitions <= std::min(max_threads*2, mat_size); ++partitions) {
-            mat->loadFromTriplets(input_mat, partitions);
+            mat->loadFromTriplets(&input_mat, partitions);
             std::fill(x, x+mat_size, 1.);
             mat->mv(x,y);
 
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE(mv_mycielskian5_bin, * boost::unit_test::tolerance(std::pow
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
         
         for (int partitions = 1; partitions <= std::min(max_threads*2, mat_size); ++partitions) {
-            mat->loadFromTriplets(input_mat, partitions);
+            mat->loadFromTriplets(&input_mat, partitions);
             std::fill(x, x+mat_size, 1.);
             mat->mv(x,y);
 
@@ -223,7 +223,7 @@ BOOST_AUTO_TEST_CASE(mv_8_4_bin_no_rand, * boost::unit_test::tolerance(std::pow(
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
         
         for (int partitions = 1; partitions <= std::min(max_threads*2, mat_size); ++partitions) {
-            mat->loadFromTriplets(input_mat, partitions);
+            mat->loadFromTriplets(&input_mat, partitions);
             std::fill(x, x+mat_size, 1.);
             mat->mv(x,y);
 
@@ -273,7 +273,7 @@ BOOST_AUTO_TEST_CASE(mv_arc130_unsigned, * boost::unit_test::tolerance(std::pow(
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
         
         for (int partitions = 1; partitions <= std::min(max_threads*2, mat_size); ++partitions) {
-            mat->loadFromTriplets(input_mat, partitions);
+            mat->loadFromTriplets(&input_mat, partitions);
             std::fill(x, x+mat_size, 1.);
             mat->mv(x,y);
 
@@ -318,7 +318,7 @@ BOOST_AUTO_TEST_CASE(mv_gre_1107_unsigned, * boost::unit_test::tolerance(std::po
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
         
         for (int partitions = 1; partitions <= std::min(max_threads*2, mat_size); ++partitions) {
-            mat->loadFromTriplets(input_mat, partitions);
+            mat->loadFromTriplets(&input_mat, partitions);
             std::fill(x, x+mat_size, 1.);
             mat->mv(x,y);
 
@@ -363,7 +363,7 @@ BOOST_AUTO_TEST_CASE(mv_mycielskian5_unsigned, * boost::unit_test::tolerance(std
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
         
         for (int partitions = 1; partitions <= std::min(max_threads*2, mat_size); ++partitions) {
-            mat->loadFromTriplets(input_mat, partitions);
+            mat->loadFromTriplets(&input_mat, partitions);
             std::fill(x, x+mat_size, 1.);
             mat->mv(x,y);
 
@@ -408,7 +408,7 @@ BOOST_AUTO_TEST_CASE(mv_mycielskian5_bin_unsigned, * boost::unit_test::tolerance
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
         
         for (int partitions = 1; partitions <= std::min(max_threads*2, mat_size); ++partitions) {
-            mat->loadFromTriplets(input_mat, partitions);
+            mat->loadFromTriplets(&input_mat, partitions);
             std::fill(x, x+mat_size, 1.);
             mat->mv(x,y);
 
@@ -452,7 +452,7 @@ BOOST_AUTO_TEST_CASE(mv_8_4_bin_no_rand_unsigned, * boost::unit_test::tolerance(
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
         
         for (int partitions = 1; partitions <= std::min(max_threads*2, mat_size); ++partitions) {
-            mat->loadFromTriplets(input_mat, partitions);
+            mat->loadFromTriplets(&input_mat, partitions);
             std::fill(x, x+mat_size, 1.);
             mat->mv(x,y);
 
@@ -501,7 +501,7 @@ BOOST_AUTO_TEST_CASE(powermethod_arc130, * boost::unit_test::tolerance(std::pow(
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
         
         for (int partitions = 1; partitions <= std::min(max_threads*2, mat_size); ++partitions) {
-            mat->loadFromTriplets(input_mat, partitions);
+            mat->loadFromTriplets(&input_mat, partitions);
             std::fill(x, x+mat_size, 1.);
             mat->powerMethod(x, y, 100);
 
@@ -550,7 +550,7 @@ BOOST_AUTO_TEST_CASE(powermethod_arc130, * boost::unit_test::tolerance(std::pow(
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
         
         for (int partitions = 1; partitions <= std::min(max_threads*2, mat_size); ++partitions) {
-            mat->loadFromTriplets(input_mat, partitions);
+            mat->loadFromTriplets(&input_mat, partitions);
             std::fill(x, x+mat_size, 1.);
             mat->powerMethod(x, y, 100);
 

@@ -116,7 +116,7 @@ int main(int argc, char** argv) {
     }
     int mat_size = input_mat.row_size;
 
-    test_mat->loadFromTriplets(input_mat, partitions);
+    test_mat->loadFromTriplets(&input_mat, partitions);
     
     double* x = new double[mat_size];
     double* y = new double[mat_size];

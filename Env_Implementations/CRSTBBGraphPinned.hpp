@@ -187,10 +187,10 @@ namespace pwm {
              * 
              * @param input Triplet format matrix used to convert to CRS
              */
-            void loadFromTriplets(pwm::Triplet<T, int_type> input, const int partitions_am) {
-                this->noc = input.col_size;
-                this->nor = input.row_size;
-                this->nnz = input.nnz;
+            void loadFromTriplets(pwm::Triplet<T, int_type>* input, const int partitions_am) {
+                this->noc = input->col_size;
+                this->nor = input->row_size;
+                this->nnz = input->nnz;
 
                 partitions = partitions_am;
 
@@ -202,7 +202,7 @@ namespace pwm {
                 first_rows = new int_type[partitions];
 
                 // Generate data for each thread
-                pwm::TripletToMultipleCRS(input.row_coord, input.col_coord, input.data, row_start, col_ind, data_arr, 
+                pwm::TripletToMultipleCRS(input->row_coord, input->col_coord, input->data, row_start, col_ind, data_arr, 
                                           partitions, partition_rows, first_rows, this->nnz, this->nor);
 
                 // Generate function nodes per thread

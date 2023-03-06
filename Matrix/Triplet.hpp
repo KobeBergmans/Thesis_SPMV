@@ -53,6 +53,17 @@ namespace pwm {
             // Base constructor
             Triplet(): gen(747846), dist(-100., 100.) {}
 
+            // Deconstructor
+            ~Triplet() {
+                delete [] row_coord;
+                delete [] col_coord;
+                delete [] data;
+
+                row_coord = NULL;
+                col_coord = NULL;
+                data = NULL;
+            }
+
             /**
              * @brief Load from Matrix Market format
              * 

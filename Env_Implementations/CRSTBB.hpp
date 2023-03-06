@@ -70,16 +70,16 @@ namespace pwm {
              * 
              * @param input Triplet format matrix used to convert to CRS
              */
-            void loadFromTriplets(pwm::Triplet<T, int_type> input, const int partition_am) {
-                this->noc = input.col_size;
-                this->nor = input.row_size;
-                this->nnz = input.nnz;
+            void loadFromTriplets(pwm::Triplet<T, int_type>* input, const int partition_am) {
+                this->noc = input->col_size;
+                this->nor = input->row_size;
+                this->nnz = input->nnz;
 
                 row_start = new int_type[this->nor+1];
                 col_ind = new int_type[this->nnz];
                 data_arr = new T[this->nnz];
 
-                pwm::TripletToCRSTBB(input.row_coord, input.col_coord, input.data, row_start, col_ind, data_arr, this->nnz, this->nor);
+                pwm::TripletToCRSTBB(input->row_coord, input->col_coord, input->data, row_start, col_ind, data_arr, this->nnz, this->nor);
             }
 
             /**
