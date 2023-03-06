@@ -11,7 +11,6 @@
  *   York, NY, USA, 2009. Association for Computing Machinery.
  * 
  * TODO: Avoid first touch
- * TODO: Check what the O_DIM_CONST should be
  * TODO: Make parallelism faster by tweaking OpenMP
  * TODO: Add mutex implementation for temporary vector implementation
  * TODO: Make such that the amount of vertical and horizontal blocks can't bee too small
@@ -21,7 +20,7 @@
 #ifndef PWM_CSB_HPP
 #define PWM_CSB_HPP
 
-#define O_DIM_CONST 3
+#define O_DIM_CONST 4
 #define O_BETA_CONST 3
 
 #include <cassert>
@@ -44,7 +43,7 @@ typedef uint16_t index_t;
 #define L2_CACHE_SIZE_MB 1
 #define L2_CACHE_MULT 0.85
 
-#define MAX_BLOCK_SPLITS 4
+#define MIN_NNZ_TO_PAR 128
 
 namespace pwm {
     template<typename T, typename int_type>
@@ -300,13 +299,13 @@ namespace pwm {
              * @param x Part of input vector corresponding to the given block
              * @param y Part of output vector corresponding to the given block
              */
-            void blockMult(const int_type start, const int_type end, const int_type dim, const T* x, T* y, int level = 0) {              
+            void blockMult(const int_type start, const int_type end, const int_type dim, const T* x, T* y, int_type cutoff) {          
                 assert(end >= start);
 
                 index_t row_ind, col_ind;
 
                 // Perform serial computation if there are not too many nonzeros
-                if (end - start <= dim*O_DIM_CONST || level >= MAX_BLOCK_SPLITS) {
+                if (end - start <= cutoff) {
                     for (int_type i = start; i <= end; ++i) {
                         row_ind = fromCompressedToRow(ind[i]);
                         col_ind = fromCompressedToCol(ind[i]);
@@ -324,23 +323,25 @@ namespace pwm {
                 int_type s1 = binarySearchDivisionPointColumn(half_dim, start, s2-1); // Split between M00 and M01
                 int_type s3 = binarySearchDivisionPointColumn(half_dim, s2, end); // Split between M10 and M11
 
+                int_type new_cutoff = std::max<int_type>(cutoff/2, MIN_NNZ_TO_PAR);
+
                 #pragma omp parallel
                 #pragma omp single nowait
                 {
                     #pragma omp taskgroup
                     {
                         #pragma omp task
-                        if (s1-1 >= start) blockMult(start, s1-1, half_dim, x, y, level + 1); // M00
+                        if (s1-1 >= start) blockMult(start, s1-1, half_dim, x, y, new_cutoff); // M00
 
                         #pragma omp task
-                        if (end >= s3) blockMult(s3, end, half_dim, x, y, level + 1); // M11
+                        if (end >= s3) blockMult(s3, end, half_dim, x, y, new_cutoff); // M11
                     }
                     
                     #pragma omp task
-                    if (s2-1 >= s1) blockMult(s1, s2-1, half_dim, x, y, level + 1); // M01
+                    if (s2-1 >= s1) blockMult(s1, s2-1, half_dim, x, y, new_cutoff); // M01
 
                     #pragma omp task
-                    if (s3-1 >= s2) blockMult(s2, s3-1, half_dim, x, y, level + 1); // M10
+                    if (s3-1 >= s2) blockMult(s2, s3-1, half_dim, x, y, new_cutoff); // M10
                 }
             }
 
@@ -392,7 +393,7 @@ namespace pwm {
                         int_type start = blk_ptr[block_index];
                         int_type end = blk_ptr[block_index+1]-1;
 
-                        blockMult(start, end, beta, x, y);
+                        blockMult(start, end, beta, x, y, std::max<int_type>(beta*O_DIM_CONST, MIN_NNZ_TO_PAR));
                     } else {
                         // The chunk consists of multiple blocks and thus is sparse
                         sparseRowMult(block_row, left_chunk, right_chunk, x, y);
