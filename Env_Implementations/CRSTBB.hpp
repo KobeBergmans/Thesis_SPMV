@@ -43,6 +43,16 @@ namespace pwm {
             // Base constructor
             CRSTBB(int threads): global_limit(oneapi::tbb::global_control::max_allowed_parallelism, threads) {}
 
+            ~CRSTBB() {
+                delete [] row_start;
+                delete [] col_ind;
+                delete [] data_arr;
+
+                row_start = NULL;
+                col_ind = NULL;
+                data_arr = NULL;
+            }
+
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
              *
