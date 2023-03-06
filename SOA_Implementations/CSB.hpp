@@ -44,6 +44,8 @@ typedef uint16_t index_t;
 #define L2_CACHE_SIZE_MB 1
 #define L2_CACHE_MULT 0.85
 
+#define MAX_BLOCK_SPLITS 4
+
 namespace pwm {
     template<typename T, typename int_type>
     class CSB: public pwm::SparseMatrix<T, int_type> {
@@ -298,13 +300,13 @@ namespace pwm {
              * @param x Part of input vector corresponding to the given block
              * @param y Part of output vector corresponding to the given block
              */
-            void blockMult(const int_type start, const int_type end, const int_type dim, const T* x, T* y) {              
+            void blockMult(const int_type start, const int_type end, const int_type dim, const T* x, T* y, int level = 0) {              
                 assert(end >= start);
 
                 index_t row_ind, col_ind;
 
                 // Perform serial computation if there are not too many nonzeros
-                if (end - start <= dim*O_DIM_CONST) {
+                if (end - start <= dim*O_DIM_CONST || level >= MAX_BLOCK_SPLITS) {
                     for (int_type i = start; i <= end; ++i) {
                         row_ind = fromCompressedToRow(ind[i]);
                         col_ind = fromCompressedToCol(ind[i]);
@@ -328,17 +330,17 @@ namespace pwm {
                     #pragma omp taskgroup
                     {
                         #pragma omp task
-                        if (s1-1 >= start) blockMult(start, s1-1, half_dim, x, y); // M00
+                        if (s1-1 >= start) blockMult(start, s1-1, half_dim, x, y, level + 1); // M00
 
                         #pragma omp task
-                        if (end >= s3) blockMult(s3, end, half_dim, x, y); // M11
+                        if (end >= s3) blockMult(s3, end, half_dim, x, y, level + 1); // M11
                     }
                     
                     #pragma omp task
-                    if (s2-1 >= s1) blockMult(s1, s2-1, half_dim, x, y); // M01
+                    if (s2-1 >= s1) blockMult(s1, s2-1, half_dim, x, y, level + 1); // M01
 
                     #pragma omp task
-                    if (s3-1 >= s2) blockMult(s2, s3-1, half_dim, x, y); // M10
+                    if (s3-1 >= s2) blockMult(s2, s3-1, half_dim, x, y, level + 1); // M10
                 }
             }
 
