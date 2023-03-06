@@ -451,6 +451,17 @@ namespace pwm {
             // Base constructor
             CSB(int threads): threads(threads) {}
 
+            // Deconstructor
+            ~CSB() {
+                delete [] ind;
+                delete [] data;
+                delete [] blk_ptr;
+                
+                ind = NULL;
+                data = NULL;
+                blk_ptr = NULL;
+            }
+
             /**
              * @brief Input the CSB matrix from a Triplet format
              * 
@@ -580,9 +591,9 @@ namespace pwm {
                 for (int_type block_row = 0; block_row < vertical_blocks; ++block_row) {
                     #pragma omp task
                     {
-                        int* chunks = new int[horizontal_blocks]; // Worst case that all blocks are a separate chunk
-                        int_type chunk_index = 0;
-                        chunks[chunk_index++] = -1;
+                        int* chunks = new int[horizontal_blocks+1]; // Worst case that all blocks are a separate chunk
+                        chunks[0] = -1;
+                        int_type chunk_index = 1;
 
                         int_type first_block_index = blockCoordToIndex(block_row, 0);
 
