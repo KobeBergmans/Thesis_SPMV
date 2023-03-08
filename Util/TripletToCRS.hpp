@@ -14,10 +14,10 @@
 #include "oneapi/tbb.h"
 
 namespace pwm {
-    template<typename T, typename int_type, typename index_type>
-    void swapArrayElems(int_type** coords, T* data, int am_coords, index_type index_1, index_type index_2) {
+    template<typename T, typename index_type, typename int_type>
+    void swapArrayElems(index_type** coords, T* data, int am_coords, int_type index_1, int_type index_2) {
         for (int i = 0; i < am_coords; ++i) {
-            int_type temp = coords[i][index_1];
+            index_type temp = coords[i][index_1];
             coords[i][index_1] = coords[i][index_2];
             coords[i][index_2] = temp;
         }
@@ -27,10 +27,10 @@ namespace pwm {
         data[index_2] = data_temp;
     }
 
-    template<typename T, typename int_type, typename index_type>
-    void swapArrayElems(int_type** coords, std::vector<T>& data, int am_coords, index_type index_1, index_type index_2) {
+    template<typename T, typename index_type, typename int_type>
+    void swapArrayElems(index_type** coords, std::vector<T>& data, int am_coords, int_type index_1, int_type index_2) {
         for (int i = 0; i < am_coords; ++i) {
-            int_type temp = coords[i][index_1];
+            index_type temp = coords[i][index_1];
             coords[i][index_1] = coords[i][index_2];
             coords[i][index_2] = temp;
         }
@@ -40,9 +40,9 @@ namespace pwm {
         data[index_2] = data_temp;
     }
 
-    template<typename T, typename int_type, typename index_type>
-    void swapArrayElems(int_type* coords, T* data, index_type index_1, index_type index_2) {
-        int_type temp = coords[index_1];
+    template<typename T, typename index_type, typename int_type>
+    void swapArrayElems(index_type* coords, T* data, int_type index_1, int_type index_2) {
+        index_type temp = coords[index_1];
         coords[index_1] = coords[index_2];
         coords[index_2] = temp;
 
@@ -51,9 +51,9 @@ namespace pwm {
         data[index_2] = data_temp;
     }
 
-    template<typename T, typename int_type, typename index_type>
-    void swapArrayElems(int_type* coords, std::vector<T>& data, index_type index_1, index_type index_2) {
-        int_type temp = coords[index_1];
+    template<typename T, typename index_type, typename int_type>
+    void swapArrayElems(index_type* coords, std::vector<T>& data, int_type index_1, int_type index_2) {
+        index_type temp = coords[index_1];
         coords[index_1] = coords[index_2];
         coords[index_2] = temp;
 
@@ -62,8 +62,8 @@ namespace pwm {
         data[index_2] = data_temp;
     }
 
-    template<typename T, typename int_type>
-    int_type partitionArrays(int_type** coords, T* data, int am_coords, int_type low, int_type high) {
+    template<typename T, typename index_type, typename int_type>
+    int_type partitionArrays(index_type** coords, T* data, int am_coords, int_type low, int_type high) {
         // Select pivot (rightmost element)
         int_type pivot = coords[0][high];
 
@@ -72,13 +72,13 @@ namespace pwm {
         for (int j = low; j < high; ++j) {
             if (coords[0][j] <= pivot) {
                 // If element is smaller than pivot swap it with i+1
-                swapArrayElems<T, int_type, int_type>(coords, data, am_coords, i, j);
+                swapArrayElems<T, index_type, int_type>(coords, data, am_coords, i, j);
                 i++;
             }
         }
 
         // Swap pivot with the greatest element at i+1
-        swapArrayElems<T, int_type, int_type>(coords, data, am_coords, i, high);
+        swapArrayElems<T, index_type, int_type>(coords, data, am_coords, i, high);
 
         // return the partitioning point
         return i;
@@ -97,8 +97,8 @@ namespace pwm {
      * @param low Start index of quicksort
      * @param high End index of quicksort
      */
-    template<typename T, typename int_type>
-    void sortOnCoord(int_type** coords, T* data, int am_coords, int_type low, int_type high) {
+    template<typename T, typename index_type, typename int_type>
+    void sortOnCoord(index_type** coords, T* data, int am_coords, int_type low, int_type high) {
         if (low < high) {
             swapArrayElems(coords, data, am_coords, (((int_type)rand()) % (high-low)) + low, high); // Random permutation of rightmost element
             int_type middle = partitionArrays(coords, data, am_coords, low, high);
@@ -123,13 +123,13 @@ namespace pwm {
      * @param CRS_data Output data array of CRS format
      * @param nnz Number of nonzeros in matrix
      */
-    template<typename T, typename int_type>
-    void TripletToCRS(int_type* row_coord, int_type* col_coord, T* data, int_type* row_start, int_type* col_ind, T* CRS_data, int_type nnz, int_type nor) {
+    template<typename T, typename index_type, typename int_type>
+    void TripletToCRS(index_type* row_coord, index_type* col_coord, T* data, index_type* row_start, index_type* col_ind, T* CRS_data, int_type nnz, int_type nor) {
         // Sort triplets on row value
-        int_type** coords = new int_type*[2];
+        index_type** coords = new index_type*[2];
         coords[0] = row_coord;
         coords[1] = col_coord;
-        sortOnCoord<T, int_type>(coords, data, 2, 0, nnz-1);
+        sortOnCoord<T, index_type, int_type>(coords, data, 2, 0, nnz-1);
 
         // Fill CRS datastructures
         row_start[0] = 0;
@@ -154,7 +154,7 @@ namespace pwm {
         coords[0] = col_ind;
         for (int row = 0; row <= row_coord[nnz-1]; ++row) {
             if (row_start[row+1] != 0) { // Needed for when the first row is empty and unsigned integers are used
-                sortOnCoord<T, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
+                sortOnCoord<T, index_type, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
             }
         }
 
@@ -182,7 +182,7 @@ namespace pwm {
         int_type** coords = new int_type*[2];
         coords[0] = row_coord;
         coords[1] = col_coord;
-        sortOnCoord<T, int_type>(coords, data, 2, 0, nnz-1);
+        sortOnCoord<T, int_type, int_type>(coords, data, 2, 0, nnz-1);
 
         // Fill CRS data with omp to avoid first touch
         #pragma omp parallel for shared(col_ind, col_coord, CRS_data, data, row_coord, row_start) schedule(dynamic, 8)
@@ -212,7 +212,7 @@ namespace pwm {
         #pragma omp parallel for shared(col_ind, CRS_data, row_start) schedule(dynamic)
         for (int_type row = 0; row <= row_coord[nnz-1]; ++row) {
             if (row_start[row+1] != 0) { // Needed for when the first row is empty and unsigned integers are used
-                sortOnCoord<T, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
+                sortOnCoord<T, int_type, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
             }
         }
 
@@ -240,7 +240,7 @@ namespace pwm {
         int_type** coords = new int_type*[2];
         coords[0] = row_coord;
         coords[1] = col_coord;
-        sortOnCoord<T, int_type>(coords, data, 2, 0, nnz-1);
+        sortOnCoord<T, int_type, int_type>(coords, data, 2, 0, nnz-1);
 
         // Fill CRS data with omp to avoid first touch
         tbb::parallel_for((int_type)0, nnz, [=](int_type i) {
@@ -268,7 +268,7 @@ namespace pwm {
         coords[0] = col_ind;
         tbb::parallel_for((int_type)0, row_coord[nnz-1]+1, [=](int_type row) {
             if (row_start[row+1] != 0) { // Needed for when the first row is empty and unsigned integers are used
-                sortOnCoord<T, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
+                sortOnCoord<T, int_type, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);
             }
         });
 
@@ -297,7 +297,7 @@ namespace pwm {
         int_type** coords = new int_type*[2];
         coords[0] = row_coord;
         coords[1] = col_coord;
-        sortOnCoord<T, int_type>(coords, data, 2, 0, nnz-1);
+        sortOnCoord<T, int_type, int_type>(coords, data, 2, 0, nnz-1);
 
         // Fill CRS datastructures
         int_type am_rows = std::round(nor/partitions);
@@ -359,7 +359,7 @@ namespace pwm {
             coords[0] = col_ind[i];
             for (int_type row = 0; row < thread_rows[i]; ++row) {
                 if (row_start[i][row+1] != 0) { // Needed for when the first row is empty and unsigned integers are used
-                    sortOnCoord<T, int_type>(coords, CRS_data[i], 1, row_start[i][row], row_start[i][row+1]-1);
+                    sortOnCoord<T, int_type, int_type>(coords, CRS_data[i], 1, row_start[i][row], row_start[i][row+1]-1);
                 }
             }
         }

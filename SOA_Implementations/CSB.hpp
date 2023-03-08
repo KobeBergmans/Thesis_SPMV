@@ -13,6 +13,7 @@
  * TODO: Avoid first touch
  * TODO: Make parallelism faster by tweaking OpenMP
  * TODO: Make such that the amount of vertical and horizontal blocks can't bee too small
+ * TODO: Look into compression
  */
 
 
@@ -25,6 +26,7 @@
 #include <cassert>
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 
 #include "../Matrix/SparseMatrix.hpp"
 
@@ -492,7 +494,7 @@ namespace pwm {
                 int_type** coords = new int_type*[2];
                 coords[0] = input->row_coord;
                 coords[1] = input->col_coord;
-                sortOnCoord<T, int_type>(coords, input->data, 2, 0, this->nnz-1);
+                sortOnCoord<T, int_type, int_type>(coords, input->data, 2, 0, this->nnz-1);
                 delete [] coords;
 
                 // Generate CSB structure per block row
