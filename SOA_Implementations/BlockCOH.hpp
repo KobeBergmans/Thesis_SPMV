@@ -74,6 +74,9 @@ namespace pwm {
             // Amount of nonzeros per thread
             int_type* thread_nnz;
 
+            // Amount of blocks per thread
+            int_type* thread_blocks;
+
         private:
             /**
              * @brief Ensures a correct rotation of the row and column for the next level of the hilbert curve
@@ -225,7 +228,7 @@ namespace pwm {
             }
 
             /**
-             * @brief Sorts the nonzeros using hilbert order on the blocklevel
+             * @brief Sorts the nonzeros using hilbert order on the block level
              * 
              * Makes use of quicksort implementation (see sortOnCoord in Util/TripletToCRS.hpp)
              * 
@@ -264,20 +267,38 @@ namespace pwm {
                 // Transform triplet indices to block indices
                 index_t* block_row_ind = new index_t[block_end-block_start];
                 index_t* block_col_ind = new index_t[block_end-block_start];
+                T* temp_data = new T[block_end-block_start]; // This is needed to make that Triplet structure remains valid
 
                 for (int_type j = 0; j < block_end-block_start; ++j) {
-                    block_row_ind[j] = (index_t)(((input->row_coord+block_start+triplet_index)[j] - thread_row_start[pid]) % beta[pid]);
-                    block_col_ind[j] = (index_t)((input->col_coord+block_start+triplet_index)[j] % beta[pid]);
+                    block_row_ind[j] = (index_t)((input->row_coord[block_start+triplet_index+j] - thread_row_start[pid]) % beta[pid]);
+                    block_col_ind[j] = (index_t)(input->col_coord[block_start+triplet_index+j] % beta[pid]);
+                    temp_data[j] = input->data[block_start+triplet_index+j];
                 }
 
                 // Store block as CRS format
-                pwm::TripletToCRS<T, index_t, int_type>(block_row_ind, block_col_ind, input->data+block_start+triplet_index, row_start[pid]+(beta[pid]+1)*block_index, col_ind[pid]+block_start, data[pid]+block_start, block_end-block_start, beta[pid]);
+                pwm::TripletToCRS<T, index_t, int_type>(block_row_ind, block_col_ind, temp_data, row_start[pid]+(beta[pid]+1)*block_index, col_ind[pid]+block_start, data[pid]+block_start, block_end-block_start, beta[pid]);
 
                 delete [] block_row_ind;
                 delete [] block_col_ind;
+                delete [] temp_data;
             }
 
-            
+            /**
+             * @brief CRS multiplication of a single block
+             * 
+             * @param start_index_row Starting index of CRS structure row_start array
+             * @param start_index_col Starting index of CRS structure col_ind and data array
+             * @param x Input vector for block mult
+             * @param y Output vector for block mult
+             * @param pid thread id
+             */
+            void blockMult(int_type start_index_row, int_type start_index_col, const T* x, T* y, int pid) {
+                for (int_type i = 0; i < beta[pid]; ++i) {
+                    for (int_type k = row_start[pid][start_index_row+i]; k < row_start[pid][start_index_row+i+1]; ++k) {
+                        y[i] = y[i] + data[pid][start_index_col+k]*x[col_ind[pid][start_index_col+k]];
+                    }
+                }  
+            }
 
         public:
             // Base constructor
@@ -320,6 +341,7 @@ namespace pwm {
                 delete [] vertical_blocks;
                 delete [] horizontal_blocks;
                 delete [] thread_nnz;
+                delete [] thread_blocks;
 
                 thread_row_start = NULL;
                 beta = NULL;
@@ -327,6 +349,7 @@ namespace pwm {
                 vertical_blocks = NULL;
                 horizontal_blocks = NULL;
                 thread_nnz = NULL;
+                thread_blocks = NULL;
             }
 
             /**
@@ -336,11 +359,17 @@ namespace pwm {
              * @param partitions_am unused
              */
             void loadFromTriplets(pwm::Triplet<T, int_type>* input, const int partitions_am) {
-                omp_set_num_threads(threads);
-
                 this->noc = input->col_size;
                 this->nor = input->row_size;
                 this->nnz = input->nnz;
+
+                // We require at least 4 rows per thread
+                if (this->nor / threads < 8) {
+                    threads = this->nor / 8;
+                    std::cout << "Changing the amount of threads to " << threads << " because row count is too low..." << std::endl;
+                }
+
+                omp_set_num_threads(threads);
 
                 // Distribute the matrix rows per thread
                 thread_nnz = new int_type[threads];
@@ -387,6 +416,7 @@ namespace pwm {
 
                 horizontal_blocks = new int_type[threads];
                 vertical_blocks = new int_type[threads];
+                thread_blocks = new int_type[threads];
 
                 // Indices datastructures
                 int_type triplet_index = 0;
@@ -397,8 +427,6 @@ namespace pwm {
                     // Create datastructures
                     horizontal_blocks[pid] = pwm::integerCeil<int_type>(this->noc, beta[pid]);
                     vertical_blocks[pid] = pwm::integerCeil<int_type>(calculateNOR(pid), beta[pid]);
-
-                    // std::cout << "Horizontal blocks: " << horizontal_blocks[pid] << ", Vertical blocks: " << vertical_blocks[pid] << std::endl;
 
                     row_start[pid] = new index_t[(beta[pid]+1)*horizontal_blocks[pid]*vertical_blocks[pid]]; // Beta + 1 elements per block
                     col_ind[pid] = new index_t[thread_nnz[pid]];
@@ -414,7 +442,7 @@ namespace pwm {
                     // Initialize datastructures
                     block_start = 0;
                     block_index = 1;
-                    hilbert_coord = rowColToHilbert(hilbert_size / beta[pid], (input->row_coord[triplet_index]-thread_row_start[pid]) / beta[pid], input->col_coord[triplet_index] / beta[pid]);
+                    hilbert_coord = rowColToHilbert(hilbert_size, (input->row_coord[triplet_index]-thread_row_start[pid]) / beta[pid], input->col_coord[triplet_index] / beta[pid]);
                     row_jump[pid][0] = (input->row_coord[triplet_index] - thread_row_start[pid]) / beta[pid];
                     col_jump[pid][0] = input->col_coord[triplet_index] / beta[pid];
 
@@ -423,8 +451,6 @@ namespace pwm {
                         // Check if we reached the end of the block
                         if (rowColToHilbert(hilbert_size, (input->row_coord[triplet_index+i]-thread_row_start[pid]) / beta[pid], input->col_coord[triplet_index+i] / beta[pid]) != hilbert_coord) {
 
-                            // std::cout << "End of block reached, i=" << i << std::endl;
-
                             transformHilbertBlockToCRS(input, block_start, i, block_index-1, triplet_index, pid);
 
                             // set datastructures for next block
@@ -432,27 +458,17 @@ namespace pwm {
                             hilbert_coord = rowColToHilbert(hilbert_size, (input->row_coord[triplet_index+i]-thread_row_start[pid]) / beta[pid], input->col_coord[triplet_index+i] / beta[pid]);
                             row_jump[pid][block_index] = (bicrs_t)(input->row_coord[triplet_index+i]-thread_row_start[pid]) / beta[pid] - (bicrs_t)(input->row_coord[triplet_index+i-1]-thread_row_start[pid]) / beta[pid];
                             col_jump[pid][block_index++] = (bicrs_t)(input->col_coord[triplet_index+i] / beta[pid]) - (bicrs_t)(input->col_coord[triplet_index+i-1] / beta[pid]); 
-
-                            // std::cout << "New block hilbert coord: " << hilbert_coord << std::endl;
                         } 
                     }
 
                     // Also convert the last block
                     transformHilbertBlockToCRS(input, block_start, thread_nnz[pid], block_index-1, triplet_index, pid);
 
+                    // Set thread blocks
+                    thread_blocks[pid] = block_index;
+
                     // Update triplet_index
                     triplet_index += thread_nnz[pid];
-
-                    // std::cout << "Row start: " << std::endl;
-                    // pwm::printVector(row_start[pid], (beta[pid]+1)*block_index);
-                    // std::cout << "col indices: " << std::endl;
-                    // pwm::printVector(col_ind[pid], thread_nnz[pid]);
-                    // std::cout << "data: " << std::endl;
-                    // pwm::printVector(data[pid], thread_nnz[pid]);
-                    // std::cout << "row jump: " << std::endl;
-                    // pwm::printVector(row_jump[pid], block_index);
-                    // std::cout << "col jump: " << std::endl;
-                    // pwm::printVector(col_jump[pid], block_index);
                 }
 
                 delete [] coords;
@@ -483,7 +499,26 @@ namespace pwm {
             void mv(const T* x, T* y) {
                 std::fill(y, y+this->nor, 0.);
 
-                return;
+                for (int pid = 0; pid < threads; ++pid) {
+                    // Set initial datastructures
+                    bicrs_t block_row = row_jump[pid][0];
+                    bicrs_t block_col = col_jump[pid][0];
+                    int_type block_index = 1;
+                    int_type row_index = 0;
+                    int_type col_index = 0;
+
+                    // Multiply all blocks
+                    while (block_index <= thread_blocks[pid]) {
+                        blockMult(row_index, col_index, x+block_col*beta[pid], y+thread_row_start[pid]+block_row*beta[pid], pid);
+                        row_index += beta[pid]+1;
+                        col_index += row_start[pid][row_index-1];
+
+
+                        // Set block row and column for next iteration
+                        block_row += row_jump[pid][block_index];
+                        block_col += col_jump[pid][block_index++];
+                    }
+                }
             }
 
             /**
@@ -494,7 +529,17 @@ namespace pwm {
              * @param it Amount of iterations
              */
             void powerMethod(T* x, T* y, const int_type it) {
-                return;
+                assert(this->nor == this->noc); //Power method only works on square matrices
+                
+                for (int i = 0; i < it; ++i) {
+                    if (i % 2 == 0) {
+                        this->mv(x,y);
+                        pwm::normalize(y, this->nor);
+                    } else {
+                        this->mv(y,x);
+                        pwm::normalize(x, this->nor);
+                    }
+                }
             }
 
     };

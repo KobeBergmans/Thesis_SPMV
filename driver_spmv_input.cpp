@@ -52,7 +52,6 @@ int main(int argc, char** argv) {
     std::string input_file = argv[1];
     int iter = std::stoi(argv[2]);
     int warm_up = std::stoi(argv[3]);
-
     int method = std::stoi(argv[4]);
     int threads = 0;
     int partitions = 0;
@@ -72,7 +71,7 @@ int main(int argc, char** argv) {
     }
     
     // Select method
-    pwm::SparseMatrix<double, unsigned int>* test_mat = pwm::selectType<double, unsigned int>(method, threads);
+    pwm::SparseMatrix<double, int>* test_mat = pwm::selectType<double, int>(method, threads);
 
     if (test_mat == NULL) {
         printErrorMsg();
@@ -81,7 +80,7 @@ int main(int argc, char** argv) {
 
     // Input matrix & initialize vectors
     start = omp_get_wtime();
-    pwm::Triplet<double, unsigned int> input_mat;
+    pwm::Triplet<double, int> input_mat;
 
     int file_start = input_file.find("/");
     if (boost::algorithm::ends_with(input_file, ".mtx")) {
@@ -125,6 +124,8 @@ int main(int argc, char** argv) {
     stop = omp_get_wtime();
     time = (stop - start) * 1000;
     std::cout << "Time to set up datastructures: " << time << "ms" << std::endl;
+
+    test_mat->loadFromTriplets(&input_mat, partitions);
 
     // Do warm up iterations
     for (int i = 0; i < warm_up; ++i) {

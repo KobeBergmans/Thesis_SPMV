@@ -19,6 +19,7 @@
 #include "../Env_Implementations/CRSThreadPoolPinned.hpp"
 #include "../SOA_Implementations/CRS_Merge.hpp"
 #include "../SOA_Implementations/CSB.hpp"
+#include "../SOA_Implementations/BlockCOH.hpp"
 
 namespace pwm {
     template<typename T, typename int_type>
@@ -50,6 +51,9 @@ namespace pwm {
 
             case 9:
                 return new pwm::CSB<T, int_type>(threads);
+
+            case 10:
+                return new pwm::BlockCOH<T, int_type>(threads);
             
             default:
                 return NULL;
@@ -58,15 +62,16 @@ namespace pwm {
 
     void printAvailableMethods(int startNb) {
         std::cout << "  " << startNb << "° Method to use:" << std::endl;
-        std::cout << "     1) Standard CRS (sequential)" << std::endl;
-        std::cout << "     2) CRS parallelized using OpenMP" << std::endl;
-        std::cout << "     3) CRS parallelized using TBB" << std::endl;
-        std::cout << "     4) CRS parallelized using TBB graphs" << std::endl;
-        std::cout << "     5) CRS parallelized using TBB graphs with each node pinned to a CPU" << std::endl;
-        std::cout << "     6) CRS parallelized using Boost Thread Pool" << std::endl;
-        std::cout << "     7) CRS parallelized using Boost Thread Pool with functions pinned to a CPU" << std::endl;
-        std::cout << "     8) CRS parallelized using the merge-sort method" << std::endl;
-        std::cout << "     9) CSB parallelized using TBB tasks" << std::endl;
+        std::cout << "     1)  Standard CRS (sequential)" << std::endl;
+        std::cout << "     2)  CRS parallelized using OpenMP" << std::endl;
+        std::cout << "     3)  CRS parallelized using TBB" << std::endl;
+        std::cout << "     4)  CRS parallelized using TBB graphs" << std::endl;
+        std::cout << "     5)  CRS parallelized using TBB graphs with each node pinned to a CPU" << std::endl;
+        std::cout << "     6)  CRS parallelized using Boost Thread Pool" << std::endl;
+        std::cout << "     7)  CRS parallelized using Boost Thread Pool with functions pinned to a CPU" << std::endl;
+        std::cout << "     8)  CRS parallelized using the merge-sort method" << std::endl;
+        std::cout << "     9)  CSB parallelized using TBB tasks" << std::endl;
+        std::cout << "     10) Row distributed block CO-H" << std::endl;
         std::cout << "  " << startNb +1 << "° Amount of threads (only for a parallel method).";
         std::cout << " -1 lets the program choose the amount of threads arbitrarily" << std::endl;
         std::cout << "  " << startNb + 2 << "° Amount of partitions the matrix is split up into (only for method 4, 5, 6 and 7)" << std::endl;
