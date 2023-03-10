@@ -29,6 +29,10 @@ BOOST_AUTO_TEST_CASE(mv_size_3_3, * boost::unit_test::tolerance(std::pow(10, -14
     double* x = new double[mat_size];
     double* y = new double[mat_size];
 
+    // To have more efficient partitioning testing
+    std::vector<int> non_part = pwm::get_unpartitioned_methods();
+    bool break_part;
+
     // Run test on all the matrices
     for (size_t mat_index = 0; mat_index < matrices.size(); ++mat_index) {
         pwm::SparseMatrix<double, int>* mat = matrices[mat_index];
@@ -39,6 +43,7 @@ BOOST_AUTO_TEST_CASE(mv_size_3_3, * boost::unit_test::tolerance(std::pow(10, -14
         // If we have a TBB implementation set a global limiter to overwrite other limits
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
         
+        break_part = false;
         for (int partitions = 1; partitions <= std::min(max_threads*3, 3*3); ++partitions) {
             mat->generatePoissonMatrix(3, 3, partitions);
             std::fill(x, x+mat_size, 1.);
@@ -49,10 +54,15 @@ BOOST_AUTO_TEST_CASE(mv_size_3_3, * boost::unit_test::tolerance(std::pow(10, -14
                 BOOST_TEST(y[i] == real_sol[i]);
             }
 
-            // If matrix is an omp or TBB matrix break because all executions are the same
-            if ((mat_index-1) % 6 == 0 || (mat_index-2) % 6 == 0) {
-                break;
+            // If matrix does not use partitioning we break
+            for (int index : non_part) {
+                if (((int)mat_index-index) % pwm::get_amount_of_methods() == 0) {
+                    break_part = true;
+                    break;
+                }
             }
+
+            if (break_part) break;
         }
 
         // Reset omp threads
@@ -73,6 +83,10 @@ BOOST_AUTO_TEST_CASE(mv_size_9_3, * boost::unit_test::tolerance(std::pow(10, -14
     double* x = new double[mat_size];
     double* y = new double[mat_size];
 
+    // To have more efficient partitioning testing
+    std::vector<int> non_part = pwm::get_unpartitioned_methods();
+    bool break_part;
+
     // Run test on all the matrices
     for (size_t mat_index = 0; mat_index < matrices.size(); ++mat_index) {
         pwm::SparseMatrix<double, int>* mat = matrices[mat_index];
@@ -83,6 +97,7 @@ BOOST_AUTO_TEST_CASE(mv_size_9_3, * boost::unit_test::tolerance(std::pow(10, -14
         // If we have a TBB implementation set a global limiter to overwrite other limits
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
 
+        break_part = false;
         for (int partitions = 1; partitions <= std::min(max_threads*3, 9*3); ++partitions) {
             mat->generatePoissonMatrix(9, 3, partitions);
             std::fill(x, x+mat_size, 1.);
@@ -93,10 +108,15 @@ BOOST_AUTO_TEST_CASE(mv_size_9_3, * boost::unit_test::tolerance(std::pow(10, -14
                 BOOST_TEST(y[i] == real_sol[i]);
             }
 
-            // If matrix is an omp or TBB matrix break because all executions are the same
-            if ((mat_index-1) % 6 == 0 || (mat_index-2) % 6 == 0) {
-                break;
+            // If matrix does not use partitioning we break
+            for (int index : non_part) {
+                if (((int)mat_index-index) % pwm::get_amount_of_methods() == 0) {
+                    break_part = true;
+                    break;
+                }
             }
+
+            if (break_part) break;
         }
 
 
@@ -121,6 +141,10 @@ BOOST_AUTO_TEST_CASE(mv_size_3_3_unsigned, * boost::unit_test::tolerance(std::po
     double* x = new double[mat_size];
     double* y = new double[mat_size];
 
+    // To have more efficient partitioning testing
+    std::vector<int> non_part = pwm::get_unpartitioned_methods();
+    bool break_part;
+
     // Run test on all the matrices
     for (size_t mat_index = 0; mat_index < matrices.size(); ++mat_index) {
         pwm::SparseMatrix<double, unsigned int>* mat = matrices[mat_index];
@@ -131,6 +155,7 @@ BOOST_AUTO_TEST_CASE(mv_size_3_3_unsigned, * boost::unit_test::tolerance(std::po
         // If we have a TBB implementation set a global limiter to overwrite other limits
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
         
+        break_part = false;
         for (int partitions = 1; partitions <= std::min(max_threads*3, 3*3); ++partitions) {
             mat->generatePoissonMatrix(3, 3, partitions);
             std::fill(x, x+mat_size, 1.);
@@ -141,10 +166,15 @@ BOOST_AUTO_TEST_CASE(mv_size_3_3_unsigned, * boost::unit_test::tolerance(std::po
                 BOOST_TEST(y[i] == real_sol[i]);
             }
 
-            // If matrix is an omp or TBB matrix break because all executions are the same
-            if ((mat_index-1) % 6 == 0 || (mat_index-2) % 6 == 0) {
-                break;
+            // If matrix does not use partitioning we break
+            for (int index : non_part) {
+                if (((int)mat_index-index) % pwm::get_amount_of_methods() == 0) {
+                    break_part = true;
+                    break;
+                }
             }
+
+            if (break_part) break;
         }
 
         // Reset omp threads
@@ -165,6 +195,10 @@ BOOST_AUTO_TEST_CASE(mv_size_9_3_unsigned, * boost::unit_test::tolerance(std::po
     double* x = new double[mat_size];
     double* y = new double[mat_size];
 
+    // To have more efficient partitioning testing
+    std::vector<int> non_part = pwm::get_unpartitioned_methods();
+    bool break_part;
+
     // Run test on all the matrices
     for (size_t mat_index = 0; mat_index < matrices.size(); ++mat_index) {
         pwm::SparseMatrix<double, unsigned int>* mat = matrices[mat_index];
@@ -175,6 +209,7 @@ BOOST_AUTO_TEST_CASE(mv_size_9_3_unsigned, * boost::unit_test::tolerance(std::po
         // If we have a TBB implementation set a global limiter to overwrite other limits
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
 
+        break_part = false;
         for (int partitions = 1; partitions <= std::min(max_threads*3, 9*3); ++partitions) {
             mat->generatePoissonMatrix(9, 3, partitions);
             std::fill(x, x+mat_size, 1.);
@@ -185,10 +220,15 @@ BOOST_AUTO_TEST_CASE(mv_size_9_3_unsigned, * boost::unit_test::tolerance(std::po
                 BOOST_TEST(y[i] == real_sol[i]);
             }
 
-            // If matrix is an omp or TBB matrix break because all executions are the same
-            if ((mat_index-1) % 6 == 0 || (mat_index-2) % 6 == 0) {
-                break;
+            // If matrix does not use partitioning we break
+            for (int index : non_part) {
+                if (((int)mat_index-index) % pwm::get_amount_of_methods() == 0) {
+                    break_part = true;
+                    break;
+                }
             }
+
+            if (break_part) break;
         }
 
 
@@ -214,6 +254,10 @@ BOOST_AUTO_TEST_CASE(powermethod_size_5_5, * boost::unit_test::tolerance(std::po
     double* x = new double[mat_size];
     double* y = new double[mat_size];
 
+    // To have more efficient partitioning testing
+    std::vector<int> non_part = pwm::get_unpartitioned_methods();
+    bool break_part;
+
     // Run test on all the matrices
     for (size_t mat_index = 0; mat_index < matrices.size(); ++mat_index) {
         pwm::SparseMatrix<double, int>* mat = matrices[mat_index];
@@ -224,6 +268,7 @@ BOOST_AUTO_TEST_CASE(powermethod_size_5_5, * boost::unit_test::tolerance(std::po
         // If we have a TBB implementation set a global limiter to overwrite other limits
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
         
+        break_part = false;
         for (int partitions = 1; partitions <= std::min(max_threads*3, 5*5); ++partitions) {
             mat->generatePoissonMatrix(5, 5, partitions);
             std::fill(x, x+mat_size, 1.);
@@ -234,10 +279,15 @@ BOOST_AUTO_TEST_CASE(powermethod_size_5_5, * boost::unit_test::tolerance(std::po
                 BOOST_TEST(x[i] == real_sol[i]);
             }
 
-            // If matrix is an omp or TBB matrix break because all executions are the same
-            if ((mat_index-1) % 6 == 0 || (mat_index-2) % 6 == 0) {
-                break;
+            // If matrix does not use partitioning we break
+            for (int index : non_part) {
+                if (((int)mat_index-index) % pwm::get_amount_of_methods() == 0) {
+                    break_part = true;
+                    break;
+                }
             }
+
+            if (break_part) break;
         }
 
         // Reset omp threads
@@ -258,6 +308,10 @@ BOOST_AUTO_TEST_CASE(powermethod_size_10_5, * boost::unit_test::tolerance(std::p
     double* x = new double[mat_size];
     double* y = new double[mat_size];
 
+    // To have more efficient partitioning testing
+    std::vector<int> non_part = pwm::get_unpartitioned_methods();
+    bool break_part;
+
     // Run test on all the matrices
     for (size_t mat_index = 0; mat_index < matrices.size(); ++mat_index) {
         pwm::SparseMatrix<double, int>* mat = matrices[mat_index];
@@ -268,6 +322,7 @@ BOOST_AUTO_TEST_CASE(powermethod_size_10_5, * boost::unit_test::tolerance(std::p
         // If we have a TBB implementation set a global limiter to overwrite other limits
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
 
+        break_part = false;
         for (int partitions = 1; partitions <= std::min(max_threads*3, 10*5); ++partitions) {
             mat->generatePoissonMatrix(10, 5, partitions);
             std::fill(x, x+mat_size, 1.);
@@ -278,10 +333,15 @@ BOOST_AUTO_TEST_CASE(powermethod_size_10_5, * boost::unit_test::tolerance(std::p
                 BOOST_TEST(x[i] == real_sol[i]);
             }
 
-            // If matrix is an omp or TBB matrix break because all executions are the same
-            if ((mat_index-1) % 6 == 0 || (mat_index-2) % 6 == 0) {
-                break;
+            // If matrix does not use partitioning we break
+            for (int index : non_part) {
+                if (((int)mat_index-index) % pwm::get_amount_of_methods() == 0) {
+                    break_part = true;
+                    break;
+                }
             }
+
+            if (break_part) break;
         }
 
         // Reset omp threads
@@ -306,6 +366,10 @@ BOOST_AUTO_TEST_CASE(powermethod_size_5_5_unsigned, * boost::unit_test::toleranc
     double* x = new double[mat_size];
     double* y = new double[mat_size];
 
+    // To have more efficient partitioning testing
+    std::vector<int> non_part = pwm::get_unpartitioned_methods();
+    bool break_part;
+
     // Run test on all the matrices
     for (size_t mat_index = 0; mat_index < matrices.size(); ++mat_index) {
         pwm::SparseMatrix<double, unsigned int>* mat = matrices[mat_index];
@@ -316,6 +380,7 @@ BOOST_AUTO_TEST_CASE(powermethod_size_5_5_unsigned, * boost::unit_test::toleranc
         // If we have a TBB implementation set a global limiter to overwrite other limits
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
         
+        break_part = false;
         for (int partitions = 1; partitions <= std::min(max_threads*3, 5*5); ++partitions) {
             mat->generatePoissonMatrix(5, 5, partitions);
             std::fill(x, x+mat_size, 1.);
@@ -326,10 +391,15 @@ BOOST_AUTO_TEST_CASE(powermethod_size_5_5_unsigned, * boost::unit_test::toleranc
                 BOOST_TEST(x[i] == real_sol[i]);
             }
 
-            // If matrix is an omp or TBB matrix break because all executions are the same
-            if ((mat_index-1) % 6 == 0 || (mat_index-2) % 6 == 0) {
-                break;
+            // If matrix does not use partitioning we break
+            for (int index : non_part) {
+                if (((int)mat_index-index) % pwm::get_amount_of_methods() == 0) {
+                    break_part = true;
+                    break;
+                }
             }
+
+            if (break_part) break;
         }
 
         // Reset omp threads
@@ -350,6 +420,10 @@ BOOST_AUTO_TEST_CASE(powermethod_size_10_5_unsigned, * boost::unit_test::toleran
     double* x = new double[mat_size];
     double* y = new double[mat_size];
 
+    // To have more efficient partitioning testing
+    std::vector<int> non_part = pwm::get_unpartitioned_methods();
+    bool break_part;
+
     // Run test on all the matrices
     for (size_t mat_index = 0; mat_index < matrices.size(); ++mat_index) {
         pwm::SparseMatrix<double, unsigned int>* mat = matrices[mat_index];
@@ -360,6 +434,7 @@ BOOST_AUTO_TEST_CASE(powermethod_size_10_5_unsigned, * boost::unit_test::toleran
         // If we have a TBB implementation set a global limiter to overwrite other limits
         tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism, pwm::get_threads_for_matrix(mat_index));
 
+        break_part = false;
         for (int partitions = 1; partitions <= std::min(max_threads*3, 10*5); ++partitions) {
             mat->generatePoissonMatrix(10, 5, partitions);
             std::fill(x, x+mat_size, 1.);
@@ -370,10 +445,15 @@ BOOST_AUTO_TEST_CASE(powermethod_size_10_5_unsigned, * boost::unit_test::toleran
                 BOOST_TEST(x[i] == real_sol[i]);
             }
 
-            // If matrix is an omp or TBB matrix break because all executions are the same
-            if ((mat_index-1) % 6 == 0 || (mat_index-2) % 6 == 0) {
-                break;
+            // If matrix does not use partitioning we break
+            for (int index : non_part) {
+                if (((int)mat_index-index) % pwm::get_amount_of_methods() == 0) {
+                    break_part = true;
+                    break;
+                }
             }
+
+            if (break_part) break;
         }
 
         // Reset omp threads

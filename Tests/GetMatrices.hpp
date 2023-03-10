@@ -47,6 +47,22 @@ namespace pwm {
 
         return std::floor((index - 1)/6.) + 1;
     }
+
+    inline std::vector<int> get_unpartitioned_methods() {
+        std::vector<int> methods;
+
+        methods.push_back(1);
+        methods.push_back(2);
+        methods.push_back(7);
+        methods.push_back(8);
+        methods.push_back(9);
+
+        return methods;
+    }
+
+    inline int get_amount_of_methods() {
+        return 9;
+    }
 } // namespace pwm
 
 #endif
