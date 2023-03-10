@@ -72,6 +72,9 @@ BOOST_AUTO_TEST_CASE(mv_arc130, * boost::unit_test::tolerance(std::pow(10, -14))
         // Reset omp threads
         omp_set_num_threads(max_threads);
     }
+
+    delete [] x;
+    delete [] y;
 }
 
 BOOST_AUTO_TEST_CASE(mv_gre_1107, * boost::unit_test::tolerance(std::pow(10, -14))) {
@@ -127,6 +130,9 @@ BOOST_AUTO_TEST_CASE(mv_gre_1107, * boost::unit_test::tolerance(std::pow(10, -14
         // Reset omp threads
         omp_set_num_threads(max_threads);
     }
+
+    delete [] x;
+    delete [] y;
 }
 
 BOOST_AUTO_TEST_CASE(mv_mycielskian5, * boost::unit_test::tolerance(std::pow(10, -14))) {
@@ -182,6 +188,9 @@ BOOST_AUTO_TEST_CASE(mv_mycielskian5, * boost::unit_test::tolerance(std::pow(10,
         // Reset omp threads
         omp_set_num_threads(max_threads);
     }
+
+    delete [] x;
+    delete [] y;
 }
 
 BOOST_AUTO_TEST_CASE(mv_mycielskian5_bin, * boost::unit_test::tolerance(std::pow(10, -14))) {
@@ -237,6 +246,9 @@ BOOST_AUTO_TEST_CASE(mv_mycielskian5_bin, * boost::unit_test::tolerance(std::pow
         // Reset omp threads
         omp_set_num_threads(max_threads);
     }
+
+    delete [] x;
+    delete [] y;
 }
 
 BOOST_AUTO_TEST_CASE(mv_8_4_bin_no_rand, * boost::unit_test::tolerance(std::pow(10, -14))) {
@@ -291,6 +303,9 @@ BOOST_AUTO_TEST_CASE(mv_8_4_bin_no_rand, * boost::unit_test::tolerance(std::pow(
         // Reset omp threads
         omp_set_num_threads(max_threads);
     }
+
+    delete [] x;
+    delete [] y;
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -351,6 +366,9 @@ BOOST_AUTO_TEST_CASE(mv_arc130_unsigned, * boost::unit_test::tolerance(std::pow(
         // Reset omp threads
         omp_set_num_threads(max_threads);
     }
+
+    delete [] x;
+    delete [] y;
 }
 
 BOOST_AUTO_TEST_CASE(mv_gre_1107_unsigned, * boost::unit_test::tolerance(std::pow(10, -14))) {
@@ -406,6 +424,9 @@ BOOST_AUTO_TEST_CASE(mv_gre_1107_unsigned, * boost::unit_test::tolerance(std::po
         // Reset omp threads
         omp_set_num_threads(max_threads);
     }
+
+    delete [] x;
+    delete [] y;
 }
 
 BOOST_AUTO_TEST_CASE(mv_mycielskian5_unsigned, * boost::unit_test::tolerance(std::pow(10, -14))) {
@@ -461,6 +482,9 @@ BOOST_AUTO_TEST_CASE(mv_mycielskian5_unsigned, * boost::unit_test::tolerance(std
         // Reset omp threads
         omp_set_num_threads(max_threads);
     }
+
+    delete [] x;
+    delete [] y;
 }
 
 BOOST_AUTO_TEST_CASE(mv_mycielskian5_bin_unsigned, * boost::unit_test::tolerance(std::pow(10, -14))) {
@@ -516,6 +540,9 @@ BOOST_AUTO_TEST_CASE(mv_mycielskian5_bin_unsigned, * boost::unit_test::tolerance
         // Reset omp threads
         omp_set_num_threads(max_threads);
     }
+
+    delete [] x;
+    delete [] y;
 }
 
 BOOST_AUTO_TEST_CASE(mv_8_4_bin_no_rand_unsigned, * boost::unit_test::tolerance(std::pow(10, -14))) {
@@ -570,6 +597,9 @@ BOOST_AUTO_TEST_CASE(mv_8_4_bin_no_rand_unsigned, * boost::unit_test::tolerance(
         // Reset omp threads
         omp_set_num_threads(max_threads);
     }
+
+    delete [] x;
+    delete [] y;
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -629,6 +659,9 @@ BOOST_AUTO_TEST_CASE(powermethod_arc130, * boost::unit_test::tolerance(std::pow(
         // Reset omp threads
         omp_set_num_threads(max_threads);
     }
+
+    delete [] x;
+    delete [] y;
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -688,6 +721,9 @@ BOOST_AUTO_TEST_CASE(powermethod_arc130, * boost::unit_test::tolerance(std::pow(
         // Reset omp threads
         omp_set_num_threads(max_threads);
     }
+
+    delete [] x;
+    delete [] y;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

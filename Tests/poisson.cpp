@@ -68,6 +68,9 @@ BOOST_AUTO_TEST_CASE(mv_size_3_3, * boost::unit_test::tolerance(std::pow(10, -14
         // Reset omp threads
         omp_set_num_threads(max_threads);
     }
+
+    delete [] x;
+    delete [] y;
 }
 
 BOOST_AUTO_TEST_CASE(mv_size_9_3, * boost::unit_test::tolerance(std::pow(10, -14))) {
@@ -123,6 +126,9 @@ BOOST_AUTO_TEST_CASE(mv_size_9_3, * boost::unit_test::tolerance(std::pow(10, -14
         // Reset omp threads
         omp_set_num_threads(max_threads);
     }
+
+    delete [] x;
+    delete [] y;
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -180,6 +186,9 @@ BOOST_AUTO_TEST_CASE(mv_size_3_3_unsigned, * boost::unit_test::tolerance(std::po
         // Reset omp threads
         omp_set_num_threads(max_threads);
     }
+
+    delete [] x;
+    delete [] y;
 }
 
 BOOST_AUTO_TEST_CASE(mv_size_9_3_unsigned, * boost::unit_test::tolerance(std::pow(10, -14))) {
@@ -235,6 +244,9 @@ BOOST_AUTO_TEST_CASE(mv_size_9_3_unsigned, * boost::unit_test::tolerance(std::po
         // Reset omp threads
         omp_set_num_threads(max_threads);
     }
+
+    delete [] x;
+    delete [] y;
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -293,6 +305,9 @@ BOOST_AUTO_TEST_CASE(powermethod_size_5_5, * boost::unit_test::tolerance(std::po
         // Reset omp threads
         omp_set_num_threads(max_threads);
     }
+
+    delete [] x;
+    delete [] y;
 }
 
 BOOST_AUTO_TEST_CASE(powermethod_size_10_5, * boost::unit_test::tolerance(std::pow(10, -12))) {
@@ -347,6 +362,9 @@ BOOST_AUTO_TEST_CASE(powermethod_size_10_5, * boost::unit_test::tolerance(std::p
         // Reset omp threads
         omp_set_num_threads(max_threads);
     }
+
+    delete [] x;
+    delete [] y;
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -405,6 +423,9 @@ BOOST_AUTO_TEST_CASE(powermethod_size_5_5_unsigned, * boost::unit_test::toleranc
         // Reset omp threads
         omp_set_num_threads(max_threads);
     }
+
+    delete [] x;
+    delete [] y;
 }
 
 BOOST_AUTO_TEST_CASE(powermethod_size_10_5_unsigned, * boost::unit_test::tolerance(std::pow(10, -12))) {
@@ -459,6 +480,9 @@ BOOST_AUTO_TEST_CASE(powermethod_size_10_5_unsigned, * boost::unit_test::toleran
         // Reset omp threads
         omp_set_num_threads(max_threads);
     }
+
+    delete [] x;
+    delete [] y;
 }
 
 BOOST_AUTO_TEST_SUITE_END()
