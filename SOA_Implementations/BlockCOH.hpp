@@ -424,8 +424,6 @@ namespace pwm {
                     horizontal_blocks[pid] = pwm::integerCeil<int_type>(this->noc, beta[pid]);
                     vertical_blocks[pid] = pwm::integerCeil<int_type>(calculateNOR(pid), beta[pid]);
 
-                    std::cout << horizontal_blocks[pid] << ", " << vertical_blocks[pid] << std::endl;
-
                     row_start[pid] = new index_t[((uint64_t)(beta[pid]+1))*horizontal_blocks[pid]*vertical_blocks[pid]]; // Beta + 1 elements per block
                     col_ind[pid] = new index_t[thread_nnz[pid]];
                     data[pid] = new T[thread_nnz[pid]];
@@ -453,7 +451,7 @@ namespace pwm {
                             // set datastructures for next block
                             block_start = i;
                             hilbert_coord = rowColToHilbert(hilbert_size, (input->row_coord[triplet_index+i]-thread_row_start[pid]) / beta[pid], input->col_coord[triplet_index+i] / beta[pid]);
-                            row_jump[pid][block_index] = (bicrs_t)(input->row_coord[triplet_index+i]-thread_row_start[pid]) / beta[pid] - (bicrs_t)(input->row_coord[triplet_index+i-1]-thread_row_start[pid]) / beta[pid];
+                            row_jump[pid][block_index] = (bicrs_t)((input->row_coord[triplet_index+i]-thread_row_start[pid]) / beta[pid]) - (bicrs_t)((input->row_coord[triplet_index+i-1]-thread_row_start[pid]) / beta[pid]);
                             col_jump[pid][block_index++] = (bicrs_t)(input->col_coord[triplet_index+i] / beta[pid]) - (bicrs_t)(input->col_coord[triplet_index+i-1] / beta[pid]); 
                         } 
                     }
