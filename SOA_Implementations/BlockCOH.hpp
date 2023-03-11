@@ -8,11 +8,9 @@
  *   IEEE Transactions on Parallel and Distributed Systems, 25(1):116–125, 2014.
  * 
  * TODO: Parallel implementation
- * TODO: ICRS instead of CRS on block level
  * TODO: Find efficient blocksize (look at Yzelman source code)
  * TODO: Look into compression
  * TODO: See if row partitioning can be done more effectively
- * TODO: Do something about empty blocks
  */
 
 #ifndef PWM_BLOCKCOH_HPP
@@ -39,19 +37,22 @@ namespace pwm {
     class BlockCOH: public pwm::SparseMatrix<T, int_type> {
         protected:
             // Array of pointers which correspond to the compressed CRS row starting indices
-            index_t** row_start;
+            index_t** row_jump;
 
             // Array of pointers which correspond to the compressed CRS column indices
-            index_t** col_ind;
+            index_t** col_jump;
 
             // Array of pointers which correspond to the data in each block per processor
             T** data;
 
-            // Array of pointers which correspond to the row jump arrays for BICRS on the block level per processor
-            bicrs_t** row_jump;
+            // Array of pointers which corresponds to the nnz for each of the blocks per processor
+            int_type** block_nnz;
 
             // Array of pointers which correspond to the row jump arrays for BICRS on the block level per processor
-            bicrs_t** col_jump;
+            bicrs_t** row_jump_block;
+
+            // Array of pointers which correspond to the row jump arrays for BICRS on the block level per processor
+            bicrs_t** col_jump_block;
 
             // Amount of threads
             int threads;
@@ -255,11 +256,11 @@ namespace pwm {
              * @param input Triplet input matrix
              * @param block_start Starting index of the block
              * @param block_end Ending index of the block
-             * @param block_index index of the block
              * @param triplet_index Starting index of the thread in the input matrix
              * @param pid Thread number corresponding to the given area
+             * @param row_jump_index Index in the row_jump array for this thread
              */
-            void transformHilbertBlockToCRS(pwm::Triplet<T, int_type>* input, int_type block_start, int_type block_end, int_type block_index, int_type triplet_index, int pid) {
+            void transformHilbertBlockToCRS(pwm::Triplet<T, int_type>* input, int_type block_start, int_type block_end, int_type triplet_index, int pid, int_type* row_jump_index) {
                 // Transform triplet indices to block indices
                 index_t* block_row_ind = new index_t[block_end-block_start];
                 index_t* block_col_ind = new index_t[block_end-block_start];
@@ -272,7 +273,7 @@ namespace pwm {
                 }
 
                 // Store block as CRS format
-                pwm::TripletToCRS<T, index_t, int_type>(block_row_ind, block_col_ind, temp_data, row_start[pid]+(beta[pid]+1)*block_index, col_ind[pid]+block_start, data[pid]+block_start, block_end-block_start, beta[pid]);
+                *row_jump_index += pwm::TripletToICRS<T, index_t, int_type>(block_row_ind, block_col_ind, temp_data, row_jump[pid]+*row_jump_index, col_jump[pid]+block_start, data[pid]+block_start, block_end-block_start, beta[pid]);
 
                 delete [] block_row_ind;
                 delete [] block_col_ind;
@@ -282,18 +283,33 @@ namespace pwm {
             /**
              * @brief CRS multiplication of a single block
              * 
-             * @param start_index_row Starting index of CRS structure row_start array
-             * @param start_index_col Starting index of CRS structure col_ind and data array
+             * @param row_index Starting index of CRS structure row_start array
+             * @param col_index Starting index of CRS structure col_ind and data array
              * @param x Input vector for block mult
              * @param y Output vector for block mult
              * @param pid thread id
+             * @param block_index Index of the current block
              */
-            void blockMult(int_type start_index_row, int_type start_index_col, const T* x, T* y, int pid) {
-                for (int_type i = 0; i < beta[pid]; ++i) {
-                    for (int_type k = row_start[pid][start_index_row+i]; k < row_start[pid][start_index_row+i+1]; ++k) {
-                        y[i] = y[i] + data[pid][start_index_col+k]*x[col_ind[pid][start_index_col+k]];
+            void blockMult(int_type* row_index, int_type* col_index, const T* x, T* y, int pid, int_type block_index) {
+                index_t row = row_jump[pid][*row_index];
+                index_t col = col_jump[pid][*col_index];
+
+                *row_index += 1;
+
+                for (int_type i = 0; i < block_nnz[pid][block_index]-1; ++i) {
+                    y[row] += data[pid][*col_index]*x[col];
+
+                    *col_index += 1;
+                    col += col_jump[pid][*col_index];
+                    if (col >= beta[pid]) {
+                        col -= beta[pid];
+                        row += row_jump[pid][*row_index];
+                        *row_index += 1;
                     }
-                }  
+                }
+
+                y[row] += data[pid][*col_index]*x[col];
+                *col_index += 1;
             }
 
         public:
@@ -306,30 +322,33 @@ namespace pwm {
             // Deconstructor
             ~BlockCOH() {
                 for (int i = 0; i < threads; ++i) {
-                    delete [] row_start[i];
-                    delete [] col_ind[i];
-                    delete [] data[i];
                     delete [] row_jump[i];
                     delete [] col_jump[i];
+                    delete [] data[i];
+                    delete [] row_jump_block[i];
+                    delete [] col_jump_block[i];
+                    delete [] block_nnz[i];
 
-                    row_start[i] = NULL;
-                    col_ind[i] = NULL;
-                    data[i] = NULL;
                     row_jump[i] = NULL;
                     col_jump[i] = NULL;
+                    data[i] = NULL;
+                    row_jump_block[i] = NULL;
+                    col_jump_block[i] = NULL;
+                    block_nnz[i] = NULL;
                 }
 
-                delete [] row_start;
-                delete [] col_ind;
-                delete [] data;
                 delete [] row_jump;
                 delete [] col_jump;
+                delete [] data;
+                delete [] row_jump_block;
+                delete [] col_jump_block;
+                delete [] block_nnz;
 
-                row_start = NULL;
-                col_ind = NULL;
-                data = NULL;
                 row_jump = NULL;
                 col_jump = NULL;
+                data = NULL;
+                row_jump_block = NULL;
+                col_jump_block = NULL;
 
                 delete [] thread_row_start;
                 delete [] beta;
@@ -404,11 +423,12 @@ namespace pwm {
                 setBlockSizeParams();
 
                 // Generate datastructures for each thread
-                row_start = new index_t*[threads];
-                col_ind = new index_t*[threads];
+                row_jump = new index_t*[threads];
+                col_jump = new index_t*[threads];
                 data = new T*[threads];
-                row_jump = new bicrs_t*[threads];
-                col_jump = new bicrs_t*[threads];
+                row_jump_block = new bicrs_t*[threads];
+                col_jump_block = new bicrs_t*[threads];
+                block_nnz = new int_type*[threads];
 
                 horizontal_blocks = new int_type[threads];
                 vertical_blocks = new int_type[threads];
@@ -424,11 +444,12 @@ namespace pwm {
                     horizontal_blocks[pid] = pwm::integerCeil<int_type>(this->noc, beta[pid]);
                     vertical_blocks[pid] = pwm::integerCeil<int_type>(calculateNOR(pid), beta[pid]);
 
-                    row_start[pid] = new index_t[((uint64_t)(beta[pid]+1))*horizontal_blocks[pid]*vertical_blocks[pid]]; // Beta + 1 elements per block
-                    col_ind[pid] = new index_t[thread_nnz[pid]];
+                    row_jump[pid] = new index_t[((uint64_t)(beta[pid]+1))*horizontal_blocks[pid]*vertical_blocks[pid]]; // Maximum beta + 1 elements per block
+                    col_jump[pid] = new index_t[thread_nnz[pid]];
                     data[pid] = new T[thread_nnz[pid]];
-                    row_jump[pid] = new bicrs_t[horizontal_blocks[pid]*vertical_blocks[pid]+1];
-                    col_jump[pid] = new bicrs_t[horizontal_blocks[pid]*vertical_blocks[pid]+1];
+                    row_jump_block[pid] = new bicrs_t[horizontal_blocks[pid]*vertical_blocks[pid]+1];
+                    col_jump_block[pid] = new bicrs_t[horizontal_blocks[pid]*vertical_blocks[pid]+1];
+                    block_nnz[pid] = new int_type[horizontal_blocks[pid]*vertical_blocks[pid]];
 
                     // Sort the elements for this thread using the hilbert sorting method
                     hilbert_size = std::max<int_type>(calculateNOR(pid), this->noc);
@@ -439,25 +460,28 @@ namespace pwm {
                     block_start = 0;
                     block_index = 1;
                     hilbert_coord = rowColToHilbert(hilbert_size, (input->row_coord[triplet_index]-thread_row_start[pid]) / beta[pid], input->col_coord[triplet_index] / beta[pid]);
-                    row_jump[pid][0] = (input->row_coord[triplet_index] - thread_row_start[pid]) / beta[pid];
-                    col_jump[pid][0] = input->col_coord[triplet_index] / beta[pid];
+                    row_jump_block[pid][0] = (input->row_coord[triplet_index] - thread_row_start[pid]) / beta[pid];
+                    col_jump_block[pid][0] = input->col_coord[triplet_index] / beta[pid];
 
                     // Track all the indices in each Hilbert block and use Triplet to CRS in each block
+                    int_type row_jump_index = 0;
                     for (int_type i = 0; i < thread_nnz[pid]; ++i) {
                         // Check if we reached the end of the block
                         if (rowColToHilbert(hilbert_size, (input->row_coord[triplet_index+i]-thread_row_start[pid]) / beta[pid], input->col_coord[triplet_index+i] / beta[pid]) != hilbert_coord) {
-                            transformHilbertBlockToCRS(input, block_start, i, block_index-1, triplet_index, pid);
+                            transformHilbertBlockToCRS(input, block_start, i, triplet_index, pid, &row_jump_index);
+                            block_nnz[pid][block_index-1] = i-block_start;
 
                             // set datastructures for next block
                             block_start = i;
                             hilbert_coord = rowColToHilbert(hilbert_size, (input->row_coord[triplet_index+i]-thread_row_start[pid]) / beta[pid], input->col_coord[triplet_index+i] / beta[pid]);
-                            row_jump[pid][block_index] = (bicrs_t)((input->row_coord[triplet_index+i]-thread_row_start[pid]) / beta[pid]) - (bicrs_t)((input->row_coord[triplet_index+i-1]-thread_row_start[pid]) / beta[pid]);
-                            col_jump[pid][block_index++] = (bicrs_t)(input->col_coord[triplet_index+i] / beta[pid]) - (bicrs_t)(input->col_coord[triplet_index+i-1] / beta[pid]); 
+                            row_jump_block[pid][block_index] = (bicrs_t)((input->row_coord[triplet_index+i]-thread_row_start[pid]) / beta[pid]) - (bicrs_t)((input->row_coord[triplet_index+i-1]-thread_row_start[pid]) / beta[pid]);
+                            col_jump_block[pid][block_index++] = (bicrs_t)(input->col_coord[triplet_index+i] / beta[pid]) - (bicrs_t)(input->col_coord[triplet_index+i-1] / beta[pid]); 
                         } 
                     }
 
                     // Also convert the last block
-                    transformHilbertBlockToCRS(input, block_start, thread_nnz[pid], block_index-1, triplet_index, pid);
+                    transformHilbertBlockToCRS(input, block_start, thread_nnz[pid], triplet_index, pid, &row_jump_index);
+                    block_nnz[pid][block_index-1] = thread_nnz[pid] - block_start;
 
                     // Set thread blocks
                     thread_blocks[pid] = block_index;
@@ -496,22 +520,19 @@ namespace pwm {
 
                 for (int pid = 0; pid < threads; ++pid) {
                     // Set initial datastructures
-                    bicrs_t block_row = row_jump[pid][0];
-                    bicrs_t block_col = col_jump[pid][0];
+                    bicrs_t block_row = row_jump_block[pid][0];
+                    bicrs_t block_col = col_jump_block[pid][0];
                     int_type block_index = 1;
                     int_type row_index = 0;
                     int_type col_index = 0;
 
                     // Multiply all blocks
                     while (block_index <= thread_blocks[pid]) {
-                        blockMult(row_index, col_index, x+block_col*beta[pid], y+thread_row_start[pid]+block_row*beta[pid], pid);
-                        row_index += beta[pid]+1;
-                        col_index += row_start[pid][row_index-1];
-
+                        blockMult(&row_index, &col_index, x+block_col*beta[pid], y+thread_row_start[pid]+block_row*beta[pid], pid, block_index-1);
 
                         // Set block row and column for next iteration
-                        block_row += row_jump[pid][block_index];
-                        block_col += col_jump[pid][block_index++];
+                        block_row += row_jump_block[pid][block_index];
+                        block_col += col_jump_block[pid][block_index++];
                     }
                 }
             }

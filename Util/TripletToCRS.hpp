@@ -366,6 +366,72 @@ namespace pwm {
 
         delete [] coords;        
     }
+
+    /**
+     * @brief Transforms Triplet format to ICRS format
+     * 
+     * The output arrays are assumed to have the right maximum size.
+     * 
+     * @param row_coord Array of row coordinates of Triplet format
+     * @param col_coord Array of column coordinates of Triplet format
+     * @param data Data array for Triplet format
+     * @param row_jump Output row_jump array of ICRS format
+     * @param col_jump Output col_jump array of ICRS format
+     * @param ICRS_data Output data array of ICRS format
+     * @param nnz Number of nonzeros in matrix
+     * @param size Size of the matrix
+     * @return int_type Returns the index in the row_jump array as this is not always equal to nor+1
+     */
+    template<typename T, typename index_type, typename int_type>
+    int_type TripletToICRS(index_type* row_coord, index_type* col_coord, T* data, index_type* row_jump, index_type* col_jump, T* ICRS_data, int_type nnz, int_type size) {
+        // Sort triplets on row value
+        index_type** coords = new index_type*[2];
+        coords[0] = row_coord;
+        coords[1] = col_coord;
+        sortOnCoord<T, index_type, int_type>(coords, data, 2, 0, nnz-1);
+
+        // Sort column values in each row
+        coords[0] = col_coord;
+        int_type row_start = 0;
+        int_type row_val = row_coord[0];
+        for (int_type i = 1; i < nnz; ++i) {
+            // If the row value jumps, we sort the row
+            if (row_coord[i] != row_val) {
+                sortOnCoord<T, index_type, int_type>(coords, data, 1, row_start, i-1);
+
+                row_start = i;
+                row_val = row_coord[i];
+            }
+        }
+
+        // Sort last row
+        sortOnCoord<T, index_type, int_type>(coords, data, 1, row_start, nnz-1);
+
+        // Fill initial values of ICRS structure
+        row_jump[0] = row_coord[0];
+        col_jump[0] = col_coord[0];
+        ICRS_data[0] = data[0];
+
+        // Loop over values and fill ICRS structure
+        int_type row_jump_index = 1;
+        index_type cur_row = row_coord[0];
+        for (int_type i = 1; i < nnz; ++i) {
+            if (row_coord[i] != cur_row) {
+                // We have a new row so the col_jump must overflow
+                col_jump[i] = (col_coord[i] + size) - col_coord[i-1];
+                row_jump[row_jump_index++] = row_coord[i] - row_coord[i-1];
+                cur_row = row_coord[i];
+            } else {
+                col_jump[i] = col_coord[i] - col_coord[i-1];
+            }
+
+            ICRS_data[i] = data[i];
+        }
+
+        delete [] coords;
+
+        return row_jump_index;
+    }
 } // namespace pwm
 
 
