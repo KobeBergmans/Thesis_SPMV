@@ -149,25 +149,6 @@ namespace pwm {
             }
 
             /**
-             * @brief Compares two matrix elements for the hilbert order
-             * 
-             * Calculates the coordinate on the hilbert curve of both elements and then compares
-             * 
-             * TODO: This is not optimal and slow...
-             * 
-             * @param size Size of the matrix, this must be a power of 2
-             * @param row1 Row of first element
-             * @param col1 Column of first element
-             * @param row2 Row of second element
-             * @param col2 Column of second element
-             * @return true if the first element is before or equal to the second element in Hilbert order
-             * @return false if the first element is after than the second element in Hilbert order
-             */
-            bool hilbertCompare(int_type size, int_type row1, int_type col1, int_type row2, int_type col2) {
-                return rowColToHilbert(size, row1, col1) <= rowColToHilbert(size, row2, col2);
-            }
-
-            /**
              * @brief Calculates the blocksize for each thread
              */
             void setBlockSizeParams() {
@@ -197,23 +178,31 @@ namespace pwm {
             /**
              * @brief Quicksort partition function
              * 
+             * Returns high+1 if all elements in the array are the same to avoid unnecessary recursion
+             * 
              * @param coords Array which contains 2 pointers, pointing to the column and row indices respectively
              * @param data data of the block which needs to be partitioned
              * @param low Starting index of data
              * @param high Ending index of data
              * @param orig_size Size of the area that is sorted
              * @param pid Thread number corresponding to the given area
-             * @return int_type Returns partitioning point
+             * @return int_type Returns partitioning point of high+1 if all the elements are the same
              */
             int_type partitionBlock(int_type** coords, T* data, int_type low, int_type high, int_type orig_size, int pid) {
                 // Select pivot (rightmost element)
                 int_type pivotRow = (coords[0][high]-thread_row_start[pid]) / beta[pid];
                 int_type pivotCol = coords[1][high] / beta[pid];
+                int_type hilbert_pivot = rowColToHilbert(orig_size / beta[pid], pivotRow, pivotCol);
 
                 // Points to biggest element
                 int_type i = low;
+                int_type hilbert_elem;
+                int_type same_ct = 0;
                 for (int j = low; j < high; ++j) {
-                    if (hilbertCompare(orig_size / beta[pid], (coords[0][j]-thread_row_start[pid]) / beta[pid], coords[1][j]/ beta[pid], pivotRow, pivotCol)) {
+                    hilbert_elem = rowColToHilbert(orig_size / beta[pid], (coords[0][j]-thread_row_start[pid]) / beta[pid], coords[1][j]/ beta[pid]);
+                    if (hilbert_elem <= hilbert_pivot) {
+                        if (hilbert_elem == hilbert_pivot) same_ct++;
+
                         // If element is smaller than pivot swap it with i+1
                         pwm::swapArrayElems<T, int_type, int_type>(coords, data, 2, i, j);
                         i++;
@@ -222,6 +211,10 @@ namespace pwm {
 
                 // Swap pivot with the greatest element at i+1
                 pwm::swapArrayElems<T, int_type, int_type>(coords, data, 2, i, high);
+
+                if (same_ct == high-low) {
+                    return high+1;
+                }
 
                 // return the partitioning point
                 return i;
@@ -246,10 +239,13 @@ namespace pwm {
 
                     int_type middle = partitionBlock(coords, data, low, high, orig_size, pid);
 
-                    if (middle > 0) {
-                        sortForHilbertBlocks(coords, data, low, middle - 1, orig_size, pid);
+                    // We don't do anything if all elements are the same in the array
+                    if (middle != high + 1) {
+                        if (middle > 0) {
+                            sortForHilbertBlocks(coords, data, low, middle - 1, orig_size, pid);
+                        }
+                        sortForHilbertBlocks(coords, data, middle + 1, high, orig_size, pid);
                     }
-                    sortForHilbertBlocks(coords, data, middle + 1, high, orig_size, pid);
                 }
             }
 
@@ -428,7 +424,9 @@ namespace pwm {
                     horizontal_blocks[pid] = pwm::integerCeil<int_type>(this->noc, beta[pid]);
                     vertical_blocks[pid] = pwm::integerCeil<int_type>(calculateNOR(pid), beta[pid]);
 
-                    row_start[pid] = new index_t[(beta[pid]+1)*horizontal_blocks[pid]*vertical_blocks[pid]]; // Beta + 1 elements per block
+                    std::cout << horizontal_blocks[pid] << ", " << vertical_blocks[pid] << std::endl;
+
+                    row_start[pid] = new index_t[((uint64_t)(beta[pid]+1))*horizontal_blocks[pid]*vertical_blocks[pid]]; // Beta + 1 elements per block
                     col_ind[pid] = new index_t[thread_nnz[pid]];
                     data[pid] = new T[thread_nnz[pid]];
                     row_jump[pid] = new bicrs_t[horizontal_blocks[pid]*vertical_blocks[pid]+1];
@@ -450,7 +448,6 @@ namespace pwm {
                     for (int_type i = 0; i < thread_nnz[pid]; ++i) {
                         // Check if we reached the end of the block
                         if (rowColToHilbert(hilbert_size, (input->row_coord[triplet_index+i]-thread_row_start[pid]) / beta[pid], input->col_coord[triplet_index+i] / beta[pid]) != hilbert_coord) {
-
                             transformHilbertBlockToCRS(input, block_start, i, block_index-1, triplet_index, pid);
 
                             // set datastructures for next block

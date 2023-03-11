@@ -125,8 +125,6 @@ int main(int argc, char** argv) {
     time = (stop - start) * 1000;
     std::cout << "Time to set up datastructures: " << time << "ms" << std::endl;
 
-    test_mat->loadFromTriplets(&input_mat, partitions);
-
     // Do warm up iterations
     for (int i = 0; i < warm_up; ++i) {
         test_mat->mv(x, y);
