@@ -6,8 +6,6 @@
  * Based on:
  *   A.-J. N. Yzelman and D. Roose. High-level strategies for parallel sharedmemory sparse matrix-vector multiplication. 
  *   IEEE Transactions on Parallel and Distributed Systems, 25(1):116–125, 2014.
- * 
- * TODO: See if row partitioning can be done more effectively
  */
 
 #ifndef PWM_BLOCKCOH_HPP
