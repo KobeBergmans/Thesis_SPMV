@@ -7,7 +7,7 @@
  *   A.-J. N. Yzelman and D. Roose. High-level strategies for parallel sharedmemory sparse matrix-vector multiplication. 
  *   IEEE Transactions on Parallel and Distributed Systems, 25(1):116–125, 2014.
  * 
- * TODO: Parallel implementation
+ * TODO: Make matrix loading parallel
  * TODO: Find efficient blocksize (look at Yzelman source code)
  * TODO: Look into compression
  * TODO: See if row partitioning can be done more effectively
@@ -533,9 +533,11 @@ namespace pwm {
              * @param y Result vector
              */
             void mv(const T* x, T* y) {
-                std::fill(y, y+this->nor, 0.);
-
+                #pragma omp parallel for schedule(static)
                 for (int pid = 0; pid < threads; ++pid) {
+                    // Clear y
+                    std::fill(y+thread_row_start[pid], y+thread_row_start[pid]+calculateNOR(pid), 0.);
+
                     // Set initial datastructures
                     bicrs_t block_row = row_jump_block[pid][0];
                     bicrs_t block_col = col_jump_block[pid][0];
