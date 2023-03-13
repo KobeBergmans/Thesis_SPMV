@@ -7,7 +7,6 @@
  *   A.-J. N. Yzelman and D. Roose. High-level strategies for parallel sharedmemory sparse matrix-vector multiplication. 
  *   IEEE Transactions on Parallel and Distributed Systems, 25(1):116–125, 2014.
  * 
- * TODO: Make matrix loading parallel
  * TODO: Find efficient blocksize (look at Yzelman source code)
  * TODO: Look into compression
  * TODO: See if row partitioning can be done more effectively
@@ -434,11 +433,8 @@ namespace pwm {
                 vertical_blocks = new int_type[threads];
                 thread_blocks = new int_type[threads];
 
-                // Indices datastructures
-                int_type triplet_index = 0;
-                int_type hilbert_size, hilbert_coord, block_start, row_block_index, block_index;
-
                 // Create and fill datastructures for each thread
+                #pragma omp parallel for schedule(static) 
                 for (int pid = 0; pid < threads; ++pid) {
                     // Create datastructures
                     horizontal_blocks[pid] = pwm::integerCeil<int_type>(this->noc, beta[pid]);
@@ -451,16 +447,22 @@ namespace pwm {
                     col_jump_block[pid] = new bicrs_t[horizontal_blocks[pid]*vertical_blocks[pid]+1];
                     block_nnz[pid] = new int_type[horizontal_blocks[pid]*vertical_blocks[pid]];
 
+                    // Calculate triplet index
+                    int_type triplet_index = 0;
+                    for (int i = 0; i < pid; ++i) {
+                        triplet_index += thread_nnz[i];
+                    }
+
                     // Sort the elements for this thread using the hilbert sorting method
-                    hilbert_size = std::max<int_type>(calculateNOR(pid), this->noc);
+                    int_type hilbert_size = std::max<int_type>(calculateNOR(pid), this->noc);
                     hilbert_size = (int_type)std::pow<double>(2., std::ceil(std::log2((double)hilbert_size)));
                     sortForHilbertBlocks(coords, input->data, triplet_index, triplet_index + thread_nnz[pid]-1, hilbert_size, pid);
 
                     // Initialize datastructures
-                    block_start = 0;
-                    block_index = 1;
-                    row_block_index = 1;
-                    hilbert_coord = rowColToHilbert(hilbert_size, (input->row_coord[triplet_index]-thread_row_start[pid]) / beta[pid], input->col_coord[triplet_index] / beta[pid]);
+                    int_type block_start = 0;
+                    int_type block_index = 1;
+                    int_type row_block_index = 1;
+                    int_type hilbert_coord = rowColToHilbert(hilbert_size, (input->row_coord[triplet_index]-thread_row_start[pid]) / beta[pid], input->col_coord[triplet_index] / beta[pid]);
                     row_jump_block[pid][0] = (input->row_coord[triplet_index] - thread_row_start[pid]) / beta[pid];
                     col_jump_block[pid][0] = input->col_coord[triplet_index] / beta[pid];
 
