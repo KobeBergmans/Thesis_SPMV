@@ -7,8 +7,6 @@
  *   A.-J. N. Yzelman and D. Roose. High-level strategies for parallel sharedmemory sparse matrix-vector multiplication. 
  *   IEEE Transactions on Parallel and Distributed Systems, 25(1):116–125, 2014.
  * 
- * TODO: Find efficient blocksize (look at Yzelman source code)
- * TODO: Look into compression
  * TODO: See if row partitioning can be done more effectively
  */
 
@@ -155,13 +153,14 @@ namespace pwm {
                 beta = new int_type[threads];
                 block_bits = new int_type[threads];
 
-                int_type minimal_size;
+                int_type maximal_size, lg_sqrt_size;
                 for (int pid = 0; pid < threads; ++pid) {
+                    maximal_size = std::max(calculateNOR(pid), this->noc);
+
                     // Maximum of 16 is specified because row and column indices should fit in 4 bytes
-                    minimal_size = std::min<int_type>(calculateNOR(pid), this->noc);
-                    int_type lg_sqrt_size = (int_type)(std::ceil(std::log2(std::sqrt((double)minimal_size))));
-                    block_bits[pid] = std::min<int_type>(16, lg_sqrt_size);
-                    beta[pid] = std::pow(2, block_bits[pid]);
+                    lg_sqrt_size = (int_type)(std::ceil(std::log2(std::sqrt((double)maximal_size))));
+                    block_bits[pid] = std::min<int_type>(16, 3+lg_sqrt_size);
+                    beta[pid] = (int_type)(std::pow(2, block_bits[pid]));
                 }
             }
 
@@ -290,8 +289,9 @@ namespace pwm {
              * @param block_index Index of the current block
              */
             void blockMult(int_type* row_index, int_type* col_index, const T* x, T* y, int pid, int_type block_index) {
-                index_t row = row_jump[pid][*row_index];
-                index_t col = col_jump[pid][*col_index];
+                // We need to transform to int_type because there can be overflow of the columns
+                int_type row = row_jump[pid][*row_index];
+                int_type col = col_jump[pid][*col_index];
 
                 *row_index += 1;
 
@@ -440,7 +440,7 @@ namespace pwm {
                     horizontal_blocks[pid] = pwm::integerCeil<int_type>(this->noc, beta[pid]);
                     vertical_blocks[pid] = pwm::integerCeil<int_type>(calculateNOR(pid), beta[pid]);
 
-                    row_jump[pid] = new index_t[((uint64_t)(beta[pid]+1))*horizontal_blocks[pid]*vertical_blocks[pid]]; // Maximum beta + 1 elements per block
+                    row_jump[pid] = new index_t[((size_t)(beta[pid]+1))*horizontal_blocks[pid]*vertical_blocks[pid]]; // Maximum beta + 1 elements per block
                     col_jump[pid] = new index_t[thread_nnz[pid]];
                     data[pid] = new T[thread_nnz[pid]];
                     row_jump_block[pid] = new bicrs_t[horizontal_blocks[pid]*vertical_blocks[pid]+1];
