@@ -436,7 +436,7 @@ namespace pwm {
 
                 // Indices datastructures
                 int_type triplet_index = 0;
-                int_type hilbert_size, hilbert_coord, block_start, block_index;
+                int_type hilbert_size, hilbert_coord, block_start, row_block_index, block_index;
 
                 // Create and fill datastructures for each thread
                 for (int pid = 0; pid < threads; ++pid) {
@@ -459,12 +459,16 @@ namespace pwm {
                     // Initialize datastructures
                     block_start = 0;
                     block_index = 1;
+                    row_block_index = 1;
                     hilbert_coord = rowColToHilbert(hilbert_size, (input->row_coord[triplet_index]-thread_row_start[pid]) / beta[pid], input->col_coord[triplet_index] / beta[pid]);
                     row_jump_block[pid][0] = (input->row_coord[triplet_index] - thread_row_start[pid]) / beta[pid];
                     col_jump_block[pid][0] = input->col_coord[triplet_index] / beta[pid];
 
                     // Track all the indices in each Hilbert block and use Triplet to CRS in each block
                     int_type row_jump_index = 0;
+                    bicrs_t old_block_row, old_block_col;
+                    bicrs_t new_block_row = (bicrs_t)((input->row_coord[triplet_index]-thread_row_start[pid]) / beta[pid]);
+                    bicrs_t new_block_col = (bicrs_t)(input->col_coord[triplet_index] / beta[pid]);
                     for (int_type i = 0; i < thread_nnz[pid]; ++i) {
                         // Check if we reached the end of the block
                         if (rowColToHilbert(hilbert_size, (input->row_coord[triplet_index+i]-thread_row_start[pid]) / beta[pid], input->col_coord[triplet_index+i] / beta[pid]) != hilbert_coord) {
@@ -474,8 +478,21 @@ namespace pwm {
                             // set datastructures for next block
                             block_start = i;
                             hilbert_coord = rowColToHilbert(hilbert_size, (input->row_coord[triplet_index+i]-thread_row_start[pid]) / beta[pid], input->col_coord[triplet_index+i] / beta[pid]);
-                            row_jump_block[pid][block_index] = (bicrs_t)((input->row_coord[triplet_index+i]-thread_row_start[pid]) / beta[pid]) - (bicrs_t)((input->row_coord[triplet_index+i-1]-thread_row_start[pid]) / beta[pid]);
-                            col_jump_block[pid][block_index++] = (bicrs_t)(input->col_coord[triplet_index+i] / beta[pid]) - (bicrs_t)(input->col_coord[triplet_index+i-1] / beta[pid]); 
+
+                            // Set BICRS structure on block-level
+                            old_block_row = new_block_row;
+                            new_block_row = (bicrs_t)((input->row_coord[triplet_index+i]-thread_row_start[pid]) / beta[pid]);
+                            old_block_col = new_block_col;
+                            new_block_col = (bicrs_t)(input->col_coord[triplet_index+i] / beta[pid]);
+                            
+                            if (new_block_row == old_block_row) {
+                                col_jump_block[pid][block_index++] = new_block_col - old_block_col;
+                            } else {
+                                // We have a new row so the col_jump array must overflow
+                                row_jump_block[pid][row_block_index++] = new_block_row - old_block_row;
+                                col_jump_block[pid][block_index++] = new_block_col - old_block_col + horizontal_blocks[pid]; 
+                            }
+                            
                         } 
                     }
 
@@ -523,6 +540,7 @@ namespace pwm {
                     bicrs_t block_row = row_jump_block[pid][0];
                     bicrs_t block_col = col_jump_block[pid][0];
                     int_type block_index = 1;
+                    int_type block_row_index = 1;
                     int_type row_index = 0;
                     int_type col_index = 0;
 
@@ -530,9 +548,15 @@ namespace pwm {
                     while (block_index <= thread_blocks[pid]) {
                         blockMult(&row_index, &col_index, x+block_col*beta[pid], y+thread_row_start[pid]+block_row*beta[pid], pid, block_index-1);
 
-                        // Set block row and column for next iteration
-                        block_row += row_jump_block[pid][block_index];
+                        // Set block column for the next iteration
                         block_col += col_jump_block[pid][block_index++];
+
+                        // Check for block_col overflow
+                        if (block_col >= horizontal_blocks[pid]) {
+                            // Set the row for the next iteration and update the rows
+                            block_col -= horizontal_blocks[pid];
+                            block_row += row_jump_block[pid][block_row_index++];
+                        }
                     }
                 }
             }
