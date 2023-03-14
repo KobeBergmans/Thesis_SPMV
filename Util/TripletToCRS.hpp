@@ -10,8 +10,10 @@
 #include <stdlib.h>
 
 #include "VectorUtill.hpp"
+#include "Constants.hpp"
 
 #include "oneapi/tbb.h"
+#include <omp.h>
 
 namespace pwm {
     template<typename T, typename index_type, typename int_type>
@@ -185,7 +187,7 @@ namespace pwm {
         sortOnCoord<T, int_type, int_type>(coords, data, 2, 0, nnz-1);
 
         // Fill CRS data with omp to avoid first touch
-        #pragma omp parallel for shared(col_ind, col_coord, CRS_data, data, row_coord, row_start) schedule(dynamic, 8)
+        #pragma omp parallel for shared(col_ind, col_coord, CRS_data, data, row_coord, row_start) schedule(dynamic, OMP_DYNAMIC_CHUNK_SIZE)
         for (int i = 0; i < nnz; ++i) {
             col_ind[i] = col_coord[i];
             CRS_data[i] = data[i];
@@ -209,7 +211,7 @@ namespace pwm {
 
         // Sort columns of CRS data
         coords[0] = col_ind;
-        #pragma omp parallel for shared(col_ind, CRS_data, row_start) schedule(dynamic)
+        #pragma omp parallel for shared(col_ind, CRS_data, row_start) schedule(dynamic, OMP_DYNAMIC_CHUNK_SIZE)
         for (int_type row = 0; row <= row_coord[nnz-1]; ++row) {
             if (row_start[row+1] != 0) { // Needed for when the first row is empty and unsigned integers are used
                 sortOnCoord<T, int_type, int_type>(coords, CRS_data, 1, row_start[row], row_start[row+1]-1);

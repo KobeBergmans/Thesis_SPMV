@@ -12,20 +12,13 @@
 #define PWM_BLOCKCOH_HPP
 
 #include <algorithm>
-#include <cstdint>
 #include <tuple>
 #include <cmath>
 
 #include "../Matrix/Triplet.hpp"
 #include "../Matrix/SparseMatrix.hpp"
 #include "../Util/TripletToCRS.hpp"
-
-typedef uint16_t index_t;
-typedef int16_t bicrs_t;
-
-#define LOW_BITMASK  0b00000000000000001111111111111111
-#define HIGH_BITMASK 0b11111111111111110000000000000000
-#define COORD_BITS 16
+#include "../Util/Constants.hpp"
 
 namespace pwm {
     template<typename T, typename int_type>

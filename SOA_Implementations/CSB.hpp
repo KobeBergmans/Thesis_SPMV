@@ -20,9 +20,6 @@
 #ifndef PWM_CSB_HPP
 #define PWM_CSB_HPP
 
-#define O_DIM_CONST 4
-#define O_BETA_CONST 3
-
 #include <cassert>
 #include <algorithm>
 #include <cmath>
@@ -33,18 +30,7 @@
 #include "../Util/VectorUtill.hpp"
 #include "../Util/Math.hpp"
 #include "../Util/TripletToCRS.hpp"
-
-typedef uint32_t compress_t;
-typedef uint16_t index_t;
-
-#define LOW_BITMASK  0b00000000000000001111111111111111
-#define HIGH_BITMASK 0b11111111111111110000000000000000
-#define COORD_BITS 16
-
-#define L2_CACHE_SIZE_MB 1
-#define L2_CACHE_MULT 0.85
-
-#define MIN_NNZ_TO_PAR 128
+#include "../Util/Constants.hpp"
 
 namespace pwm {
     template<typename T, typename int_type>

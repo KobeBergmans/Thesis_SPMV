@@ -17,6 +17,7 @@
 #include "../Matrix/SparseMatrix.hpp"
 #include "../Util/VectorUtill.hpp"
 #include "../Util/Poisson.hpp"
+#include "../Util/Constants.hpp"
 
 #include <omp.h>
 
@@ -106,7 +107,7 @@ namespace pwm {
              * @param y Output vector
              */
             void mv(const T* x, T* y) {             
-                #pragma omp parallel for shared(x, y) schedule(dynamic, 8) // We use dynamic scheduler because of the varying workload per row
+                #pragma omp parallel for shared(x, y) schedule(dynamic, OMP_DYNAMIC_CHUNK_SIZE) // We use dynamic scheduler because of the varying workload per row
                 for (int_type i = 0; i < this->nor; ++i) {
                     T sum = 0.;
                     int_type j;
