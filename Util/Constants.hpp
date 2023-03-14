@@ -27,6 +27,6 @@ typedef int16_t bicrs_t;
 #define O_BETA_CONST 3
 #define L2_CACHE_SIZE_MB 1
 #define L2_CACHE_MULT 0.85
-#define MIN_NNZ_TO_PAR 128
+#define MIN_NNZ_TO_PAR 256
 
 #endif // PWM_CONSTANTS_HPP
