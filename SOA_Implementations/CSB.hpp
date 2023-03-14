@@ -544,6 +544,11 @@ namespace pwm {
                     }
                 }
 
+#ifndef NDEBUG
+                if (balanced_block_rows) std::cout << "The CSB matrix is balanced" << std::endl;
+                else std::cout << "The CSB matrix is unbalanced" << std::endl;
+#endif
+
                 delete [] blockrow_nnz;
             }
 
