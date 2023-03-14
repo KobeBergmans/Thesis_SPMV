@@ -393,35 +393,19 @@ namespace pwm {
                 // Use a Mutex to check if the first mult is already finished
                 omp_lock_t temp_lock;
                 omp_init_lock(&temp_lock);
-                omp_set_lock(&temp_lock);
 
                 #pragma omp task firstprivate(block_row, middle, y) shared(temp_lock, x, chunks) priority(51)
                 {
+                    omp_set_lock(&temp_lock);
                     blockRowMult(block_row, chunks, middle+1, x, y);
-
                     omp_unset_lock(&temp_lock);
                 }
 
-                #pragma omp taskwait
-
                 #pragma omp task firstprivate(middle, chunks_length, block_row, y) shared(temp_lock, x, chunks) priority(50)
                 {
-                    if (omp_test_lock(&temp_lock)) {
-                        blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, y);
-                    } else {
-                        // Initialize vector for temporary results
-                        T* temp_res = new T[beta];
-                        std::fill(temp_res, temp_res+beta, 0.);
-
-                        blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, temp_res);
-
-                        // Add temporary result serially
-                        for (int_type i = 0; i < beta; ++i) {
-                            y[i] = y[i] + temp_res[i];
-                        }
-
-                        delete [] temp_res;
-                    }
+                    omp_set_lock(&temp_lock);
+                    blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, y);
+                    omp_unset_lock(&temp_lock);
                 }
 
                 #pragma omp taskwait
