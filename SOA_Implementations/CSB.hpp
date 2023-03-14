@@ -402,6 +402,8 @@ namespace pwm {
                     omp_unset_lock(&temp_lock);
                 }
 
+                #pragma omp taskwait
+
                 #pragma omp task firstprivate(middle, chunks_length, block_row, y) shared(temp_lock, x, chunks) priority(50)
                 {
                     if (omp_test_lock(&temp_lock)) {
