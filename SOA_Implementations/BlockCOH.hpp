@@ -431,7 +431,7 @@ namespace pwm {
                     horizontal_blocks[pid] = pwm::integerCeil<int_type>(this->noc, beta[pid]);
                     vertical_blocks[pid] = pwm::integerCeil<int_type>(calculateNOR(pid), beta[pid]);
 
-                    row_jump[pid] = new index_t[((size_t)(beta[pid]+1))*horizontal_blocks[pid]*vertical_blocks[pid]]; // Maximum beta + 1 elements per block
+                    row_jump[pid] = new index_t[std::max<size_t>(((size_t)(beta[pid]+1))*horizontal_blocks[pid]*vertical_blocks[pid], thread_nnz[pid])]; // Maximum beta + 1 elements per block or maximal number of nnz
                     col_jump[pid] = new index_t[thread_nnz[pid]];
                     data[pid] = new T[thread_nnz[pid]];
                     row_jump_block[pid] = new bicrs_t[horizontal_blocks[pid]*vertical_blocks[pid]+1];
