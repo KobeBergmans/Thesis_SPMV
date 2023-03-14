@@ -312,24 +312,25 @@ namespace pwm {
 
                 int_type new_cutoff = std::max<int_type>(cutoff/2, MIN_NNZ_TO_PAR);
 
-                #pragma omp parallel
-                #pragma omp single nowait
-                {
-                    #pragma omp taskgroup
-                    {
-                        #pragma omp task
-                        if (s1-1 >= start) blockMult(start, s1-1, half_dim, x, y, new_cutoff); // M00
+                #pragma omp task
+                if (s1-1 >= start) blockMult(start, s1-1, half_dim, x, y, new_cutoff); // M00
 
-                        #pragma omp task
-                        if (end >= s3) blockMult(s3, end, half_dim, x, y, new_cutoff); // M11
-                    }
-                    
-                    #pragma omp task
-                    if (s2-1 >= s1) blockMult(s1, s2-1, half_dim, x, y, new_cutoff); // M01
+                #pragma omp taskwait
 
-                    #pragma omp task
-                    if (s3-1 >= s2) blockMult(s2, s3-1, half_dim, x, y, new_cutoff); // M10
-                }
+                #pragma omp task
+                if (end >= s3) blockMult(s3, end, half_dim, x, y, new_cutoff); // M11
+
+                #pragma omp taskwait
+
+                #pragma omp task
+                if (s2-1 >= s1) blockMult(s1, s2-1, half_dim, x, y, new_cutoff); // M01
+
+                #pragma omp taskwait
+
+                #pragma omp task
+                if (s3-1 >= s2) blockMult(s2, s3-1, half_dim, x, y, new_cutoff); // M10
+                
+                #pragma omp taskwait
             }
 
             /**
@@ -381,6 +382,7 @@ namespace pwm {
                         int_type end = blk_ptr[block_index+1]-1;
 
                         blockMult(start, end, beta, x, y, std::max<int_type>(beta*O_DIM_CONST, MIN_NNZ_TO_PAR));
+                        #pragma omp taskwait
                     } else {
                         // The chunk consists of multiple blocks and thus is sparse
                         sparseRowMult(block_row, left_chunk, right_chunk, x, y);
@@ -389,47 +391,50 @@ namespace pwm {
                     return;
                 }
                 
-                #pragma omp parallel
-                #pragma omp single nowait
+                // Blockrow contains multiple chunks thus we subdivide
+                int_type middle = integerCeil<int_type>(chunks_length, 2) - 1; // Middle chunk index
+                int_type x_middle = beta*(chunks[middle] - chunks[0]); // Middle of x vector
+
+                // Use a Mutex to check if the first mult is already finished
+                omp_lock_t temp_lock;
+                omp_init_lock(&temp_lock);
+                omp_set_lock(&temp_lock);
+
+                #pragma omp task shared(temp_lock)
                 {
-                    // Blockrow contains multiple chunks thus we subdivide
-                    int_type middle = integerCeil<int_type>(chunks_length, 2) - 1; // Middle chunk index
-                    int_type x_middle = beta*(chunks[middle] - chunks[0]); // Middle of x vector
+                    blockRowMult(block_row, chunks, middle+1, x, y);
+                    #pragma omp taskwait
 
-                    // Use a Mutex to check if the first mult is already finished
-                    omp_lock_t temp_lock;
-                    omp_init_lock(&temp_lock);
-                    omp_set_lock(&temp_lock);
-
-                    #pragma omp task shared(temp_lock)
-                    {
-                        blockRowMult(block_row, chunks, middle+1, x, y);
-                        omp_unset_lock(&temp_lock);
-                    }
-                        
-
-                    #pragma omp task shared(temp_lock)
-                    {
-                        if (omp_test_lock(&temp_lock)) {
-                            blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, y);
-                        } else {
-                            // Initialize vector for temporary results
-                            T* temp_res = new T[beta];
-                            std::fill(temp_res, temp_res+beta, 0.);
-
-                            blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, temp_res);
-
-                            // Add temporary result serially
-                            for (int_type i = 0; i < beta; ++i) {
-                                y[i] = y[i] + temp_res[i];
-                            }
-
-                            delete [] temp_res;
-                        }
-                    }
-
-                    omp_destroy_lock(&temp_lock);
+                    omp_unset_lock(&temp_lock);
                 }
+
+                #pragma omp taskwait
+
+                #pragma omp task shared(temp_lock)
+                {
+                    if (omp_test_lock(&temp_lock)) {
+                        blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, y);
+                        #pragma omp taskwait
+                    } else {
+                        // Initialize vector for temporary results
+                        T* temp_res = new T[beta];
+                        std::fill(temp_res, temp_res+beta, 0.);
+
+                        blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, temp_res);
+                        #pragma omp taskwait
+
+                        // Add temporary result serially
+                        for (int_type i = 0; i < beta; ++i) {
+                            y[i] = y[i] + temp_res[i];
+                        }
+
+                        delete [] temp_res;
+                    }
+                }
+
+                #pragma omp taskwait
+
+                // omp_destroy_lock(&temp_lock);
             }
 
         public:
@@ -607,7 +612,7 @@ namespace pwm {
                             blockRowMult(block_row, chunks, chunk_index, x, y+block_row*beta);
                         }
 
-                        delete [] chunks;
+                        // delete [] chunks;
                     }
                 }
             }
