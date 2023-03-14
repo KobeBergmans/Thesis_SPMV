@@ -312,18 +312,18 @@ namespace pwm {
 
                 int_type new_cutoff = std::max<int_type>(cutoff/2, MIN_NNZ_TO_PAR);
 
-                #pragma omp task priority(1) mergeable
+                #pragma omp task priority(1) firstprivate(start, s1, half_dim, new_cutoff) shared(x, y)
                 if (s1-1 >= start) blockMult(start, s1-1, half_dim, x, y, new_cutoff); // M00
 
-                #pragma omp task priority(1) mergeable
+                #pragma omp task priority(1) firstprivate(s3, end, half_dim, new_cutoff) shared(x, y)
                 if (end >= s3) blockMult(s3, end, half_dim, x, y, new_cutoff); // M11
 
                 #pragma omp taskwait
 
-                #pragma omp task priority(1) mergeable
+                #pragma omp task priority(1) firstprivate(s1, s2, half_dim, new_cutoff) shared(x, y)
                 if (s2-1 >= s1) blockMult(s1, s2-1, half_dim, x, y, new_cutoff); // M01
 
-                #pragma omp task priority(1) mergeable
+                #pragma omp task priority(1) firstprivate(s2, s3, half_dim, new_cutoff) shared(x, y)
                 if (s3-1 >= s2) blockMult(s2, s3-1, half_dim, x, y, new_cutoff); // M10
                 
                 #pragma omp taskwait
@@ -395,14 +395,14 @@ namespace pwm {
                 omp_init_lock(&temp_lock);
                 omp_set_lock(&temp_lock);
 
-                #pragma omp task shared(temp_lock) priority(51)
+                #pragma omp task firstprivate(block_row, middle, y) shared(temp_lock, x, chunks) priority(51)
                 {
                     blockRowMult(block_row, chunks, middle+1, x, y);
 
                     omp_unset_lock(&temp_lock);
                 }
 
-                #pragma omp task shared(temp_lock) priority(50)
+                #pragma omp task firstprivate(middle, chunks_length, block_row, y) shared(temp_lock, x, chunks) priority(50)
                 {
                     if (omp_test_lock(&temp_lock)) {
                         blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, y);
@@ -577,7 +577,7 @@ namespace pwm {
                 #pragma omp parallel
                 #pragma omp single
                 for (int_type block_row = 0; block_row < vertical_blocks; ++block_row) {
-                    #pragma omp task priority(100)
+                    #pragma omp task firstprivate(block_row) priority(100)
                     {
                         int* chunks = new int[horizontal_blocks+1]; // Worst case that all blocks are a separate chunk
                         chunks[0] = -1;
