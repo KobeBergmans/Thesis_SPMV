@@ -312,18 +312,18 @@ namespace pwm {
 
                 int_type new_cutoff = std::max<int_type>(cutoff/2, MIN_NNZ_TO_PAR);
 
-                #pragma omp task priority(1)
+                #pragma omp task priority(1) mergeable
                 if (s1-1 >= start) blockMult(start, s1-1, half_dim, x, y, new_cutoff); // M00
 
-                #pragma omp task priority(1)
+                #pragma omp task priority(1) mergeable
                 if (end >= s3) blockMult(s3, end, half_dim, x, y, new_cutoff); // M11
 
                 #pragma omp taskwait
 
-                #pragma omp task priority(1)
+                #pragma omp task priority(1) mergeable
                 if (s2-1 >= s1) blockMult(s1, s2-1, half_dim, x, y, new_cutoff); // M01
 
-                #pragma omp task priority(1)
+                #pragma omp task priority(1) mergeable
                 if (s3-1 >= s2) blockMult(s2, s3-1, half_dim, x, y, new_cutoff); // M10
                 
                 #pragma omp taskwait
