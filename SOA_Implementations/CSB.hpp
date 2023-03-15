@@ -576,13 +576,13 @@ namespace pwm {
              * @param y Result vector
              */
             void mv(const T* x, T* y) {
-                std::fill(y, y+this->nor, 0.);
-
                 #pragma omp parallel
                 #pragma omp single
                 for (int_type block_row = 0; block_row < vertical_blocks; ++block_row) {
                     #pragma omp task firstprivate(block_row) priority(100)
                     {
+                        std::fill(y+block_row*beta, y+std::min((block_row+1)*beta, this->nor), 0.);
+
                         int* chunks = new int[horizontal_blocks+1]; // Worst case that all blocks are a separate chunk
                         chunks[0] = -1;
                         int_type chunk_index = 1;
