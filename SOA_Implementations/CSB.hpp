@@ -9,8 +9,6 @@
  *   In Proceedings of the Twenty-First Annual Symposium
  *   on Parallelism in Algorithms and Architectures, SPAA ’09, pages 233–244, New
  *   York, NY, USA, 2009. Association for Computing Machinery.
- * 
- * TODO: Make such that the amount of vertical and horizontal blocks can't bee too small
  */
 
 
