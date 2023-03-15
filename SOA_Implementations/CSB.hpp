@@ -10,9 +10,7 @@
  *   on Parallelism in Algorithms and Architectures, SPAA ’09, pages 233–244, New
  *   York, NY, USA, 2009. Association for Computing Machinery.
  * 
- * TODO: Avoid first touch
  * TODO: Make such that the amount of vertical and horizontal blocks can't bee too small
- * TODO: Look into compression
  */
 
 
@@ -472,7 +470,6 @@ namespace pwm {
 
                 // Keep track of nnz's in each blockrow
                 double* blockrow_nnz = new double[vertical_blocks];
-                double temp_nnz;
 
                 // Sort triplets on row value
                 int_type** coords = new int_type*[2];
@@ -480,53 +477,66 @@ namespace pwm {
                 coords[1] = input->col_coord;
                 sortOnCoord<T, int_type, int_type>(coords, input->data, 2, 0, this->nnz-1);
                 delete [] coords;
-
-                // Generate CSB structure per block row
-                int_type triplet_index = 0;
-                int_type csb_index = 0;
-                int_type blk_ptr_index = 1;
-
-                // Data structures which keep track of indices and data in each block
-                std::vector<std::vector<compress_t>> block_ind(horizontal_blocks);
-                std::vector<std::vector<T>> block_data(horizontal_blocks);
+                
+                #pragma omp parallel
+                #pragma omp single
                 for (int_type block_row = 0; block_row < vertical_blocks; ++block_row) {
-                    temp_nnz = 0.;
+                    #pragma omp task firstprivate(block_row)
+                    {
+                        double temp_nnz = 0.;
 
-                    std::fill(block_ind.begin(), block_ind.end(), std::vector<compress_t>());
-                    std::fill(block_data.begin(), block_data.end(), std::vector<T>());
+                        // Data structures which keep track of indices and data in each block
+                        std::vector<std::vector<compress_t>> block_ind(horizontal_blocks, std::vector<compress_t>());
+                        std::vector<std::vector<T>> block_data(horizontal_blocks, std::vector<T>());
 
-                    // Loop over all indices in triplet structure which are part of this block row
-                    while (triplet_index < this->nnz && input->row_coord[triplet_index] < (block_row+1)*beta) {
-                        int_type block_index = input->col_coord[triplet_index] / beta;
+                        // Calculate triplet and csb index by finding the first element which belongs to this block_row
+                        int_type triplet_index = this->nnz;
+                        int_type csb_index = this->nnz;
+                        for (int_type i = 0; i < this->nnz; ++i) {
+                            if (input->row_coord[i] >= block_row*beta) {
+                                triplet_index = i;
+                                csb_index = i;
 
-                        compress_t index = fromIndicesToCompressed(input->row_coord[triplet_index] % beta, input->col_coord[triplet_index] % beta);
-                        block_ind[block_index].push_back(index);
-                        block_data[block_index].push_back(input->data[triplet_index]);
-
-                        triplet_index++;
-                        temp_nnz += 1.;
-                    }
-
-                    blockrow_nnz[block_row] = temp_nnz;
-
-                    // Sort blocks in Morton-Z order
-                    for (int_type block_column = 0; block_column < horizontal_blocks; ++block_column) {
-                        if (block_ind[block_column].size() > 0) {
-                            sortBlock(block_ind[block_column].data(), block_data[block_column], 0, block_ind[block_column].size()-1);
-                        }                        
-                    }
-
-                    // Initialize CSB datastructures
-                    for (int_type block_col = 0; block_col < horizontal_blocks; ++block_col) {
-                        for (size_t i = 0; i < block_ind[block_col].size(); ++i) {
-                            ind[csb_index] = block_ind[block_col][i];
-                            data[csb_index] = block_data[block_col][i];
-
-                            csb_index++;
+                                break;
+                            }
                         }
 
-                        blk_ptr[blk_ptr_index] = csb_index;
-                        blk_ptr_index++;
+                        // Calculate block pointer index
+                        int_type blk_ptr_index = block_row*horizontal_blocks+1;
+
+                        // Loop over all indices in triplet structure which are part of this block row
+                        while (triplet_index < this->nnz && input->row_coord[triplet_index] < (block_row+1)*beta) {
+                            int_type block_index = input->col_coord[triplet_index] / beta;
+
+                            compress_t index = fromIndicesToCompressed(input->row_coord[triplet_index] % beta, input->col_coord[triplet_index] % beta);
+                            block_ind[block_index].push_back(index);
+                            block_data[block_index].push_back(input->data[triplet_index]);
+
+                            triplet_index++;
+                            temp_nnz += 1.;
+                        }
+
+                        blockrow_nnz[block_row] = temp_nnz;
+
+                        // Sort blocks in Morton-Z order
+                        for (int_type block_column = 0; block_column < horizontal_blocks; ++block_column) {
+                            if (block_ind[block_column].size() > 0) {
+                                sortBlock(block_ind[block_column].data(), block_data[block_column], 0, block_ind[block_column].size()-1);
+                            }                        
+                        }
+
+                        // Initialize CSB datastructures
+                        for (int_type block_col = 0; block_col < horizontal_blocks; ++block_col) {
+                            for (size_t i = 0; i < block_ind[block_col].size(); ++i) {
+                                ind[csb_index] = block_ind[block_col][i];
+                                data[csb_index] = block_data[block_col][i];
+
+                                csb_index++;
+                            }
+
+                            blk_ptr[blk_ptr_index] = csb_index;
+                            blk_ptr_index++;
+                        }   
                     }
                 }
 
