@@ -11,7 +11,6 @@
  *   York, NY, USA, 2009. Association for Computing Machinery.
  * 
  * TODO: Avoid first touch
- * TODO: Make parallelism faster by tweaking OpenMP
  * TODO: Make such that the amount of vertical and horizontal blocks can't bee too small
  * TODO: Look into compression
  */
