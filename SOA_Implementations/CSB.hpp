@@ -490,16 +490,8 @@ namespace pwm {
                         std::vector<std::vector<T>> block_data(horizontal_blocks, std::vector<T>());
 
                         // Calculate triplet and csb index by finding the first element which belongs to this block_row
-                        int_type triplet_index = this->nnz;
-                        int_type csb_index = this->nnz;
-                        for (int_type i = 0; i < this->nnz; ++i) {
-                            if (input->row_coord[i] >= block_row*beta) {
-                                triplet_index = i;
-                                csb_index = i;
-
-                                break;
-                            }
-                        }
+                        int_type triplet_index = pwm::binarySearchLeftMost(input->row_coord, block_row*beta, this->nnz);
+                        int_type csb_index = triplet_index;
 
                         // Calculate block pointer index
                         int_type blk_ptr_index = block_row*horizontal_blocks+1;
