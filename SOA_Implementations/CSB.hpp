@@ -390,25 +390,43 @@ namespace pwm {
                 int_type middle = integerCeil<int_type>(chunks_length, 2) - 1; // Middle chunk index
                 int_type x_middle = beta*(chunks[middle] - chunks[0]); // Middle of x vector
 
-                // Use a Mutex to check if the first mult is already finished
+                // Create pointer to temp array and use a Mutex to check if the first mult is already finished
                 omp_lock_t temp_lock;
                 omp_init_lock(&temp_lock);
+                omp_set_lock(&temp_lock);
 
-                #pragma omp task firstprivate(block_row, middle, y) shared(temp_lock, x, chunks) priority(51)
+                T* temp_res = NULL;
+
+                #pragma omp task firstprivate(block_row, middle) shared(temp_lock, x, y, chunks) priority(51)
                 {
-                    omp_set_lock(&temp_lock);
                     blockRowMult(block_row, chunks, middle+1, x, y);
                     omp_unset_lock(&temp_lock);
                 }
 
-                #pragma omp task firstprivate(middle, chunks_length, block_row, y) shared(temp_lock, x, chunks) priority(50)
+                #pragma omp task firstprivate(middle, chunks_length, block_row) shared(temp_lock, x, y, chunks, temp_res) priority(50)
                 {
-                    omp_set_lock(&temp_lock);
-                    blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, y);
-                    omp_unset_lock(&temp_lock);
+                    if (omp_test_lock(&temp_lock)) {
+                        // First result is already calculated so we don't need temp vector
+                        blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, y);
+                    } else {
+                        // Initialize temp result
+                        temp_res = new T[std::min((block_row+1)*beta, this->nor) - block_row*beta];
+                        std::fill(temp_res, temp_res+std::min((block_row+1)*beta, this->nor) - block_row*beta, 0.);
+
+                        blockRowMult(block_row, chunks+middle, chunks_length-middle, x+x_middle, temp_res);
+                    }
                 }
 
                 #pragma omp taskwait
+
+                // If a temp vector was initialized we need to sequentially add the results
+                if (temp_res != NULL) {
+                    for (int_type i = 0; i < std::min((block_row+1)*beta, this->nor) - block_row*beta; ++i) {
+                        y[i] += temp_res[i];
+                    }
+
+                    delete [] temp_res;
+                }
 
                 omp_destroy_lock(&temp_lock);
             }
