@@ -19,7 +19,6 @@
 #include <boost/algorithm/string/predicate.hpp>
 
 #include "omp.h"
-#include "oneapi/tbb.h"
 
 void printErrorMsg() {
     std::cout << "You need to provide the correct command line arguments:" << std::endl;

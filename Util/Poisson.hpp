@@ -8,7 +8,10 @@
 #define PWM_POISSONUTILL_HPP
 
 #include "omp.h"
+
+#ifndef NTBB
 #include "oneapi/tbb.h"
+#endif
 
 namespace pwm {
     /**
@@ -157,7 +160,8 @@ namespace pwm {
         }
     }
 
-        /**
+#ifndef NTBB
+    /**
      * @brief Fill the 2D discretized Poisson matrix.
      * 
      * https://en.wikipedia.org/wiki/Discrete_Poisson_equation
@@ -234,6 +238,8 @@ namespace pwm {
             row_start[row+1] = nnz_index;
         });
     }
+#endif // NTBB
+
 } // namespace pwm
 
 #endif //PWM_POISSONUTILL_HPP

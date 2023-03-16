@@ -12,8 +12,11 @@
 #include "VectorUtill.hpp"
 #include "Constants.hpp"
 
-#include "oneapi/tbb.h"
 #include <omp.h>
+
+#ifndef NTBB
+#include "oneapi/tbb.h"
+#endif
 
 namespace pwm {
     template<typename T, typename index_type, typename int_type>
@@ -221,6 +224,7 @@ namespace pwm {
         delete [] coords;
     }
 
+#ifndef NTBB
     /**
      * @brief Transforms Triplet format to CRS format
      * 
@@ -276,6 +280,7 @@ namespace pwm {
 
         delete [] coords;
     }
+#endif // NTBB
 
     /**
      * @brief Transforms Triplet format to CRS format
