@@ -22,6 +22,8 @@
 
 #include "../Util/VectorUtill.hpp"
 
+#include <omp.h>
+
 namespace pwm {
     template<typename T, typename int_type>
     class Triplet {
@@ -163,8 +165,10 @@ namespace pwm {
                 col_size = mat_size;
 
                 struct stat results;
+                int_type binary_entries;
                 if (stat(filename.c_str(), &results) == 0) {
-                    nnz = results.st_size / (2*sizeof(uint32_t)); // Binary file is stored in unsigned long format
+                    binary_entries = results.st_size / (2*sizeof(uint32_t)); // Binary file is stored in unsigned long format
+                    nnz = binary_entries;
                 } else {
                     std::cout << "An error occurred while reading the Kronecker input file" << std::endl;
                 }
@@ -177,39 +181,83 @@ namespace pwm {
                 col_coord = new int_type[nnz];
                 data = new T[nnz];
 
-                uint32_t input_nb;
-                char input_buf[sizeof(uint32_t)];
-                std::ifstream input_file(filename, std::ios::in | std::ios::binary);
-                int_type i = 0;
-                while (i < nnz) {
-                    input_file.read(input_buf, sizeof(uint32_t));
-                    std::memcpy(&input_nb, input_buf, sizeof(uint32_t));
-                    row_coord[i] = input_nb;
+                int threads = omp_get_max_threads();
+                int_type* nnz_end = new int_type[threads];
 
-                    input_file.read(input_buf, sizeof(uint32_t));
-                    std::memcpy(&input_nb, input_buf, sizeof(uint32_t));
-                    col_coord[i] = input_nb;
+                #pragma omp parallel for schedule(static) num_threads(threads)
+                for (int pid = 0; pid < threads; ++pid) {
+                    uint32_t input_nb;
+                    char input_buf[sizeof(uint32_t)];
+                    std::ifstream input_file(filename, std::ios::in | std::ios::binary);
 
-                    if (random_vals) {
-                        data[i] = dist(gen);
+                    // Calculate starting position of stream and nnz
+                    int_type stream_start = (binary_entries / threads)*pid;
+                    int_type stream_end;
+                    if (pid != threads-1) stream_end = (binary_entries / threads)*(pid+1);
+                    else stream_end = binary_entries;
+
+                    int_type nnz_start;
+                    if (!symmetric) {
+                        nnz_start = stream_start;
                     } else {
-                        data[i] = 1.;
+                        nnz_start = stream_start*2;
                     }
 
-                    i++;
+                    input_file.seekg(sizeof(uint32_t)*stream_start*2, std::ios::beg);
+                    int_type i = nnz_start;
+                    while (stream_start < stream_end) {
+                        input_file.read(input_buf, sizeof(uint32_t));
+                        std::memcpy(&input_nb, input_buf, sizeof(uint32_t));
+                        row_coord[i] = input_nb;
 
-                    if (symmetric && row_coord[i-1] != col_coord[i-1]) {
-                        row_coord[i] = col_coord[i-1];
-                        col_coord[i] = row_coord[i-1];
-                        data[i] = data[i-1];
+                        input_file.read(input_buf, sizeof(uint32_t));
+                        std::memcpy(&input_nb, input_buf, sizeof(uint32_t));
+                        col_coord[i] = input_nb;
+
+                        if (random_vals) {
+                            data[i] = dist(gen);
+                        } else {
+                            data[i] = 1.;
+                        }
+
                         i++;
+
+                        if (symmetric && row_coord[i-1] != col_coord[i-1]) {
+                            row_coord[i] = col_coord[i-1];
+                            col_coord[i] = row_coord[i-1];
+                            data[i] = data[i-1];
+                            i++;
+                        }
+
+                        stream_start++;
                     }
+
+                    nnz_end[pid] = i;
                 }
 
-                // Correction for diagonal entries for symmetric matrices
+                // Make sure that there are no empty spots in the array
                 if (symmetric) {
-                    nnz = i;
+                    for (int pid = 1; pid < threads; ++pid) {
+                        int_type stream_start = (binary_entries / threads)*pid;
+                        int_type nnz_start = stream_start*2;
+
+                        if (nnz_end[pid-1] != nnz_start) {
+                            // The array was not completely filled during reading
+                            int_type pid_nnz = nnz_end[pid] - nnz_start;
+                            int_type am_to_copy = std::min(nnz_start - nnz_end[pid-1], pid_nnz);
+
+                            std::copy(row_coord+nnz_start+pid_nnz-am_to_copy, row_coord+nnz_start+pid_nnz, row_coord+nnz_end[pid-1]);
+                            std::copy(col_coord+nnz_start+pid_nnz-am_to_copy, col_coord+nnz_start+pid_nnz, col_coord+nnz_end[pid-1]);
+                            std::copy(data+nnz_start+pid_nnz-am_to_copy, data+nnz_start+pid_nnz, data+nnz_end[pid-1]);
+
+                            // Update stream end
+                            nnz_end[pid] -= am_to_copy;
+                        }
+                    }
+
+                    nnz = nnz_end[threads-1];
                 }
+                
             }
 
             /**
