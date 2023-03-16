@@ -4,9 +4,13 @@
 # Input files
 /Input
 
+# Sniper output directory
+/Sniper_Out
+
 # Executables
 driver_poisson
 MPI_driver_poisson
 driver_input
 driver_spmv_input
 test
+driver_sniper
