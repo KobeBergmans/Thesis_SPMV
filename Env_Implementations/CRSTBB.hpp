@@ -104,10 +104,8 @@ namespace pwm {
             void mv(const T* x, T* y) {   
                 oneapi::tbb::parallel_for((int_type)0, this->nor, [=](int_type i) {
                     T sum = 0.;
-                    int_type j;
                     for (int_type k = row_start[i]; k < row_start[i+1]; ++k) {
-                        j = col_ind[k];
-                        sum += data_arr[k]*x[j];
+                        sum += data_arr[k]*x[col_ind[k]];
                     }
                     
                     y[i] = sum;
