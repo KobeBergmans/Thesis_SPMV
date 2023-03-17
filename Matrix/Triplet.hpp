@@ -69,9 +69,10 @@ namespace pwm {
              * 
              * @param filename Filename of file to load
              * @param has_data Specifies if this is a weighted graph (x, y and z coordinates are present)
+             * @param symmetric Specifies if this is a symmetric matrix and that only the weakly lower triangular entries are given
              * @param random_fill Specifies if the data should be randomly filled in. Only used if has_data is false.
              */
-            void loadFromMM(std::string filename, bool has_data, bool symmetric, bool random_fill = false) {
+            void loadFromMM(const std::string filename, const bool has_data, const bool symmetric, const bool random_fill = false) {
                 std::ifstream input_file(filename);
 
                 if (input_file.is_open()) {
@@ -156,9 +157,11 @@ namespace pwm {
              * @brief Loads Triplet matrix from Kronecker graph generator binary output.
              * 
              * @param filename Filename of input file
+             * @param mat_size Size of the matrix, the matrix is supposed to be square
+             * @param symmetric Specifies if this is a symmetric matrix and that only the weakly lower triangular entries are given
              * @param random_vals If this is true generate random matrix values. If this is false every value is 1.
              */
-            void loadFromBin(std::string filename, int_type mat_size, bool symmetric, bool random_vals) {
+            void loadFromBin(const std::string filename, const int_type mat_size, const bool symmetric, const bool random_vals) {
                 row_size = mat_size;
                 col_size = mat_size;
 
