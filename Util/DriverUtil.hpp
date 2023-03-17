@@ -88,7 +88,7 @@ namespace pwm {
         std::cout << "     9)  CSB parallelized using OpenMP tasks" << std::endl;
         std::cout << "     10) Row distributed block CO-H" << std::endl;
 #ifdef MKL
-        std::cout << "     11) Intel MKL. Threads specification will not have any effect..." << std::endl;
+        std::cout << "     11) SpMV using Intel MKL library parallelized with TBB" << std::endl;
 #endif
         std::cout << "  " << startNb +1 << "° Amount of threads (only for a parallel method).";
         std::cout << " -1 lets the program choose the amount of threads arbitrarily" << std::endl;

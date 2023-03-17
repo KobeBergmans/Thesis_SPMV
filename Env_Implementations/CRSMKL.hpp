@@ -22,6 +22,9 @@ namespace pwm {
             // SYCL queue for SpMV execution
             cl::sycl::queue sycl_queue;
 
+            // Global threads limit
+            oneapi::tbb::global_control global_limit;
+
         private:
             /**
              * @brief Invokes the MKL matrix and sets the CRS data
@@ -36,7 +39,8 @@ namespace pwm {
             CRSMKL(): sycl_queue(cl::sycl::cpu_selector{}) {}
 
             // Base constructor
-            CRSMKL(int threads): pwm::CRS<T, int_type>(threads), sycl_queue(cl::sycl::cpu_selector{}) {}
+            CRSMKL(int threads): pwm::CRS<T, int_type>(threads), sycl_queue(cl::sycl::cpu_selector{}),
+                                 global_limit(oneapi::tbb::global_control::max_allowed_parallelism, threads) {}
 
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
