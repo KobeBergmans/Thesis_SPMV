@@ -64,12 +64,11 @@ namespace pwm {
                         const T* x = std::get<0>(input);
                         T* y = std::get<1>(input);
 
-                        int_type j;
+                        T sum;
                         for (int_type l = 0; l < partition_rows[i]; ++l) {
-                            T sum = 0;
+                            sum = 0;
                             for (int_type k = row_start[i][l]; k < row_start[i][l+1]; ++k) {
-                                j = col_ind[i][k];
-                                sum += data_arr[i][k]*x[j];
+                                sum += data_arr[i][k]*x[col_ind[i][k]];
                             }
                             y[l+first_rows[i]] = sum;
                         }
@@ -142,7 +141,7 @@ namespace pwm {
                 first_rows = new int_type[partitions];
 
                 // Generate data for each thread
-                int_type am_rows = std::round(m*n/partitions);
+                const int_type am_rows = std::round(m*n/partitions);
                 int_type last_row = 0;
                 for (int i = 0; i < partitions; ++i) {
                     first_rows[i] = last_row;
