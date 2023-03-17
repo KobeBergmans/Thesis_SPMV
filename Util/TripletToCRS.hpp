@@ -20,57 +20,59 @@
 
 namespace pwm {
     template<typename T, typename index_type, typename int_type>
-    void swapArrayElems(index_type** coords, T* data, int am_coords, int_type index_1, int_type index_2) {
+    void swapArrayElems(index_type** coords, T* data, const int am_coords, const int_type index_1, const int_type index_2) {
+        index_type temp;
         for (int i = 0; i < am_coords; ++i) {
-            index_type temp = coords[i][index_1];
+            temp = coords[i][index_1];
             coords[i][index_1] = coords[i][index_2];
             coords[i][index_2] = temp;
         }
 
-        T data_temp = data[index_1];
+        const T data_temp = data[index_1];
         data[index_1] = data[index_2];
         data[index_2] = data_temp;
     }
 
     template<typename T, typename index_type, typename int_type>
-    void swapArrayElems(index_type** coords, std::vector<T>& data, int am_coords, int_type index_1, int_type index_2) {
+    void swapArrayElems(index_type** coords, std::vector<T>& data, const int am_coords, const int_type index_1, const int_type index_2) {
+        index_type temp;
         for (int i = 0; i < am_coords; ++i) {
-            index_type temp = coords[i][index_1];
+            temp = coords[i][index_1];
             coords[i][index_1] = coords[i][index_2];
             coords[i][index_2] = temp;
         }
 
-        T data_temp = data[index_1];
+        const T data_temp = data[index_1];
         data[index_1] = data[index_2];
         data[index_2] = data_temp;
     }
 
     template<typename T, typename index_type, typename int_type>
-    void swapArrayElems(index_type* coords, T* data, int_type index_1, int_type index_2) {
-        index_type temp = coords[index_1];
+    void swapArrayElems(index_type* coords, T* data, const int_type index_1, const int_type index_2) {
+        const index_type temp = coords[index_1];
         coords[index_1] = coords[index_2];
         coords[index_2] = temp;
 
-        T data_temp = data[index_1];
+        const T data_temp = data[index_1];
         data[index_1] = data[index_2];
         data[index_2] = data_temp;
     }
 
     template<typename T, typename index_type, typename int_type>
-    void swapArrayElems(index_type* coords, std::vector<T>& data, int_type index_1, int_type index_2) {
-        index_type temp = coords[index_1];
+    void swapArrayElems(index_type* coords, std::vector<T>& data, const int_type index_1, const int_type index_2) {
+        const index_type temp = coords[index_1];
         coords[index_1] = coords[index_2];
         coords[index_2] = temp;
 
-        T data_temp = data[index_1];
+        const T data_temp = data[index_1];
         data[index_1] = data[index_2];
         data[index_2] = data_temp;
     }
 
     template<typename T, typename index_type, typename int_type>
-    int_type partitionArrays(index_type** coords, T* data, int am_coords, int_type low, int_type high) {
+    int_type partitionArrays(index_type** coords, T* data, const int am_coords, const int_type low, const int_type high) {
         // Select pivot (rightmost element)
-        int_type pivot = coords[0][high];
+        const int_type pivot = coords[0][high];
 
         // Points to biggest element
         int_type i = low;
@@ -103,10 +105,10 @@ namespace pwm {
      * @param high End index of quicksort
      */
     template<typename T, typename index_type, typename int_type>
-    void sortOnCoord(index_type** coords, T* data, int am_coords, int_type low, int_type high) {
+    void sortOnCoord(index_type** coords, T* data, const int am_coords, const int_type low, const int_type high) {
         if (low < high) {
             swapArrayElems(coords, data, am_coords, (((int_type)rand()) % (high-low)) + low, high); // Random permutation of rightmost element
-            int_type middle = partitionArrays(coords, data, am_coords, low, high);
+            const int_type middle = partitionArrays(coords, data, am_coords, low, high);
 
             if (middle > 0) {
                 sortOnCoord(coords, data, am_coords, low, middle - 1);
@@ -129,7 +131,8 @@ namespace pwm {
      * @param nnz Number of nonzeros in matrix
      */
     template<typename T, typename index_type, typename int_type>
-    void TripletToCRS(index_type* row_coord, index_type* col_coord, T* data, index_type* row_start, index_type* col_ind, T* CRS_data, int_type nnz, int_type nor) {
+    void TripletToCRS(index_type* row_coord, index_type* col_coord, T* data, index_type* row_start, index_type* col_ind, T* CRS_data, 
+                      const int_type nnz, const int_type nor) {
         // Sort triplets on row value
         index_type** coords = new index_type*[2];
         coords[0] = row_coord;
@@ -182,7 +185,8 @@ namespace pwm {
      * @param nnz Number of nonzeros in matrix
      */
     template<typename T, typename int_type>
-    void TripletToCRSOMP(int_type* row_coord, int_type* col_coord, T* data, int_type* row_start, int_type* col_ind, T* CRS_data, int_type nnz, int_type nor) {
+    void TripletToCRSOMP(int_type* row_coord, int_type* col_coord, T* data, int_type* row_start, int_type* col_ind, T* CRS_data, 
+                         const int_type nnz, const int_type nor) {
         // Sort triplets on row value
         int_type** coords = new int_type*[2];
         coords[0] = row_coord;
@@ -241,7 +245,8 @@ namespace pwm {
      * @param nnz Number of nonzeros in matrix
      */
     template<typename T, typename int_type>
-    void TripletToCRSTBB(int_type* row_coord, int_type* col_coord, T* data, int_type* row_start, int_type* col_ind, T* CRS_data, int_type nnz, int_type nor) {
+    void TripletToCRSTBB(int_type* row_coord, int_type* col_coord, T* data, int_type* row_start, int_type* col_ind, T* CRS_data, 
+                         const int_type nnz, const int_type nor) {
         // Sort triplets on row value
         int_type** coords = new int_type*[2];
         coords[0] = row_coord;
@@ -294,11 +299,14 @@ namespace pwm {
      * @param col_ind Output col_ind arrays of CRS format
      * @param CRS_data Output data arrays of CRS format
      * @param partitions Amount of partitions for the CRS matrix (amount of arrays in row_start, col_ind, and CRS_data)
+     * @param thread_rows Array which holds the amount of rows per thread
+     * @param first_rows Array which holds the first row of each thread
      * @param nnz Number of nonzeros in matrix
+     * @param nor Number of rows in the matrix
      */
     template<typename T, typename int_type>
     void TripletToMultipleCRS(int_type* row_coord, int_type* col_coord, T* data, int_type** row_start, int_type** col_ind, T** CRS_data, 
-                              int partitions, int_type* thread_rows, int_type* first_rows, int_type nnz, int_type nor) {
+                              const int partitions, int_type* thread_rows, int_type* first_rows, const int_type nnz, const int_type nor) {
 
         // Sort triplets on row value
         int_type** coords = new int_type*[2];
@@ -390,7 +398,8 @@ namespace pwm {
      * @return int_type Returns the index in the row_jump array as this is not always equal to nor+1
      */
     template<typename T, typename index_type, typename int_type>
-    int_type TripletToICRS(index_type* row_coord, index_type* col_coord, T* data, index_type* row_jump, index_type* col_jump, T* ICRS_data, int_type nnz, int_type size) {
+    int_type TripletToICRS(index_type* row_coord, index_type* col_coord, T* data, index_type* row_jump, index_type* col_jump, T* ICRS_data, 
+                           const int_type nnz, const int_type size) {
         // Sort triplets on row value
         index_type** coords = new index_type*[2];
         coords[0] = row_coord;

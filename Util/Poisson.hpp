@@ -30,7 +30,8 @@ namespace pwm {
      * @param last_row Last row of the matrix which is put into CRS format
      */
     template<typename T, typename int_type>
-    void fillPoisson(T* data_arr, int_type* row_start, int_type* col_ind, int_type m, int_type n, int_type first_row = 0, int_type last_row = 0) {
+    void fillPoisson(T* data_arr, int_type* row_start, int_type* col_ind, const int_type m, const int_type n, 
+                     const int_type first_row = 0, int_type last_row = 0) {
         if (last_row == 0) {
             last_row = m*n;
         }
@@ -99,8 +100,8 @@ namespace pwm {
      * @param last_row Last row of the matrix which is put into CRS format
      */
     template<typename T, typename int_type>
-    void fillPoissonOMP(T* data_arr, int_type* row_start, int_type* col_ind, int_type m, int_type n) {
-        int_type last_row = m*n;
+    void fillPoissonOMP(T* data_arr, int_type* row_start, int_type* col_ind, const int_type m, const int_type n) {
+        const int_type last_row = m*n;
         row_start[0] = 0;
 
         // Fill data rows
@@ -179,8 +180,8 @@ namespace pwm {
      * @param last_row Last row of the matrix which is put into CRS format
      */
     template<typename T, typename int_type>
-    void fillPoissonTBB(T* data_arr, int_type* row_start, int_type* col_ind, int_type m, int_type n) {
-        int_type last_row = m*n;
+    void fillPoissonTBB(T* data_arr, int_type* row_start, int_type* col_ind, const int_type m, const int_type n) {
+        const int_type last_row = m*n;
         row_start[0] = 0;
 
         // Fill data rows using TBB to avoid first touch
