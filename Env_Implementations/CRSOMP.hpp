@@ -102,18 +102,20 @@ namespace pwm {
              * @brief Matrix vector product Ax = y
              * 
              * Loop is parallelized using OpenMP
+             * Dynamic scheduler is used because of the varying workload per row
              * 
              * @param x Input vector
              * @param y Output vector
              */
-            void mv(const T* x, T* y) {             
-                #pragma omp parallel for shared(x, y) schedule(dynamic, OMP_DYNAMIC_CHUNK_SIZE) // We use dynamic scheduler because of the varying workload per row
+            void mv(const T* x, T* y) {    
+                T sum;
+
+                // Dynamic scheduler because of the varying workload per row
+                #pragma omp parallel for shared(x, y) private(sum) schedule(dynamic, OMP_DYNAMIC_CHUNK_SIZE) 
                 for (int_type i = 0; i < this->nor; ++i) {
-                    T sum = 0.;
-                    int_type j;
+                    sum = 0.;
                     for (int_type k = row_start[i]; k < row_start[i+1]; ++k) {
-                        j = col_ind[k];
-                        sum += data_arr[k]*x[j];
+                        sum += data_arr[k]*x[col_ind[k]];
                     }
                     
                     y[i] = sum;
@@ -124,6 +126,7 @@ namespace pwm {
              * @brief Power method: Executes matrix vector product repeatedly to get the dominant eigenvector.
              * 
              * Loop is parallelized using OpenMP
+             * Normalization uses static scheduling because every iteration has the same workload
              * 
              * @param x Input vector to start calculation, contains the output at the end of the algorithm is it is uneven
              * @param y Vector to store calculations, contains the output at the end of the algorithm if it is even
