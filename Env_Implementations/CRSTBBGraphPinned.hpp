@@ -54,7 +54,7 @@ namespace pwm {
             std::vector<oneapi::tbb::flow::function_node<std::tuple<const T*, T*>, int>> mv_func_list;
 
             // TBB normalize nodes list
-            std::vector<oneapi::tbb::flow::function_node<std::tuple<T*, T>, int>> norm_func_list;
+            std::vector<oneapi::tbb::flow::function_node<std::tuple<T*, const T>, int>> norm_func_list;
 
             // Global threads limit
             oneapi::tbb::global_control global_limit;
@@ -65,7 +65,7 @@ namespace pwm {
              */
             void generateFunctionNodes() {
                 mv_func_list = std::vector<oneapi::tbb::flow::function_node<std::tuple<const T*, T*>, int>>();
-                norm_func_list = std::vector<oneapi::tbb::flow::function_node<std::tuple<T*, T>, int>>();
+                norm_func_list = std::vector<oneapi::tbb::flow::function_node<std::tuple<T*, const T>, int>>();
 
                 const int cpu_count = std::thread::hardware_concurrency();
                 const int max_threads = std::min(threads, cpu_count);
@@ -100,7 +100,7 @@ namespace pwm {
                     mv_func_list.push_back(mv_node);
 
                     // Create normalize node for this partition
-                    oneapi::tbb::flow::function_node<std::tuple<T*, T>, int> norm_node(g, 1, [=](std::tuple<T*, T> input) -> int {
+                    oneapi::tbb::flow::function_node<std::tuple<T*, const T>, int> norm_node(g, 1, [=](std::tuple<T*, const T> input) -> int {
                         // Put the current thread on the right cpu
                         cpu_set_t *mask;
                         mask = CPU_ALLOC(1);
@@ -112,7 +112,7 @@ namespace pwm {
                         }
 
                         T* x = std::get<0>(input);
-                        T norm = std::get<1>(input);
+                        const T norm = std::get<1>(input);
 
                         for (int_type l = 0; l < partition_rows[i]; ++l) {
                             x[l+first_rows[i]] /= norm;

@@ -58,6 +58,9 @@ namespace pwm {
             std::vector<std::function<void(T*, T)>> norm_function_list;
 
         private:
+            /**
+             * @brief Generates the list of SpMV and normalization functions
+             */
             void generateFunctions() {
                 mv_function_list = std::vector<std::function<void(const T*, T*)>>();
                 norm_function_list = std::vector<std::function<void(T*, T)>>();
@@ -65,12 +68,11 @@ namespace pwm {
                 for (int i = 0; i < partitions; ++i) {
                     // Create mv lambda function for this thread
                     std::function<void(const T*, T*)> mv_func = [=](const T* x, T* y) -> void {
-                        int_type j;
+                        T sum;
                         for (int_type l = 0; l < partition_rows[i]; ++l) {
-                            T sum = 0;
+                            sum = 0;
                             for (int_type k = row_start[i][l]; k < row_start[i][l+1]; ++k) {
-                                j = col_ind[i][k];
-                                sum += data_arr[i][k]*x[j];
+                                sum += data_arr[i][k]*x[col_ind[i][k]];
                             }
                             y[l+first_rows[i]] = sum;
                         }
@@ -79,7 +81,7 @@ namespace pwm {
                     mv_function_list.push_back(mv_func);
 
                     // Create normalize function for this thread
-                    std::function<void(T*, T)> norm_func = [=](T* x, T norm) -> void {
+                    std::function<void(T*, const T)> norm_func = [=](T* x, const T norm) -> void {
                         for (int_type l = 0; l < partition_rows[i]; ++l) {
                             x[l+first_rows[i]] /= norm;
                         }
@@ -149,7 +151,7 @@ namespace pwm {
                 first_rows = new int_type[partitions];
 
                 // Generate data for each thread
-                int_type am_rows = std::round(m*n/partitions);
+                const int_type am_rows = std::round(m*n/partitions);
                 int_type last_row = 0;
                 for (int i = 0; i < partitions_am; ++i) {
                     first_rows[i] = last_row;
@@ -237,10 +239,11 @@ namespace pwm {
             void powerMethod(T* x, T* y, const int_type it) {
                 assert(this->nor == this->noc); //Power method only works on square matrices
                 
+                T norm;
                 for (int it_nb = 0; it_nb < it; ++it_nb) {
                     if (it_nb % 2 == 0) {
                         this->mv(x, y);
-                        T norm = pwm::norm2(y, this->nor);
+                        norm = pwm::norm2(y, this->nor);
                         
                         std::vector<boost::packaged_task<void>> tasks;
                         tasks.reserve(partitions);
@@ -260,7 +263,7 @@ namespace pwm {
                         }
                     } else {
                         this->mv(y, x);
-                        T norm = pwm::norm2(x, this->nor);
+                        norm = pwm::norm2(x, this->nor);
                         
                         std::vector<boost::packaged_task<void>> tasks;
                         tasks.reserve(partitions);
