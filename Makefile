@@ -53,6 +53,12 @@ driver_spmv_input_debug:
 driver_spmv_input_debug_ntbb:
 	dpcpp -Wall -Og -DNTBB -fopenmp -o driver_spmv_input driver_spmv_input.cpp -lboost_thread
 
+driver_spmv_input_mkl:
+	dpcpp -Wall -DNDEBUG -DMKL -O3 -DMKL_ILP64 -I"${MKLROOT}/include" -fopenmp -o driver_spmv_input driver_spmv_input.cpp -ltbb -lboost_thread -L${MKLROOT}/lib/intel64 -lmkl_intel_ilp64 -lmkl_tbb_thread -lmkl_core -lpthread -lm -ldl
+
+driver_spmv_input_debug_mkl:
+	dpcpp -Wall -DMKL -Og -I"${MKLROOT}/include" -DMKL_ILP64 -fopenmp -o driver_spmv_input driver_spmv_input.cpp -ltbb -lboost_thread -L${MKLROOT}/lib/intel64 -lmkl_intel_ilp64 -lmkl_tbb_thread -lmkl_core -lpthread -lm -ldl
+
 # SNIPER DRIVER (uses icx and NTBB because tbb and dpcpp (uses tbb) are not supported in sniper)
 driver_sniper:
 	icx -Wall -DNDEBUG -DNTBB -O3 -fopenmp -I${SNIPER}/include -o driver_sniper driver_sniper.cpp -lboost_thread -lstdc++

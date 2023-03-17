@@ -24,6 +24,10 @@
 #include "../Env_Implementations/CRSTBBGraphPinned.hpp"
 #endif
 
+#ifdef MKL
+#include "../Env_Implementations/CRSMKL.hpp"
+#endif
+
 namespace pwm {
     template<typename T, typename int_type>
     pwm::SparseMatrix<T, int_type>* selectType(int method, int threads) {
@@ -58,6 +62,11 @@ namespace pwm {
 
             case 10:
                 return new pwm::BlockCOH<T, int_type>(threads);
+
+#ifdef MKL
+            case 11:
+                return new pwm::CRSMKL<T, int_type>(threads);
+#endif
             
             default:
                 return NULL;

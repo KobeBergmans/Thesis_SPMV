@@ -31,6 +31,12 @@ typedef int16_t bicrs_t;
 
 // Definitions for drivers
 typedef double data_t;
+
+// Specific case for MKL needed because it does not support unsigned integers
+#ifdef MKL
+typedef int64_t index_t;
+#else
 typedef uint32_t index_t;
+#endif
 
 #endif // PWM_CONSTANTS_HPP
