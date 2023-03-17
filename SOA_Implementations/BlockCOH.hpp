@@ -76,7 +76,7 @@ namespace pwm {
              * @param row_region specifies in which row region the current element lies
              * @param col_region specifies in which column region the current element lies
              */
-            void hilbertRotate(int_type size, int_type* row, int_type* col, int_type row_region, int_type col_region) {
+            void hilbertRotate(const int_type size, int_type* row, int_type* col, const int_type row_region, const int_type col_region) {
                 if (row_region == 0) {
                     if (col_region == 1) {
                         *col = size - 1 - *col;
@@ -100,7 +100,7 @@ namespace pwm {
              * @param col Column of element
              * @return int_type index of the element on the hilbert curve
              */
-            int_type rowColToHilbert(int_type size, int_type row, int_type col) {
+            int_type rowColToHilbert(const int_type size, int_type row, int_type col) {
                 int_type row_region, col_region; 
                 int_type index = 0;
                 for (int_type check_size = size/2; check_size > 0; check_size /= 2) {
@@ -111,30 +111,6 @@ namespace pwm {
                 }
 
                 return index;
-            }
-
-            /**
-             * @brief Returns row and column corresponding to index on hilbert curve
-             * 
-             * @param size Size of the original matrix, must be a power of 2
-             * @param hilbert Hilbert coordinate of element
-             * @return std::tuple<int_type, int_type> Row and column coordinate of element
-             */
-            std::tuple<int_type, int_type> hilbertToRowCol(int_type size, int_type hilbert) {
-                int_type row_region, col_region;
-                int_type row = 0;
-                int_type col = 0;
-
-                for (int_type check_size = 1; check_size < size; check_size *= 2) {
-                    col_region = 1 & (hilbert/2);
-                    row_region = 1 & (hilbert ^ col_region);
-                    hilbertRotate(size, &row, &col, row_region, col_region);
-                    row += check_size * row_region;
-                    col += check_size * col_region;
-                    hilbert /= 4;
-                }
-
-                return std::make_tuple(row, col);
             }
 
             /**
@@ -178,7 +154,7 @@ namespace pwm {
              * @param pid Thread number corresponding to the given area
              * @return int_type Returns partitioning point of high+1 if all the elements are the same
              */
-            int_type partitionBlock(int_type** coords, T* data, int_type low, int_type high, int_type orig_size, int pid) {
+            int_type partitionBlock(int_type** coords, T* data, const int_type low, const int_type high, const int_type orig_size, const int pid) {
                 // Select pivot (rightmost element)
                 int_type pivotRow = (coords[0][high]-thread_row_start[pid]) / beta[pid];
                 int_type pivotCol = coords[1][high] / beta[pid];
@@ -222,12 +198,12 @@ namespace pwm {
              * @param orig_size Size of the area that is sorted
              * @param pid Thread number corresponding to the given area
              */
-            void sortForHilbertBlocks(int_type** coords, T* data, int_type low, int_type high, int_type orig_size, int pid) {
+            void sortForHilbertBlocks(int_type** coords, T* data, int_type low, const int_type high, const int_type orig_size, const int pid) {
                 if (low < high) {
                     // Random permutation of rightmost element
                     pwm::swapArrayElems<T, int_type, int_type>(coords, data, 2, (((int_type)rand()) % (high-low)) + low, high); 
 
-                    int_type middle = partitionBlock(coords, data, low, high, orig_size, pid);
+                    const int_type middle = partitionBlock(coords, data, low, high, orig_size, pid);
 
                     // We don't do anything if all elements are the same in the array
                     if (middle != high + 1) {
@@ -249,7 +225,8 @@ namespace pwm {
              * @param pid Thread number corresponding to the given area
              * @param row_jump_index Index in the row_jump array for this thread
              */
-            void transformHilbertBlockToCRS(pwm::Triplet<T, int_type>* input, int_type block_start, int_type block_end, int_type triplet_index, int pid, int_type* row_jump_index) {
+            void transformHilbertBlockToCRS(pwm::Triplet<T, int_type>* input, const int_type block_start, const int_type block_end, 
+                                            const int_type triplet_index, const int pid, int_type* row_jump_index) {
                 // Transform triplet indices to block indices
                 compress_index_t* block_row_ind = new compress_index_t[block_end-block_start];
                 compress_index_t* block_col_ind = new compress_index_t[block_end-block_start];
@@ -279,7 +256,7 @@ namespace pwm {
              * @param pid thread id
              * @param block_index Index of the current block
              */
-            void blockMult(int_type* row_index, int_type* col_index, const T* x, T* y, int pid, int_type block_index) {
+            void blockMult(int_type* row_index, int_type* col_index, const T* x, T* y, const int pid, const int_type block_index) {
                 // We need to transform to int_type because there can be overflow of the columns
                 int_type row = row_jump[pid][*row_index];
                 int_type col = col_jump[pid][*col_index];
@@ -445,8 +422,7 @@ namespace pwm {
                     }
 
                     // Sort the elements for this thread using the hilbert sorting method
-                    int_type hilbert_size = std::max<int_type>(calculateNOR(pid), this->noc);
-                    hilbert_size = (int_type)std::pow<double>(2., std::ceil(std::log2((double)hilbert_size)));
+                    const int_type hilbert_size = (int_type)std::pow<double>(2., std::ceil(std::log2((double)std::max<int_type>(calculateNOR(pid), this->noc))));
                     sortForHilbertBlocks(coords, input->data, triplet_index, triplet_index + thread_nnz[pid]-1, hilbert_size, pid);
 
                     // Initialize datastructures
