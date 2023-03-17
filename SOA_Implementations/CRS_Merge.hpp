@@ -22,6 +22,13 @@
 namespace pwm {
     template<typename T, typename int_type>
     class CRS_Merge: public pwm::CRSOMP<T, int_type> {
+        protected:
+            // List that keeps track of the starting coordinates in list A
+            int_type* list_a_coord;
+
+            // List that keeps track of the starting coordinates in list A
+            int_type* list_b_coord;
+
         private:
             /**
              * @brief Calculate which coordinate in both lists the merge path will have on the given diagonal
@@ -54,6 +61,31 @@ namespace pwm {
                 return std::make_tuple(std::min(a_coord_min, this->nor), diagonal-a_coord_min);
             }
 
+            /**
+             * @brief Generates the starting coordinates in both list for all threads
+             */
+            void generateThreadStartingCoord() {
+                list_a_coord = new int_type[this->threads+1];
+                list_b_coord = new int_type[this->threads+1];
+                
+                list_a_coord[0] = 0;
+                list_b_coord[0] = 0;
+
+                const int_type* row_end_offsets = this->row_start + 1; // Merge list A
+                const int_type num_merge_items = this->nor + this->nnz;
+                const int_type items_per_thread = (num_merge_items + this->threads - 1) / this->threads;
+                
+                int_type diagonal = 0;
+                std::tuple<int_type, int_type> thread_coord_end;
+                for (int pid = 0; pid < this->threads; ++pid) {
+                    diagonal = std::min(diagonal + items_per_thread, num_merge_items);
+                    thread_coord_end = searchPathOnDiag(diagonal, row_end_offsets);
+
+                    list_a_coord[pid+1] = std::get<0>(thread_coord_end);
+                    list_b_coord[pid+1] = std::get<1>(thread_coord_end);
+                }
+            }
+
         public:
             // Base constructor
             CRS_Merge() {}
@@ -66,6 +98,33 @@ namespace pwm {
             }
 
             /**
+             * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
+             * 
+             * Calls the normal OMP initializer and then generates datastructures which say where a specific thread starts and ends
+             *
+             * @param m The amount of discretization steps in the x direction
+             * @param n The amount of discretization steps in the y direction
+             */
+            void generatePoissonMatrix(const int_type m, const int_type n, const int partitions) {
+                pwm::CRSOMP<T, int_type>::generatePoissonMatrix(m, n, partitions);
+
+                generateThreadStartingCoord();
+            }
+
+            /**
+             * @brief Input the CRS matrix from a Triplet format
+             * 
+             * Calls the CRSOMP constructor and then generates datastructures which say where a specific thread starts and ends
+             * 
+             * @param input Triplet format matrix used to convert to CRS
+             */
+            void loadFromTriplets(pwm::Triplet<T, int_type>* input, const int partition_am) {
+                pwm::CRSOMP<T, int_type>::loadFromTriplets(input, partition_am);
+
+                generateThreadStartingCoord();
+            }
+
+            /**
              * @brief Matrix vector product Ax = y
              * 
              * Static scheduling using the merge-based scheduling
@@ -73,10 +132,8 @@ namespace pwm {
              * @param x Input vector
              * @param y Output vector
              */
-            void mv(const T* x, T* y) {             
+            void mv(const T* x, T* y) {
                 const int_type* row_end_offsets = this->row_start + 1; // Merge list A
-                const int_type num_merge_items = this->nor + this->nnz;
-                const int_type items_per_thread = (num_merge_items + this->threads - 1) / this->threads;
 
                 int_type row_carry_out[this->threads];
                 T value_carry_out[this->threads];
@@ -84,16 +141,10 @@ namespace pwm {
                 // Parallel section: each thread processes 1 loop iteration
                 #pragma omp parallel for schedule(static) num_threads(this->threads)
                 for (int tid = 0; tid < this->threads; ++tid) {
-                    // Find start and stop coordinates of merge path
-                    const int_type diagonal = std::min(items_per_thread*tid, num_merge_items);
-                    const int_type diagonal_end = std::min(diagonal + items_per_thread, num_merge_items);
-                    const std::tuple<int_type, int_type> thread_coord = searchPathOnDiag(diagonal, row_end_offsets);
-                    const std::tuple<int_type, int_type> thread_coord_end = searchPathOnDiag(diagonal_end, row_end_offsets);
-
-                    int_type thread_a_coord = std::get<0>(thread_coord);
-                    int_type thread_b_coord = std::get<1>(thread_coord);
-                    const int_type thread_a_coord_end = std::get<0>(thread_coord_end);
-                    const int_type thread_b_coord_end = std::get<1>(thread_coord_end);
+                    int_type thread_a_coord = list_a_coord[tid];
+                    int_type thread_b_coord = list_b_coord[tid];
+                    const int_type thread_a_coord_end = list_a_coord[tid+1];
+                    const int_type thread_b_coord_end = list_b_coord[tid+1];
 
                     // Consume merge items for every whole row
                     T running_total = 0.;
