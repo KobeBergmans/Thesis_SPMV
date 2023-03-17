@@ -485,7 +485,7 @@ namespace pwm {
                 int_type** coords = new int_type*[2];
                 coords[0] = input->row_coord;
                 coords[1] = input->col_coord;
-                sortOnCoord<T, int_type, int_type>(coords, input->data, 2, 0, this->nnz-1);
+                sortOnCoord<T, int_type, int_type, 2>(coords, input->data, 0, this->nnz-1);
                 delete [] coords;
                 
                 #pragma omp parallel

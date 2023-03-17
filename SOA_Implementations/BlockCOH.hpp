@@ -170,13 +170,13 @@ namespace pwm {
                         if (hilbert_elem == hilbert_pivot) same_ct++;
 
                         // If element is smaller than pivot swap it with i+1
-                        pwm::swapArrayElems<T, int_type, int_type>(coords, data, 2, i, j);
+                        pwm::swapArrayElems<T, int_type, int_type, 2>(coords, data, i, j);
                         i++;
                     }
                 }
 
                 // Swap pivot with the greatest element at i+1
-                pwm::swapArrayElems<T, int_type, int_type>(coords, data, 2, i, high);
+                pwm::swapArrayElems<T, int_type, int_type, 2>(coords, data, i, high);
 
                 if (same_ct == high-low) {
                     return high+1;
@@ -201,7 +201,7 @@ namespace pwm {
             void sortForHilbertBlocks(int_type** coords, T* data, int_type low, const int_type high, const int_type orig_size, const int pid) {
                 if (low < high) {
                     // Random permutation of rightmost element
-                    pwm::swapArrayElems<T, int_type, int_type>(coords, data, 2, (((int_type)rand()) % (high-low)) + low, high); 
+                    pwm::swapArrayElems<T, int_type, int_type, 2>(coords, data, (((int_type)rand()) % (high-low)) + low, high); 
 
                     const int_type middle = partitionBlock(coords, data, low, high, orig_size, pid);
 
@@ -384,7 +384,7 @@ namespace pwm {
                 int_type** coords = new int_type*[2];
                 coords[0] = input->row_coord;
                 coords[1] = input->col_coord;
-                sortOnCoord<T, int_type, int_type>(coords, input->data, 2, 0, this->nnz-1);
+                sortOnCoord<T, int_type, int_type, 2>(coords, input->data, 0, this->nnz-1);
 
                 // Calculate block size for each thread
                 setBlockSizeParams();
