@@ -25,10 +25,10 @@ namespace pwm {
     class BlockCOH: public pwm::SparseMatrix<T, int_type> {
         protected:
             // Array of pointers which correspond to the compressed CRS row starting indices
-            index_t** row_jump;
+            compress_index_t** row_jump;
 
             // Array of pointers which correspond to the compressed CRS column indices
-            index_t** col_jump;
+            compress_index_t** col_jump;
 
             // Array of pointers which correspond to the data in each block per processor
             T** data;
@@ -251,18 +251,18 @@ namespace pwm {
              */
             void transformHilbertBlockToCRS(pwm::Triplet<T, int_type>* input, int_type block_start, int_type block_end, int_type triplet_index, int pid, int_type* row_jump_index) {
                 // Transform triplet indices to block indices
-                index_t* block_row_ind = new index_t[block_end-block_start];
-                index_t* block_col_ind = new index_t[block_end-block_start];
+                compress_index_t* block_row_ind = new compress_index_t[block_end-block_start];
+                compress_index_t* block_col_ind = new compress_index_t[block_end-block_start];
                 T* temp_data = new T[block_end-block_start]; // This is needed to make that Triplet structure remains valid
 
                 for (int_type j = 0; j < block_end-block_start; ++j) {
-                    block_row_ind[j] = (index_t)((input->row_coord[block_start+triplet_index+j] - thread_row_start[pid]) % beta[pid]);
-                    block_col_ind[j] = (index_t)(input->col_coord[block_start+triplet_index+j] % beta[pid]);
+                    block_row_ind[j] = (compress_index_t)((input->row_coord[block_start+triplet_index+j] - thread_row_start[pid]) % beta[pid]);
+                    block_col_ind[j] = (compress_index_t)(input->col_coord[block_start+triplet_index+j] % beta[pid]);
                     temp_data[j] = input->data[block_start+triplet_index+j];
                 }
 
                 // Store block as CRS format
-                *row_jump_index += pwm::TripletToICRS<T, index_t, int_type>(block_row_ind, block_col_ind, temp_data, row_jump[pid]+*row_jump_index, col_jump[pid]+block_start, data[pid]+block_start, block_end-block_start, beta[pid]);
+                *row_jump_index += pwm::TripletToICRS<T, compress_index_t, int_type>(block_row_ind, block_col_ind, temp_data, row_jump[pid]+*row_jump_index, col_jump[pid]+block_start, data[pid]+block_start, block_end-block_start, beta[pid]);
 
                 delete [] block_row_ind;
                 delete [] block_col_ind;
@@ -413,8 +413,8 @@ namespace pwm {
                 setBlockSizeParams();
 
                 // Generate datastructures for each thread
-                row_jump = new index_t*[threads];
-                col_jump = new index_t*[threads];
+                row_jump = new compress_index_t*[threads];
+                col_jump = new compress_index_t*[threads];
                 data = new T*[threads];
                 row_jump_block = new bicrs_t*[threads];
                 col_jump_block = new bicrs_t*[threads];
@@ -431,8 +431,8 @@ namespace pwm {
                     horizontal_blocks[pid] = pwm::integerCeil<int_type>(this->noc, beta[pid]);
                     vertical_blocks[pid] = pwm::integerCeil<int_type>(calculateNOR(pid), beta[pid]);
 
-                    row_jump[pid] = new index_t[std::min<size_t>(((size_t)(beta[pid]+1))*horizontal_blocks[pid]*vertical_blocks[pid], thread_nnz[pid])]; // Maximum beta + 1 elements per block or maximal number of nnz
-                    col_jump[pid] = new index_t[thread_nnz[pid]];
+                    row_jump[pid] = new compress_index_t[std::min<size_t>(((size_t)(beta[pid]+1))*horizontal_blocks[pid]*vertical_blocks[pid], thread_nnz[pid])]; // Maximum beta + 1 elements per block or maximal number of nnz
+                    col_jump[pid] = new compress_index_t[thread_nnz[pid]];
                     data[pid] = new T[thread_nnz[pid]];
                     row_jump_block[pid] = new bicrs_t[horizontal_blocks[pid]*vertical_blocks[pid]+1];
                     col_jump_block[pid] = new bicrs_t[horizontal_blocks[pid]*vertical_blocks[pid]+1];

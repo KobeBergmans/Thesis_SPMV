@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
     }
     
     //Select method
-    pwm::SparseMatrix<double, int>* test_mat = pwm::selectType<double, int>(method, threads);
+    pwm::SparseMatrix<data_t, index_t>* test_mat = pwm::selectType<data_t, index_t>(method, threads);
 
     if (test_mat == NULL) {
         printErrorMsg();
@@ -69,8 +69,8 @@ int main(int argc, char** argv) {
     start = omp_get_wtime();
     test_mat->generatePoissonMatrix(m, m, partitions);
 
-    double* x = new double[mat_size];
-    double* y = new double[mat_size];
+    data_t* x = new data_t[mat_size];
+    data_t* y = new data_t[mat_size];
     std::fill(x, x+mat_size, 1.);
 
     stop = omp_get_wtime();

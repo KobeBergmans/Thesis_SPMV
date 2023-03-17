@@ -63,20 +63,20 @@ namespace pwm {
              * @brief Transforms compressed index to the corresponding row index
              * 
              * @param input Compressed input parameter
-             * @return index_t Corresponding row index
+             * @return compress_index_t Corresponding row index
              */
-            inline index_t fromCompressedToRow(const compress_t input) {
-                return (index_t)((input & HIGH_BITMASK) >> COORD_BITS);
+            inline compress_index_t fromCompressedToRow(const compress_t input) {
+                return (compress_index_t)((input & HIGH_BITMASK) >> COORD_BITS);
             }
 
             /**
              * @brief Transforms compressed index to the corresponding column index
              * 
              * @param input Compressed input parameter
-             * @return index_t Corresponding column index
+             * @return compress_index_t Corresponding column index
              */
-            inline index_t fromCompressedToCol(const compress_t input) {
-                return (index_t)(input & LOW_BITMASK);
+            inline compress_index_t fromCompressedToCol(const compress_t input) {
+                return (compress_index_t)(input & LOW_BITMASK);
             }
             
             /**
@@ -86,7 +86,7 @@ namespace pwm {
              * @param col Column index to be compressed
              * @return compress_t Compressed integer
              */
-            inline compress_t fromIndicesToCompressed(const index_t row, const index_t col) {
+            inline compress_t fromIndicesToCompressed(const compress_index_t row, const compress_index_t col) {
                 return ((compress_t)row << COORD_BITS) | (compress_t)col;
             }
 
@@ -144,7 +144,7 @@ namespace pwm {
              * @return true if the first element is smaller than or equal to the second element
              * @return false if the first element is larger than the second element
              */
-            bool zMortonCompare(const index_t x1, const index_t y1, const index_t x2, const index_t y2) {
+            bool zMortonCompare(const compress_index_t x1, const compress_index_t y1, const compress_index_t x2, const compress_index_t y2) {
                 bool set_1, set_2;
                 for (int bit_nb = block_bits-1; bit_nb >= 0; --bit_nb) {
                     // Check y bit
@@ -183,8 +183,8 @@ namespace pwm {
              */
             int_type partitionBlock(compress_t* coords, std::vector<T>& data, int_type low, int_type high) {
                 // Select pivot (rightmost element)
-                index_t pivotRow = fromCompressedToRow(coords[high]);
-                index_t pivotCol = fromCompressedToCol(coords[high]);
+                compress_index_t pivotRow = fromCompressedToRow(coords[high]);
+                compress_index_t pivotCol = fromCompressedToCol(coords[high]);
 
                 // Points to biggest element
                 int_type i = low;
@@ -238,8 +238,8 @@ namespace pwm {
                 while (start < end) {
                     int_type middle = (start+end)/2;
                     
-                    index_t middle_index = fromCompressedToRow(ind[middle]);
-                    if ((middle_index & (index_t)half_dim) == 0) {
+                    compress_index_t middle_index = fromCompressedToRow(ind[middle]);
+                    if ((middle_index & (compress_index_t)half_dim) == 0) {
                         start = middle + 1;
                     } else {
                         end = middle;
@@ -261,8 +261,8 @@ namespace pwm {
                 while (start < end) {
                     int_type middle = (start+end)/2;
                     
-                    index_t middle_index = fromCompressedToCol(ind[middle]);
-                    if ((middle_index & (index_t)half_dim) == 0) {
+                    compress_index_t middle_index = fromCompressedToCol(ind[middle]);
+                    if ((middle_index & (compress_index_t)half_dim) == 0) {
                         start = middle + 1;
                     } else {
                         end = middle;
@@ -284,7 +284,7 @@ namespace pwm {
             void blockMult(const int_type start, const int_type end, const int_type dim, const T* x, T* y, int_type cutoff) {          
                 assert(end >= start);
 
-                index_t row_ind, col_ind;
+                compress_index_t row_ind, col_ind;
 
                 // Perform serial computation if there are not too many nonzeros
                 if (end - start <= cutoff) {
@@ -298,7 +298,7 @@ namespace pwm {
                 }
 
                 // There are too much nonzeros so we do a recursive subdivision (M00, M01, M10, M11)
-                index_t half_dim = dim / 2;
+                compress_index_t half_dim = dim / 2;
 
                 // Calculate splitting points
                 int_type s2 = binarySearchDivisionPointRow(half_dim, start, end); // Split between M00, M01 and M10, M11
@@ -338,7 +338,7 @@ namespace pwm {
                 int_type am_blocks = (block_column_end - block_column_start)+1;
                 int_type block_index, x_offset;
 
-                index_t row_ind, col_ind;
+                compress_index_t row_ind, col_ind;
                 for (int_type block_nb = 0; block_nb < am_blocks; ++block_nb) {
                     block_index = first_block_index + block_nb;
                     x_offset = block_nb*beta;

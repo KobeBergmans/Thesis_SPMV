@@ -13,7 +13,7 @@
 #define OMP_DYNAMIC_CHUNK_SIZE 500
 
 // Definitions for compressed integers
-typedef uint16_t index_t;
+typedef uint16_t compress_index_t;
 typedef uint32_t compress_t;
 typedef int16_t bicrs_t;
 
@@ -28,5 +28,9 @@ typedef int16_t bicrs_t;
 #define L2_CACHE_SIZE_MB 1
 #define L2_CACHE_MULT 0.85
 #define MIN_NNZ_TO_PAR 256
+
+// Definitions for drivers
+typedef double data_t;
+typedef uint32_t index_t;
 
 #endif // PWM_CONSTANTS_HPP
