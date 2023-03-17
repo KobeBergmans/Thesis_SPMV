@@ -94,10 +94,10 @@ namespace pwm {
              * @brief Sets the blocksize and block bits for the imported matrix
              */
             void setBlockSizeParam() {
-                int_type minimal_size = std::min(this->nor, this->noc);
+                const int_type minimal_size = std::min(this->nor, this->noc);
 
                 // Maximum of 16 is specified because row and column indices should fit in 4 bytes
-                int_type lg_sqrt_size = (int_type)(std::ceil(std::log2(std::sqrt((double)minimal_size))));
+                const int_type lg_sqrt_size = (int_type)(std::ceil(std::log2(std::sqrt((double)minimal_size))));
                 block_bits = std::min<int_type>(16, 3+lg_sqrt_size);
                 beta = (int_type)(std::pow(2, block_bits));
 
@@ -181,7 +181,7 @@ namespace pwm {
              * @param high Ending index of data
              * @return int_type Returns partitioning point
              */
-            int_type partitionBlock(compress_t* coords, std::vector<T>& data, int_type low, int_type high) {
+            int_type partitionBlock(compress_t* coords, std::vector<T>& data, const int_type low, const int_type high) {
                 // Select pivot (rightmost element)
                 compress_index_t pivotRow = fromCompressedToRow(coords[high]);
                 compress_index_t pivotCol = fromCompressedToCol(coords[high]);
@@ -213,11 +213,11 @@ namespace pwm {
              * @param low starting index of data to be sorted
              * @param high ending index of data to be sorted
              */
-            void sortBlock(compress_t* coords, std::vector<T>& data, int_type low, int_type high) {
+            void sortBlock(compress_t* coords, std::vector<T>& data, const int_type low, const int_type high) {
                 if (low < high) {
                     // Random permutation of rightmost element
                     pwm::swapArrayElems<T, compress_t, int_type>(coords, data, (((int_type)rand()) % (high-low)) + low, high); 
-                    int_type middle = partitionBlock(coords, data, low, high);
+                    const int_type middle = partitionBlock(coords, data, low, high);
 
                     if (middle > 0) {
                         sortBlock(coords, data, low, middle - 1);
@@ -280,14 +280,14 @@ namespace pwm {
              * @param dim Dimension of subblock
              * @param x Part of input vector corresponding to the given block
              * @param y Part of output vector corresponding to the given block
+             * @param cutoff Indicates the maximum number of nonzeros in the block for serial computation
              */
-            void blockMult(const int_type start, const int_type end, const int_type dim, const T* x, T* y, int_type cutoff) {          
+            void blockMult(const int_type start, const int_type end, const int_type dim, const T* x, T* y, const int_type cutoff) {          
                 assert(end >= start);
-
-                compress_index_t row_ind, col_ind;
 
                 // Perform serial computation if there are not too many nonzeros
                 if (end - start <= cutoff) {
+                    compress_index_t row_ind, col_ind;
                     for (int_type i = start; i <= end; ++i) {
                         row_ind = fromCompressedToRow(ind[i]);
                         col_ind = fromCompressedToCol(ind[i]);
@@ -298,28 +298,40 @@ namespace pwm {
                 }
 
                 // There are too much nonzeros so we do a recursive subdivision (M00, M01, M10, M11)
-                compress_index_t half_dim = dim / 2;
+                const int_type half_dim = dim / 2;
 
                 // Calculate splitting points
-                int_type s2 = binarySearchDivisionPointRow(half_dim, start, end); // Split between M00, M01 and M10, M11
-                int_type s1 = binarySearchDivisionPointColumn(half_dim, start, s2-1); // Split between M00 and M01
-                int_type s3 = binarySearchDivisionPointColumn(half_dim, s2, end); // Split between M10 and M11
+                const int_type s2 = binarySearchDivisionPointRow(half_dim, start, end); // Split between M00, M01 and M10, M11
+                const int_type s1 = binarySearchDivisionPointColumn(half_dim, start, s2-1); // Split between M00 and M01
+                const int_type s3 = binarySearchDivisionPointColumn(half_dim, s2, end); // Split between M10 and M11
 
-                int_type new_cutoff = std::max<int_type>(cutoff/2, MIN_NNZ_TO_PAR);
-
-                #pragma omp task priority(1) firstprivate(start, s1, half_dim, new_cutoff) shared(x, y)
-                if (s1-1 >= start) blockMult(start, s1-1, half_dim, x, y, new_cutoff); // M00
-
-                #pragma omp task priority(1) firstprivate(s3, end, half_dim, new_cutoff) shared(x, y)
-                if (end >= s3) blockMult(s3, end, half_dim, x, y, new_cutoff); // M11
+                const int_type new_cutoff = std::max<int_type>(cutoff/2, MIN_NNZ_TO_PAR);
+                
+                // M00
+                if (s1-1 >= start) {
+                    #pragma omp task priority(1)
+                    blockMult(start, s1-1, half_dim, x, y, new_cutoff);
+                }
+                
+                // M11
+                if (end >= s3) {
+                    #pragma omp task priority(1)
+                    blockMult(s3, end, half_dim, x, y, new_cutoff);
+                }
 
                 #pragma omp taskwait
 
-                #pragma omp task priority(1) firstprivate(s1, s2, half_dim, new_cutoff) shared(x, y)
-                if (s2-1 >= s1) blockMult(s1, s2-1, half_dim, x, y, new_cutoff); // M01
-
-                #pragma omp task priority(1) firstprivate(s2, s3, half_dim, new_cutoff) shared(x, y)
-                if (s3-1 >= s2) blockMult(s2, s3-1, half_dim, x, y, new_cutoff); // M10
+                // M01
+                if (s2-1 >= s1) {
+                    #pragma omp task priority(1)
+                    blockMult(s1, s2-1, half_dim, x, y, new_cutoff);
+                }
+                
+                // M10
+                if (s3-1 >= s2) {
+                    #pragma omp task priority(1)
+                    blockMult(s2, s3-1, half_dim, x, y, new_cutoff);
+                }
                 
                 #pragma omp taskwait
             }
@@ -334,10 +346,10 @@ namespace pwm {
              * @param y Part of output vector corresponding to the current block row
              */
             void sparseRowMult(const int_type block_row, const int_type block_column_start, const int_type block_column_end, const T* x, T* y) {
-                int_type first_block_index = blockCoordToIndex(block_row, block_column_start);
-                int_type am_blocks = (block_column_end - block_column_start)+1;
+                const int_type first_block_index = blockCoordToIndex(block_row, block_column_start);
+                const int_type am_blocks = (block_column_end - block_column_start)+1;
+                
                 int_type block_index, x_offset;
-
                 compress_index_t row_ind, col_ind;
                 for (int_type block_nb = 0; block_nb < am_blocks; ++block_nb) {
                     block_index = first_block_index + block_nb;
@@ -363,8 +375,8 @@ namespace pwm {
             void blockRowMult(const int_type block_row, const int* chunks, const int_type chunks_length, const T* x, T* y) {
                 // Check if the blockrow is a single chunk
                 if (chunks_length == 2) {
-                    int_type left_chunk = chunks[0]+1;
-                    int_type right_chunk = chunks[1];
+                    const int_type left_chunk = chunks[0]+1;
+                    const int_type right_chunk = chunks[1];
 
                     if (left_chunk == right_chunk) {
                         // Chunk is a single block
@@ -382,8 +394,8 @@ namespace pwm {
                 }
                 
                 // Blockrow contains multiple chunks thus we subdivide
-                int_type middle = integerCeil<int_type>(chunks_length, 2) - 1; // Middle chunk index
-                int_type x_middle = beta*(chunks[middle] - chunks[0]); // Middle of x vector
+                const int_type middle = integerCeil<int_type>(chunks_length, 2) - 1; // Middle chunk index
+                const int_type x_middle = beta*(chunks[middle] - chunks[0]); // Middle of x vector
 
                 // Create pointer to temp array and use a Mutex to check if the first mult is already finished
                 omp_lock_t temp_lock;
@@ -392,13 +404,13 @@ namespace pwm {
 
                 T* temp_res = NULL;
 
-                #pragma omp task firstprivate(block_row, middle) shared(temp_lock, x, y, chunks) priority(51)
+                #pragma omp task shared(temp_lock, x, y, chunks) priority(51)
                 {
                     blockRowMult(block_row, chunks, middle+1, x, y);
                     omp_unset_lock(&temp_lock);
                 }
 
-                #pragma omp task firstprivate(middle, chunks_length, block_row) shared(temp_lock, x, y, chunks, temp_res) priority(50)
+                #pragma omp task shared(temp_lock, x, y, chunks, temp_res) priority(50)
                 {
                     if (omp_test_lock(&temp_lock)) {
                         // First result is already calculated so we don't need temp vector
@@ -495,10 +507,12 @@ namespace pwm {
                         int_type blk_ptr_index = block_row*horizontal_blocks+1;
 
                         // Loop over all indices in triplet structure which are part of this block row
+                        int_type block_index;
+                        compress_t index;
                         while (triplet_index < this->nnz && input->row_coord[triplet_index] < (block_row+1)*beta) {
-                            int_type block_index = input->col_coord[triplet_index] / beta;
+                            block_index = input->col_coord[triplet_index] / beta;
 
-                            compress_t index = fromIndicesToCompressed(input->row_coord[triplet_index] % beta, input->col_coord[triplet_index] % beta);
+                            index = fromIndicesToCompressed(input->row_coord[triplet_index] % beta, input->col_coord[triplet_index] % beta);
                             block_ind[block_index].push_back(index);
                             block_data[block_index].push_back(input->data[triplet_index]);
 
@@ -534,7 +548,7 @@ namespace pwm {
                 // This happens if no blockrow has twice the nnz on a blockrow than the average nnz per blockrow
                 balanced_block_rows = true;
 
-                double block_row_avg = std::accumulate(blockrow_nnz, blockrow_nnz+vertical_blocks, 0.0) / vertical_blocks;
+                const double block_row_avg = std::accumulate(blockrow_nnz, blockrow_nnz+vertical_blocks, 0.0) / vertical_blocks;
                 for (int_type i = 0; i < vertical_blocks; ++i) {
                     if (blockrow_nnz[i] > 2*block_row_avg) {
                         balanced_block_rows = false;
@@ -568,49 +582,82 @@ namespace pwm {
             /**
              * @brief Sparse matrix vector product calculation
              * 
-             * Uses work-stealing scheduling of TBB
+             * Uses work-stealing scheduling of OpenMP Tasks
              * Tasks are block rows which can be split up as described in the CSB paper
              * 
              * @param x Vector to be multiplied with the matrix
              * @param y Result vector
              */
             void mv(const T* x, T* y) {
-                #pragma omp parallel
-                #pragma omp single
-                for (int_type block_row = 0; block_row < vertical_blocks; ++block_row) {
-                    #pragma omp task firstprivate(block_row) priority(100)
-                    {
-                        std::fill(y+block_row*beta, y+std::min((block_row+1)*beta, this->nor), 0.);
+                if (balanced_block_rows) {
+                    #pragma omp parallel
+                    #pragma omp single
+                    for (int_type block_row = 0; block_row < vertical_blocks; ++block_row) {
+                        #pragma omp task firstprivate(block_row) priority(100)
+                        {
+                            std::fill(y+block_row*beta, y+std::min((block_row+1)*beta, this->nor), 0.);
 
-                        int* chunks = new int[horizontal_blocks+1]; // Worst case that all blocks are a separate chunk
-                        chunks[0] = -1;
-                        int_type chunk_index = 1;
+                            int* chunks = new int[horizontal_blocks+1]; // Worst case that all blocks are a separate chunk
+                            chunks[0] = -1;
+                            int_type chunk_index = 1;
 
-                        int_type first_block_index = blockCoordToIndex(block_row, 0);
+                            int_type first_block_index = blockCoordToIndex(block_row, 0);
 
-                        int_type count = 0;
-                        for (int_type block_col = 0; block_col < horizontal_blocks - 1; ++block_col) {
-                            // Add elements of current block to count
-                            count = count + blk_ptr[first_block_index+block_col+1]-blk_ptr[first_block_index+block_col];
+                            int_type count = 0;
+                            for (int_type block_col = 0; block_col < horizontal_blocks - 1; ++block_col) {
+                                // Add elements of current block to count
+                                count = count + blk_ptr[first_block_index+block_col+1]-blk_ptr[first_block_index+block_col];
 
-                            // Check if next block will exceed the maximum number of nz
-                            if (count + blk_ptr[first_block_index+block_col+2]-blk_ptr[first_block_index+block_col+1] > beta*O_BETA_CONST) {
-                                chunks[chunk_index++] = block_col;
-                                count = 0;
+                                // Check if next block will exceed the maximum number of nz
+                                if (count + blk_ptr[first_block_index+block_col+2]-blk_ptr[first_block_index+block_col+1] > beta*O_BETA_CONST) {
+                                    chunks[chunk_index++] = block_col;
+                                    count = 0;
+                                }
                             }
-                        }
 
-                        // Add last block to end the last chunk
-                        chunks[chunk_index++] = horizontal_blocks-1; 
+                            // Add last block to end the last chunk
+                            chunks[chunk_index++] = horizontal_blocks-1; 
 
-                        // Perform block row multiplication
-                        if (balanced_block_rows) {
+                            // Perform balanced block row multiplication
                             sparseRowMult(block_row, 0, horizontal_blocks-1, x, y+block_row*beta);
-                        } else {
-                            blockRowMult(block_row, chunks, chunk_index, x, y+block_row*beta);
-                        }
 
-                        delete [] chunks;
+                            delete [] chunks;
+                        }
+                    }
+                } else {
+                    #pragma omp parallel
+                    #pragma omp single
+                    for (int_type block_row = 0; block_row < vertical_blocks; ++block_row) {
+                        #pragma omp task firstprivate(block_row) priority(100)
+                        {
+                            std::fill(y+block_row*beta, y+std::min((block_row+1)*beta, this->nor), 0.);
+
+                            int* chunks = new int[horizontal_blocks+1]; // Worst case that all blocks are a separate chunk
+                            chunks[0] = -1;
+                            int_type chunk_index = 1;
+
+                            int_type first_block_index = blockCoordToIndex(block_row, 0);
+
+                            int_type count = 0;
+                            for (int_type block_col = 0; block_col < horizontal_blocks - 1; ++block_col) {
+                                // Add elements of current block to count
+                                count = count + blk_ptr[first_block_index+block_col+1]-blk_ptr[first_block_index+block_col];
+
+                                // Check if next block will exceed the maximum number of nz
+                                if (count + blk_ptr[first_block_index+block_col+2]-blk_ptr[first_block_index+block_col+1] > beta*O_BETA_CONST) {
+                                    chunks[chunk_index++] = block_col;
+                                    count = 0;
+                                }
+                            }
+
+                            // Add last block to end the last chunk
+                            chunks[chunk_index++] = horizontal_blocks-1; 
+
+                            // Perform unbalanced block row multiplication
+                            blockRowMult(block_row, chunks, chunk_index, x, y+block_row*beta);
+
+                            delete [] chunks;
+                        }
                     }
                 }
             }
