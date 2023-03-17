@@ -32,7 +32,7 @@ namespace pwm {
              * @param list_A First merge list
              * @return std::tuple<int_type, int_type> First element represents the coordinate in list A and second element coordinate in list B
              */
-            std::tuple<int_type, int_type> searchPathOnDiag(int_type diagonal, int_type* list_A) {
+            std::tuple<int_type, int_type> searchPathOnDiag(const int_type diagonal, const int_type* list_A) {
                 // Search range for A list
                 int_type a_coord_min = 0;
                 if (diagonal > this->nnz) {
@@ -74,9 +74,9 @@ namespace pwm {
              * @param y Output vector
              */
             void mv(const T* x, T* y) {             
-                int_type* row_end_offsets = this->row_start + 1; // Merge list A
-                int_type num_merge_items = this->nor + this->nnz;
-                int_type items_per_thread = (num_merge_items + this->threads - 1) / this->threads;
+                const int_type* row_end_offsets = this->row_start + 1; // Merge list A
+                const int_type num_merge_items = this->nor + this->nnz;
+                const int_type items_per_thread = (num_merge_items + this->threads - 1) / this->threads;
 
                 int_type row_carry_out[this->threads];
                 T value_carry_out[this->threads];
@@ -85,15 +85,15 @@ namespace pwm {
                 #pragma omp parallel for schedule(static) num_threads(this->threads)
                 for (int tid = 0; tid < this->threads; ++tid) {
                     // Find start and stop coordinates of merge path
-                    int_type diagonal = std::min(items_per_thread*tid, num_merge_items);
-                    int_type diagonal_end = std::min(diagonal + items_per_thread, num_merge_items);
-                    std::tuple<int_type, int_type> thread_coord = searchPathOnDiag(diagonal, row_end_offsets);
-                    std::tuple<int_type, int_type> thread_coord_end = searchPathOnDiag(diagonal_end, row_end_offsets);
+                    const int_type diagonal = std::min(items_per_thread*tid, num_merge_items);
+                    const int_type diagonal_end = std::min(diagonal + items_per_thread, num_merge_items);
+                    const std::tuple<int_type, int_type> thread_coord = searchPathOnDiag(diagonal, row_end_offsets);
+                    const std::tuple<int_type, int_type> thread_coord_end = searchPathOnDiag(diagonal_end, row_end_offsets);
 
                     int_type thread_a_coord = std::get<0>(thread_coord);
                     int_type thread_b_coord = std::get<1>(thread_coord);
-                    int_type thread_a_coord_end = std::get<0>(thread_coord_end);
-                    int_type thread_b_coord_end = std::get<1>(thread_coord_end);
+                    const int_type thread_a_coord_end = std::get<0>(thread_coord_end);
+                    const int_type thread_b_coord_end = std::get<1>(thread_coord_end);
 
                     // Consume merge items for every whole row
                     T running_total = 0.;
