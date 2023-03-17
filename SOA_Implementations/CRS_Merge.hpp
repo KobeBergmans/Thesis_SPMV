@@ -97,6 +97,14 @@ namespace pwm {
                 }
             }
 
+            ~CRS_Merge() {
+                delete [] list_a_coord;
+                delete [] list_b_coord;
+
+                list_a_coord = NULL;
+                list_b_coord = NULL;
+            }
+
             /**
              * @brief Fill the given matrix as a 2D discretized poisson matrix with equal discretization steplength in x and y
              * 
