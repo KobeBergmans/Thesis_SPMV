@@ -60,12 +60,15 @@ namespace pwm {
             oneapi::tbb::global_control global_limit;
 
         private:
+            /**
+             * @brief Generates the needed function nodes for the SpMV parts and the normalization parts
+             */
             void generateFunctionNodes() {
                 mv_func_list = std::vector<oneapi::tbb::flow::function_node<std::tuple<const T*, T*>, int>>();
                 norm_func_list = std::vector<oneapi::tbb::flow::function_node<std::tuple<T*, T>, int>>();
 
-                int cpu_count = std::thread::hardware_concurrency();
-                int max_threads = std::min(threads, cpu_count);
+                const int cpu_count = std::thread::hardware_concurrency();
+                const int max_threads = std::min(threads, cpu_count);
                 for (int i = 0; i < partitions; ++i) {
                     // Create mv node for this partition
                     oneapi::tbb::flow::function_node<std::tuple<const T*, T*>, int> mv_node(g, 1, [=](std::tuple<const T*, T*> input) -> int {
@@ -82,12 +85,11 @@ namespace pwm {
                         const T* x = std::get<0>(input);
                         T* y = std::get<1>(input);
 
-                        int_type j;
+                        T sum;
                         for (int_type l = 0; l < partition_rows[i]; ++l) {
-                            T sum = 0;
+                            sum = 0;
                             for (int_type k = row_start[i][l]; k < row_start[i][l+1]; ++k) {
-                                j = col_ind[i][k];
-                                sum += data_arr[i][k]*x[j];
+                                sum += data_arr[i][k]*x[col_ind[i][k]];
                             }
                             y[l+first_rows[i]] = sum;
                         }
@@ -185,7 +187,7 @@ namespace pwm {
                 first_rows = new int_type[partitions];
 
                 // Generate data for each thread
-                int_type am_rows = std::round(m*n/partitions);
+                const int_type am_rows = std::round(m*n/partitions);
                 int_type last_row = 0;
                 for (int i = 0; i < partitions; ++i) {
                     first_rows[i] = last_row;
@@ -253,7 +255,7 @@ namespace pwm {
             /**
              * @brief Power method: Executes matrix vector product repeatedly to get the dominant eigenvector.
              * 
-             * Loop is parallelized using parallel_for from TBB
+             * Normalization loop is parallelized using different graph nodes from TBB for each thread
              * 
              * @param x Input vector to start calculation, contains the output at the end of the algorithm is it is uneven
              * @param y Vector to store calculations, contains the output at the end of the algorithm if it is even
@@ -262,11 +264,12 @@ namespace pwm {
             void powerMethod(T* x, T* y, const int_type it) {
                 assert(this->nor == this->noc); //Power method only works on square matrices
                 
+                T norm;
                 for (int it_nb = 0; it_nb < it; ++it_nb) {
                     if (it_nb % 2 == 0) {
                         this->mv(x, y);
 
-                        T norm = pwm::norm2(y, this->nor);
+                        norm = pwm::norm2(y, this->nor);
                         
                         for (int i = 0; i < partitions; ++i) {
                             norm_func_list[i].try_put(std::make_tuple(y,norm));
@@ -276,7 +279,7 @@ namespace pwm {
                     } else {
                         this->mv(y, x);
 
-                        T norm = pwm::norm2(x, this->nor);
+                        norm = pwm::norm2(x, this->nor);
                         
                         for (int i = 0; i < partitions; ++i) {
                             norm_func_list[i].try_put(std::make_tuple(x,norm));

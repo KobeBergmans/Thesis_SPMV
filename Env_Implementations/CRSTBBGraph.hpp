@@ -55,6 +55,9 @@ namespace pwm {
             oneapi::tbb::global_control global_limit;
 
         private:
+            /**
+             * @brief Generates the needed function nodes for the different SpMV parts
+             */
             void generateFunctionNodes() {
                 n_list = std::vector<oneapi::tbb::flow::function_node<std::tuple<const T*, T*>, int>>();                
 
@@ -218,11 +221,12 @@ namespace pwm {
             void powerMethod(T* x, T* y, const int_type it) {
                 assert(this->nor == this->noc); //Power method only works on square matrices
                 
+                T norm;
                 for (int it_nb = 0; it_nb < it; ++it_nb) {
                     if (it_nb % 2 == 0) {
                         this->mv(x, y);
 
-                        T norm = pwm::norm2(y, this->nor);
+                        norm = pwm::norm2(y, this->nor);
 
                         oneapi::tbb::parallel_for((int_type)0, this->nor, [=](int_type i) {
                             y[i] /= norm;
@@ -230,7 +234,7 @@ namespace pwm {
                     } else {
                         this->mv(y, x);
 
-                        T norm = pwm::norm2(x, this->nor);
+                        norm = pwm::norm2(x, this->nor);
 
                         oneapi::tbb::parallel_for((int_type)0, this->nor, [=](int_type i) {
                             x[i] /= norm;
