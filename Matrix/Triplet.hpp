@@ -231,44 +231,44 @@ namespace pwm {
 
                 int_type index = 0;
 
-                // Add main diagonal
                 for (int_type i = 0; i < row_size; ++i) {
+                    // Add main diagonal
                     row_coord[index] = i;
                     col_coord[index] = i;
                     data[index] = 4.;
                     index++;
-                }
 
-                // Add sub and super diagonal
-                for (int_type i = 0; i < row_size - 1; ++i) {
-                    // super diagonal
-                    if (i % m != m-1) {
-                        row_coord[index] = i;
-                        col_coord[index] = i+1;
-                        data[index] = -1.;
-                        index++;
+                    // Add sub and super diagonal
+                    if (i < row_size - 1) {
+                        // super diagonal
+                        if (i % m != m-1) {
+                            row_coord[index] = i;
+                            col_coord[index] = i+1;
+                            data[index] = -1.;
+                            index++;
+                        }
+
+                        // sub diagonal
+                        if ((i+1) % m != 0) {
+                            row_coord[index] = i+1;
+                            col_coord[index] = i;
+                            data[index] = -1.;
+                            index++;
+                        }
                     }
 
-                    // sub diagonal
-                    if ((i+1) % m != 0) {
-                        row_coord[index] = i+1;
+                    // Add last two smaller diagonals
+                    if (i < row_size - m) {
+                        row_coord[index] = i+m;
                         col_coord[index] = i;
                         data[index] = -1.;
                         index++;
+
+                        row_coord[index] = i;
+                        col_coord[index] = i+m;
+                        data[index] = -1.;
+                        index++;
                     }
-                }
-
-                // Add last two smaller diagonals
-                for (int_type i = 0; i < row_size - m; ++i) {
-                    row_coord[index] = i+m;
-                    col_coord[index] = i;
-                    data[index] = -1.;
-                    index++;
-
-                    row_coord[index] = i;
-                    col_coord[index] = i+m;
-                    data[index] = -1.;
-                    index++;
                 }
 
                 assert(index == nnz);
