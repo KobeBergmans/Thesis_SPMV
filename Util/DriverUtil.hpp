@@ -28,9 +28,15 @@
 #include "../Env_Implementations/CRSMKL.hpp"
 #endif
 
+#include "omp.h"
+
 namespace pwm {
     template<typename T, typename int_type>
     pwm::SparseMatrix<T, int_type>* selectType(int method, int threads) {
+        if (threads == -1) {
+            threads = omp_get_max_threads();
+        }
+
         switch (method) {
             case 1:
                 return new pwm::CRS<T, int_type>(threads);
