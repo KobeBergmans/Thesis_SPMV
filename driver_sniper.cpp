@@ -122,16 +122,18 @@ int main(int argc, char** argv) {
     time = (stop - start) * 1000;
     std::cout << "Time to set up datastructures: " << time << "ms" << std::endl;
 
+    SimMarker(1, 1);
     start = omp_get_wtime();
     test_mat->mv(x,y);
     stop = omp_get_wtime();
     time = (stop - start) * 1000;
     std::cout << "Time to do warmup run: " << time << "ms" << std::endl;
+    SimMarker(2, 1);
 
     // Do simulation
-    SimRoiStart();
+    SimMarker(1, 2);
     test_mat->mv(x, y);
-    SimRoiEnd();
+    SimMarker(2, 2);
 
 #ifndef NDEBUG
     std::cout << "Result for checking measures: " << std::endl;
