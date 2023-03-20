@@ -122,6 +122,12 @@ int main(int argc, char** argv) {
     time = (stop - start) * 1000;
     std::cout << "Time to set up datastructures: " << time << "ms" << std::endl;
 
+    start = omp_get_wtime();
+    test_mat->mv(x,y);
+    stop = omp_get_wtime();
+    time = (stop - start) * 1000;
+    std::cout << "Time to do warmup run: " << time << "ms" << std::endl;
+
     // Do simulation
     SimRoiStart();
     test_mat->mv(x, y);
