@@ -30,13 +30,13 @@ echo "Running TBB_graphs implementation with 2 - 8 threads and double the amount
 
 
 echo "Running Threadpool implementation with 2 - 8 threads and double the amount of partitions than threads"
-./driver_spmv_input $1 $2 6 2 4
-./driver_spmv_input $1 $2 6 3 6
-./driver_spmv_input $1 $2 6 4 8
-./driver_spmv_input $1 $2 6 5 10
-./driver_spmv_input $1 $2 6 6 12
-./driver_spmv_input $1 $2 6 7 14
-./driver_spmv_input $1 $2 6 8 16
+./driver_spmv_input $1 $2 $3 6 2 4
+./driver_spmv_input $1 $2 $3 6 3 6
+./driver_spmv_input $1 $2 $3 6 4 8
+./driver_spmv_input $1 $2 $3 6 5 10
+./driver_spmv_input $1 $2 $3 6 6 12
+./driver_spmv_input $1 $2 $3 6 7 14
+./driver_spmv_input $1 $2 $3 6 8 16
 
 echo "Running CRS_merge implementation with 2-8 threads"
 ./driver_spmv_input $1 $2 $3 8 2
