@@ -67,8 +67,8 @@ driver_sniper_debug:
 	icx -Wall -DNTBB -Og -fopenmp -I${SNIPER}/include -o driver_sniper driver_sniper.cpp -lboost_thread -lstdc++
 
 run_sniper:
-	rm driver_sniper
-	driver_sniper
+	rm -f driver_sniper
+	make driver_sniper
 	../snipersim/run-sniper -n ${core} -d ./Sniper_Out/ -s markers -s roi-iter::2:2 --roi-script --no-cache-warming --viz -- ./driver_sniper ${file} ${method} ${core}
 
 # TESTS
