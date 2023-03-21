@@ -8,6 +8,7 @@
 #define PWM_DRIVERUTIL_HPP
 
 #include <iostream>
+#include <string>
 
 #include "../Matrix/SparseMatrix.hpp"
 #include "../Matrix/CRS.hpp"
@@ -27,6 +28,8 @@
 #ifdef MKL
 #include "../Env_Implementations/CRSMKL.hpp"
 #endif
+
+#include <boost/algorithm/string/predicate.hpp>
 
 #include "omp.h"
 
@@ -99,6 +102,41 @@ namespace pwm {
         std::cout << "  " << startNb +1 << "° Amount of threads (only for a parallel method).";
         std::cout << " -1 lets the program choose the amount of threads arbitrarily" << std::endl;
         std::cout << "  " << startNb + 2 << "° Amount of partitions the matrix is split up into (only for method 4, 5, 6 and 7)" << std::endl;
+    }
+
+    template<typename T, typename int_type>
+    void loadMatrixFromFile(pwm::Triplet<T, int_type>* input_mat, std::string input_file) {
+        int file_start = input_file.find("/");
+        if (boost::algorithm::ends_with(input_file, ".mtx")) {
+            int indicator = std::stoi(input_file.substr(file_start+1, 1));
+            if (indicator == 1) {
+                input_mat->loadFromMM(input_file, false, false, false);
+            } else if (indicator == 2) {
+                input_mat->loadFromMM(input_file, false, false, true);
+            } else if (indicator == 3) {
+                input_mat->loadFromMM(input_file, true, true);
+            } else if (indicator == 4) {
+                input_mat->loadFromMM(input_file, false, true, false);
+            } else if (indicator == 5) {
+                input_mat->loadFromMM(input_file, false, true, true);
+            } else {
+                input_mat->loadFromMM(input_file, true, false);
+            }
+        } else if (boost::algorithm::ends_with(input_file, ".bin")) {
+            int first_ = input_file.find("_");
+            int mat_size = std::stoi(input_file.substr(file_start+1, first_-file_start-1));
+            int indicator = std::stoi(input_file.substr(first_+1, 1));
+
+            if (indicator == 1) {
+                input_mat->loadFromBin(input_file, mat_size, false, false);
+            } else if (indicator == 2) {
+                input_mat->loadFromBin(input_file, mat_size, false, true);
+            } else if (indicator == 3) {
+                input_mat->loadFromBin(input_file, mat_size, true, false);
+            } else {
+                input_mat->loadFromBin(input_file, mat_size, true, true);
+            }
+        }
     }
 } // namespace pwm
 

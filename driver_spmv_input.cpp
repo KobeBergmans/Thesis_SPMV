@@ -15,9 +15,6 @@
 #include "Util/VectorUtill.hpp"
 #include "Util/DriverUtil.hpp"
 
-
-#include <boost/algorithm/string/predicate.hpp>
-
 #include "omp.h"
 
 void printErrorMsg() {
@@ -80,38 +77,7 @@ int main(int argc, char** argv) {
     // Input matrix & initialize vectors
     start = omp_get_wtime();
     pwm::Triplet<data_t, index_t> input_mat;
-
-    int file_start = input_file.find("/");
-    if (boost::algorithm::ends_with(input_file, ".mtx")) {
-        int indicator = std::stoi(input_file.substr(file_start+1, 1));
-        if (indicator == 1) {
-            input_mat.loadFromMM(input_file, false, false, false);
-        } else if (indicator == 2) {
-            input_mat.loadFromMM(input_file, false, false, true);
-        } else if (indicator == 3) {
-            input_mat.loadFromMM(input_file, true, true);
-        } else if (indicator == 4) {
-            input_mat.loadFromMM(input_file, false, true, false);
-        } else if (indicator == 5) {
-            input_mat.loadFromMM(input_file, false, true, true);
-        } else {
-            input_mat.loadFromMM(input_file, true, false);
-        }
-    } else if (boost::algorithm::ends_with(input_file, ".bin")) {
-        int first_ = input_file.find("_");
-        int mat_size = std::stoi(input_file.substr(file_start+1, first_-file_start-1));
-        int indicator = std::stoi(input_file.substr(first_+1, 1));
-
-        if (indicator == 1) {
-            input_mat.loadFromBin(input_file, mat_size, false, false);
-        } else if (indicator == 2) {
-            input_mat.loadFromBin(input_file, mat_size, false, true);
-        } else if (indicator == 3) {
-            input_mat.loadFromBin(input_file, mat_size, true, false);
-        } else {
-            input_mat.loadFromBin(input_file, mat_size, true, true);
-        }
-    }
+    pwm::loadMatrixFromFile(&input_mat, input_file);
     int mat_size = input_mat.row_size;
 
     test_mat->loadFromTriplets(&input_mat, partitions);
