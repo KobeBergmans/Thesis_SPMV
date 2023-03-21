@@ -118,4 +118,10 @@ int main(int argc, char** argv) {
     std::cout << "Variance of nnz per row:   " << rows_var << std::endl;
     std::cout << "Average nnz per block:     " << block_avg << std::endl;
     std::cout << "Variance of nnz per block: " << block_var << std::endl;
+
+    delete [] rows_nnz;
+    for (index_t i = 0; i < nb_blocks; ++i) {
+        delete [] block_nnz[i];
+    }
+    delete [] block_nnz;
 }
