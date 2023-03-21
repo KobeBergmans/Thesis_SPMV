@@ -74,3 +74,7 @@ run_sniper:
 # TESTS
 test:
 	dpcpp -Wall -Og -fopenmp -o test test.cpp -ltbb_debug -lboost_thread
+
+# Statistics
+calc_stats:
+	+$(MAKE) -C Util_Scripts

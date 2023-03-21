@@ -14,3 +14,4 @@ driver_input
 driver_spmv_input
 test
 driver_sniper
+calc_stats
