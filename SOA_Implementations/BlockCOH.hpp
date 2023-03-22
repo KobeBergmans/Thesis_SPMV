@@ -526,7 +526,7 @@ namespace pwm {
                     int_type col_index = 0;
 
                     // Multiply all blocks
-                    while (block_index <= thread_blocks[pid]) {
+                    while (block_index < thread_blocks[pid]) {
                         blockMult(&row_index, &col_index, x+block_col*beta[pid], y+thread_row_start[pid]+block_row*beta[pid], pid, block_index-1);
 
                         // Set block column for the next iteration
@@ -539,6 +539,8 @@ namespace pwm {
                             block_row += row_jump_block[pid][block_row_index++];
                         }
                     }
+
+                    blockMult(&row_index, &col_index, x+block_col*beta[pid], y+thread_row_start[pid]+block_row*beta[pid], pid, block_index-1);
                 }
             }
 
