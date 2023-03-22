@@ -128,6 +128,16 @@ namespace pwm {
                     lg_sqrt_size = (int_type)(std::ceil(std::log2(std::sqrt((double)maximal_size))));
                     block_bits[pid] = std::min<int_type>(16, 3+lg_sqrt_size);
                     beta[pid] = (int_type)(std::pow(2, block_bits[pid]));
+
+                    while (block_bits[pid] > lg_sqrt_size) {
+                    // Check if x and y fit in the L2 cache per block
+                    if (sizeof(T)*CHAR_BIT*beta*2 > L2_CACHE_SIZE_MB*L2_CACHE_MULT*1e6*8) {
+                        block_bits[pid] -= 1;
+                        beta[pid] = (int_type)(std::pow(2, block_bits[pid]));
+                    } else {
+                        break;
+                    }
+                }
                 }
             }
 
@@ -377,8 +387,6 @@ namespace pwm {
                 }
 
                 thread_nnz[pid] = row_sum;
-
-                pwm::printVector(thread_nnz, threads);
 
                 delete [] row_nnz;
 
