@@ -142,54 +142,11 @@ namespace pwm {
             }
 
             /**
-             * @brief Quicksort partition function
-             * 
-             * Returns high+1 if all elements in the array are the same to avoid unnecessary recursion
-             * 
-             * @param coords Array which contains 2 pointers, pointing to the column and row indices respectively
-             * @param data data of the block which needs to be partitioned
-             * @param low Starting index of data
-             * @param high Ending index of data
-             * @param orig_size Size of the area that is sorted
-             * @param pid Thread number corresponding to the given area
-             * @return int_type Returns partitioning point of high+1 if all the elements are the same
-             */
-            int_type partitionBlock(int_type** coords, T* data, const int_type low, const int_type high, const int_type orig_size, const int pid) {
-                // Select pivot (rightmost element)
-                int_type pivotRow = (coords[0][high]-thread_row_start[pid]) / beta[pid];
-                int_type pivotCol = coords[1][high] / beta[pid];
-                int_type hilbert_pivot = rowColToHilbert(orig_size / beta[pid], pivotRow, pivotCol);
-
-                // Points to biggest element
-                int_type i = low;
-                int_type hilbert_elem;
-                int_type same_ct = 0;
-                for (int j = low; j < high; ++j) {
-                    hilbert_elem = rowColToHilbert(orig_size / beta[pid], (coords[0][j]-thread_row_start[pid]) / beta[pid], coords[1][j]/ beta[pid]);
-                    if (hilbert_elem <= hilbert_pivot) {
-                        if (hilbert_elem == hilbert_pivot) same_ct++;
-
-                        // If element is smaller than pivot swap it with i+1
-                        pwm::swapArrayElems<T, int_type, int_type, 2>(coords, data, i, j);
-                        i++;
-                    }
-                }
-
-                // Swap pivot with the greatest element at i+1
-                pwm::swapArrayElems<T, int_type, int_type, 2>(coords, data, i, high);
-
-                if (same_ct == high-low) {
-                    return high+1;
-                }
-
-                // return the partitioning point
-                return i;
-            }
-
-            /**
              * @brief Sorts the nonzeros using hilbert order on the block level
              * 
              * Makes use of quicksort implementation (see sortOnCoord in Util/TripletToCRS.hpp)
+             * 
+             * https://en.wikipedia.org/wiki/Dutch_national_flag_problem
              * 
              * @param coords Array consisting of 2 pointers, pointing to the column and row indices respectively
              * @param data data of given block indices
@@ -198,20 +155,39 @@ namespace pwm {
              * @param orig_size Size of the area that is sorted
              * @param pid Thread number corresponding to the given area
              */
-            void sortForHilbertBlocks(int_type** coords, T* data, int_type low, const int_type high, const int_type orig_size, const int pid) {
+            void sortForHilbertBlocks(int_type** coords, T* data, const int_type low, const int_type high, const int_type orig_size, const int pid) {
                 if (low < high) {
-                    // Random permutation of rightmost element
-                    pwm::swapArrayElems<T, int_type, int_type, 2>(coords, data, (((int_type)rand()) % (high-low)) + low, high); 
+                    // Select pivot (random element)
+                    int_type pivot_index = (((int_type)rand()) % (high-low)) + low;
+                    int_type pivot_row = (coords[0][pivot_index]-thread_row_start[pid]) / beta[pid];
+                    int_type pivot_col = coords[1][pivot_index] / beta[pid];
+                    int_type hilbert_pivot = rowColToHilbert(orig_size / beta[pid], pivot_row, pivot_col);
 
-                    const int_type middle = partitionBlock(coords, data, low, high, orig_size, pid);
+                    // Points to biggest element
+                    int_type i = low;
+                    int_type j = low;
+                    int_type k = high;
+                    int_type hilbert_elem;
+                    while (j <= k) {
+                        hilbert_elem = rowColToHilbert(orig_size / beta[pid], (coords[0][j]-thread_row_start[pid]) / beta[pid], coords[1][j]/ beta[pid]);
+
+                        if (hilbert_elem < hilbert_pivot) {
+                            pwm::swapArrayElems<T, int_type, int_type, 2>(coords, data, i, j);
+                            i++;
+                            j++;
+                        } else if (hilbert_elem > hilbert_pivot) {
+                            pwm::swapArrayElems<T, int_type, int_type, 2>(coords, data, j, k);
+                            k--;
+                        } else {
+                            j++;
+                        }
+                    }
 
                     // We don't do anything if all elements are the same in the array
-                    if (middle != high + 1) {
-                        if (middle > 0) {
-                            sortForHilbertBlocks(coords, data, low, middle - 1, orig_size, pid);
-                        }
-                        sortForHilbertBlocks(coords, data, middle + 1, high, orig_size, pid);
+                    if (i > 0) {
+                        sortForHilbertBlocks(coords, data, low, i - 1, orig_size, pid);
                     }
+                    sortForHilbertBlocks(coords, data, k+1, high, orig_size, pid);
                 }
             }
 
@@ -460,8 +436,7 @@ namespace pwm {
                                 // We have a new row so the col_jump array must overflow
                                 row_jump_block[pid][row_block_index++] = new_block_row - old_block_row;
                                 col_jump_block[pid][block_index++] = new_block_col - old_block_col + horizontal_blocks[pid]; 
-                            }
-                            
+                            }                            
                         } 
                     }
 
