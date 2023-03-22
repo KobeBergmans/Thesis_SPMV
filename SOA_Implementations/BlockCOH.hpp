@@ -122,7 +122,7 @@ namespace pwm {
 
                 int_type maximal_size, lg_sqrt_size;
                 for (int pid = 0; pid < threads; ++pid) {
-                    maximal_size = std::min(calculateNOR(pid), this->noc);
+                    maximal_size = std::max(calculateNOR(pid), this->noc);
 
                     // Maximum of 16 is specified because row and column indices should fit in 4 bytes
                     lg_sqrt_size = (int_type)(std::ceil(std::log2(std::sqrt((double)maximal_size))));
@@ -377,6 +377,8 @@ namespace pwm {
                 }
 
                 thread_nnz[pid] = row_sum;
+
+                pwm::printVector(thread_nnz, threads);
 
                 delete [] row_nnz;
 
