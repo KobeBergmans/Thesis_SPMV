@@ -38,7 +38,7 @@ echo "Running Threadpool implementation with 2 - 8 threads and double the amount
 ./driver_spmv_input $1 $2 $3 6 7 14
 ./driver_spmv_input $1 $2 $3 6 8 16
 
-echo "Running CRS_merge implementation with 2-8 threads"
+echo "Running CRSMerge implementation with 2-8 threads"
 ./driver_spmv_input $1 $2 $3 8 2
 ./driver_spmv_input $1 $2 $3 8 3
 ./driver_spmv_input $1 $2 $3 8 4
@@ -56,7 +56,7 @@ echo "Running CSB implementation with 2-8 threads"
 ./driver_spmv_input $1 $2 $3 9 7
 ./driver_spmv_input $1 $2 $3 9 8
 
-echo "Running Block CO-H implementation with 2-8 threads"
+echo "Running BlockCOH implementation with 2-8 threads"
 ./driver_spmv_input $1 $2 $3 10 2
 ./driver_spmv_input $1 $2 $3 10 3
 ./driver_spmv_input $1 $2 $3 10 4
@@ -64,18 +64,3 @@ echo "Running Block CO-H implementation with 2-8 threads"
 ./driver_spmv_input $1 $2 $3 10 6
 ./driver_spmv_input $1 $2 $3 10 7
 ./driver_spmv_input $1 $2 $3 10 8
-
-echo "Running CRS_merge with 10, 12 and 14 threads"
-./driver_spmv_input $1 $2 $3 8 10
-./driver_spmv_input $1 $2 $3 8 12
-./driver_spmv_input $1 $2 $3 8 14
-
-echo "Running CSB with 10, 12, 14 threads"
-./driver_spmv_input $1 $2 $3 9 10
-./driver_spmv_input $1 $2 $3 9 12
-./driver_spmv_input $1 $2 $3 9 14
-
-echo "Running Block CO-H with 10, 12 and 14 threads"
-./driver_spmv_input $1 $2 $3 10 10
-./driver_spmv_input $1 $2 $3 10 12
-./driver_spmv_input $1 $2 $3 10 14
