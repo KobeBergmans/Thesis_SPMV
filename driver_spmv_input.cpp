@@ -92,7 +92,6 @@ int main(int argc, char** argv) {
     // Do warm up iterations
     for (int i = 0; i < warm_up; ++i) {
         std::generate(x, x+mat_size, pwm::randFloat<data_t>);
-        pwm::printVector(x, mat_size);
         test_mat->mv(x, y);
     }
 
