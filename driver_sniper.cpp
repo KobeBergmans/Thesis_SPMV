@@ -15,8 +15,6 @@
 #include "Util/VectorUtill.hpp"
 #include "Util/DriverUtil.hpp"
 
-#include "omp.h"
-
 #include <sim_api.h>
 
 void printErrorMsg() {
@@ -38,8 +36,6 @@ void printErrorMsg() {
 }
 
 int main(int argc, char** argv) {
-    double start, stop, time; 
-
     if (argc < 3) {
         printErrorMsg();
         return -1;
@@ -73,7 +69,6 @@ int main(int argc, char** argv) {
     }
 
     // Input matrix & initialize vectors
-    start = omp_get_wtime();
     pwm::Triplet<data_t, index_t> input_mat;
     pwm::loadMatrixFromFile(&input_mat, input_file);
     int mat_size = input_mat.row_size;
@@ -84,16 +79,8 @@ int main(int argc, char** argv) {
     data_t* y = new data_t[mat_size];
     std::generate(x, x+mat_size, pwm::randFloat<data_t>);
 
-    stop = omp_get_wtime();
-    time = (stop - start) * 1000;
-    std::cout << "Time to set up datastructures: " << time << "ms" << std::endl;
-
     SimMarker(1, 1);
-    start = omp_get_wtime();
     test_mat->mv(x,y);
-    stop = omp_get_wtime();
-    time = (stop - start) * 1000;
-    std::cout << "Time to do warmup run: " << time << "ms" << std::endl;
 
     std::generate(x, x+mat_size, pwm::randFloat<data_t>);
     SimMarker(2, 1);
