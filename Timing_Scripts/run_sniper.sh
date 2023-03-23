@@ -8,7 +8,26 @@ mkdir Sniper_Out/BlockCOH
 mkdir Sniper_Out/CSB
 mkdir Sniper_Out/MergeCRS
 
-../snipersim/run-sniper -c $3 -n $2 -d ./Sniper_Out/CRSOMP/ -s markers -s roi-iter::2:2 --roi-script --no-cache-warming -- ./driver_sniper $1 2 $2
-../snipersim/run-sniper -c $3 -n $2 -d ./Sniper_Out/BlockCOH/ -s markers -s roi-iter::2:2 --roi-script --no-cache-warming -- ./driver_sniper $1 8 $2
-../snipersim/run-sniper -c $3 -n $2 -d ./Sniper_Out/CSB/ -s markers -s roi-iter::2:2 --roi-script --no-cache-warming -- ./driver_sniper $1 9 $2
-../snipersim/run-sniper -c $3 -n $2 -d ./Sniper_Out/MergeCRS -s markers -s roi-iter::2:2 --roi-script --no-cache-warming -- ./driver_sniper $1 10 $2
+../snipersim/run-sniper -c $3 -n $2 -d ./Sniper_Out/CRSOMP/ -s markers:verbose:stats -s roi-iter::1:2 --roi-script --no-cache-warming -- ./driver_sniper $1 2 $2
+cd Sniper_Out/CRSOMP
+${SNIPER}/tools/cpi_stack.py --partial="marker-1-2:marker-2-2"
+${SNIPER}/tools/gen_simout.py --partial="marker-1-2:marker-2-2" > part_sim.out
+cd ../..
+
+../snipersim/run-sniper -c $3 -n $2 -d ./Sniper_Out/BlockCOH/ -s markers:verbose:stats -s roi-iter::1:2 --roi-script --no-cache-warming -- ./driver_sniper $1 8 $2
+cd Sniper_Out/BlockCOH
+${SNIPER}/tools/cpi_stack.py --partial="marker-1-2:marker-2-2"
+${SNIPER}/tools/gen_simout.py --partial="marker-1-2:marker-2-2" > part_sim.out
+cd ../..
+
+../snipersim/run-sniper -c $3 -n $2 -d ./Sniper_Out/CSB/ -s markers:verbose:stats -s roi-iter::1:2 --roi-script --no-cache-warming -- ./driver_sniper $1 9 $2
+cd Sniper_Out/CSB
+${SNIPER}/tools/cpi_stack.py --partial="marker-1-2:marker-2-2"
+${SNIPER}/tools/gen_simout.py --partial="marker-1-2:marker-2-2" > part_sim.out
+cd ../..
+
+../snipersim/run-sniper -c $3 -n $2 -d ./Sniper_Out/MergeCRS -s markers:verbose:stats -s roi-iter::1:2 --roi-script --no-cache-warming -- ./driver_sniper $1 10 $2
+cd Sniper_Out/MergeCRS
+${SNIPER}/tools/cpi_stack.py --partial="marker-1-2:marker-2-2"
+${SNIPER}/tools/gen_simout.py --partial="marker-1-2:marker-2-2" > part_sim.out
+cd ../..
