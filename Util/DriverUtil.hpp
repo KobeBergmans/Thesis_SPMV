@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <string>
+#include <random>
 
 #include "../Matrix/SparseMatrix.hpp"
 #include "../Matrix/CRS.hpp"
@@ -137,6 +138,10 @@ namespace pwm {
                 input_mat->loadFromBin(input_file, mat_size, true, true);
             }
         }
+    }
+
+    double randDouble() {
+        return MIN_IN + (double)std::rand() / RAND_MAX * (MAX_IN - MIN_IN);    
     }
 } // namespace pwm
 

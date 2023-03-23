@@ -39,4 +39,8 @@ typedef int64_t index_t;
 typedef uint32_t index_t;
 #endif
 
+// Maximum and minimal value for input vector
+#define MIN_IN -100.0
+#define MAX_IN 100.0
+
 #endif // PWM_CONSTANTS_HPP

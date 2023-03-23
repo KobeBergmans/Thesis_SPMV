@@ -84,7 +84,6 @@ int main(int argc, char** argv) {
     
     data_t* x = new data_t[mat_size];
     data_t* y = new data_t[mat_size];
-    std::fill(x, x+mat_size, 1.);
 
     stop = omp_get_wtime();
     time = (stop - start) * 1000;
@@ -92,12 +91,14 @@ int main(int argc, char** argv) {
 
     // Do warm up iterations
     for (int i = 0; i < warm_up; ++i) {
+        std::generate(x, x+mat_size, pwm::randDouble);
         test_mat->mv(x, y);
     }
 
     // Solve power method an amount of time
     double timings[iter];
     for (int i = 0; i < iter; ++i) {
+        std::generate(x, x+mat_size, pwm::randDouble);
         start = omp_get_wtime();
         test_mat->mv(x, y);
         stop = omp_get_wtime();
