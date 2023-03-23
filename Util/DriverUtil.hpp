@@ -140,8 +140,9 @@ namespace pwm {
         }
     }
 
-    double randDouble() {
-        return MIN_IN + (double)std::rand() / RAND_MAX * (MAX_IN - MIN_IN);    
+    template<typename T>
+    T randFloat() {
+        return MIN_IN + (T)std::rand() / RAND_MAX * (MAX_IN - MIN_IN);    
     }
 } // namespace pwm
 

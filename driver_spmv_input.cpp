@@ -91,14 +91,15 @@ int main(int argc, char** argv) {
 
     // Do warm up iterations
     for (int i = 0; i < warm_up; ++i) {
-        std::generate(x, x+mat_size, pwm::randDouble);
+        std::generate(x, x+mat_size, pwm::randFloat<data_t>);
+        pwm::printVector(x, mat_size);
         test_mat->mv(x, y);
     }
 
     // Solve power method an amount of time
     double timings[iter];
     for (int i = 0; i < iter; ++i) {
-        std::generate(x, x+mat_size, pwm::randDouble);
+        std::generate(x, x+mat_size, pwm::randFloat<data_t>);
         start = omp_get_wtime();
         test_mat->mv(x, y);
         stop = omp_get_wtime();

@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
     
     data_t* x = new data_t[mat_size];
     data_t* y = new data_t[mat_size];
-    std::fill(x, x+mat_size, 1.);
+    std::generate(x, x+mat_size, pwm::randFloat<data_t>);
 
     stop = omp_get_wtime();
     time = (stop - start) * 1000;
@@ -94,6 +94,8 @@ int main(int argc, char** argv) {
     stop = omp_get_wtime();
     time = (stop - start) * 1000;
     std::cout << "Time to do warmup run: " << time << "ms" << std::endl;
+
+    std::generate(x, x+mat_size, pwm::randFloat<data_t>);
     SimMarker(2, 1);
 
     // Do simulation
