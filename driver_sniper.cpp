@@ -81,14 +81,16 @@ int main(int argc, char** argv) {
 
     SimMarker(1, 1);
     test_mat->mv(x,y);
-
-    std::generate(x, x+mat_size, pwm::randFloat<data_t>);
     SimMarker(2, 1);
 
-    // Do simulation
     SimMarker(1, 2);
-    test_mat->mv(x, y);
+    std::generate(x, x+mat_size, pwm::randFloat<data_t>);
     SimMarker(2, 2);
+
+    // Do simulation
+    SimMarker(1, 3);
+    test_mat->mv(x, y);
+    SimMarker(2, 3);
 
 #ifndef NDEBUG
     std::cout << "Result for checking measures: " << std::endl;
