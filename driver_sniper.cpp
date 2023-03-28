@@ -15,6 +15,8 @@
 #include "Util/VectorUtill.hpp"
 #include "Util/DriverUtil.hpp"
 
+#include "omp.h"
+
 #include <sim_api.h>
 
 void printErrorMsg() {
@@ -84,7 +86,12 @@ int main(int argc, char** argv) {
     SimMarker(2, 1);
 
     SimMarker(1, 2);
-    std::generate(x, x+mat_size, pwm::randFloat<data_t>);
+    #pragma omp parallel for schedule(static) num_threads(threads)
+    for (int pid = 0; pid < threads; ++pid) {
+        std::generate(x+pid*pwm::integerCeil(mat_size, threads), 
+                      x+std::min(mat_size, pwm::integerCeil(mat_size, threads)*(pid+1)), 
+                      pwm::randFloat<data_t>);
+    }
     SimMarker(2, 2);
 
     // Do simulation
