@@ -22,6 +22,13 @@
 namespace pwm {
     template<typename T, typename int_type>
     class CRS_Merge: public pwm::CRSOMP<T, int_type> {
+        protected:
+            // Used to store the row of the carry out for each thread
+            int_type* row_carry_out;
+
+            // Used to store the value of the carry out
+            T* value_carry_out;
+
         private:
             /**
              * @brief Calculate which coordinate in both lists the merge path will have on the given diagonal
@@ -63,6 +70,18 @@ namespace pwm {
                 if (this->threads == -1) {
                     this->threads = omp_get_max_threads();
                 }
+
+                row_carry_out = new int_type[this->threads];
+                value_carry_out = new T[this->threads];
+            }
+
+            // Deconstructor
+            ~CRS_Merge() {
+                delete [] row_carry_out;
+                delete [] value_carry_out;
+
+                row_carry_out = NULL;
+                value_carry_out = NULL;
             }
 
             /**
@@ -77,9 +96,6 @@ namespace pwm {
                 const int_type* row_end_offsets = this->row_start + 1; // Merge list A
                 const int_type num_merge_items = this->nor + this->nnz;
                 const int_type items_per_thread = (num_merge_items + this->threads - 1) / this->threads;
-
-                int_type row_carry_out[this->threads];
-                T value_carry_out[this->threads];
 
                 // Parallel section: each thread processes 1 loop iteration
                 #pragma omp parallel for schedule(static) num_threads(this->threads)
