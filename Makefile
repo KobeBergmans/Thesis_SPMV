@@ -69,7 +69,9 @@ driver_sniper_debug:
 run_sniper:
 	rm -f driver_sniper
 	make driver_sniper
-	../snipersim/run-sniper -c ${config} -n ${core} -d ./Sniper_Out/ -s markers -s roi-iter::2:3 --roi-script --no-cache-warming -- ./driver_sniper ${file} ${method} ${core}
+	rm -r Sniper_Out
+	mkdir Sniper_Out
+	../snipersim/run-sniper -c ${config} -n ${core} -d ./Sniper_Out -s markers:verbose:stats -s roi-iter::3:3 --roi-script --no-cache-warming -- ./driver_sniper ${file} ${method} ${core}
 
 # TESTS
 test:
