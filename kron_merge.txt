@@ -1,0 +1,16 @@
+dpcpp -Wall -DNDEBUG -O3 -fopenmp -o driver_spmv_input driver_spmv_input.cpp -ltbb -lboost_thread
+Running method 8 with 2-8 threads
+Time to set up datastructures: 136000ms
+77.8129, 77.4648, 77.708, 78.023, 77.8, 77.641, 77.872, 77.9152, 77.6, 77.867, 
+Time to set up datastructures: 133638ms
+56.5751, 57.2619, 57.9181, 57.3978, 57.5449, 57.3709, 57.2739, 57.3719, 56.9491, 57.333, 
+Time to set up datastructures: 137485ms
+44.1461, 43.91, 44.0211, 43.8991, 43.829, 44.2181, 44.2622, 44.4539, 44.0981, 44.4391, 
+Time to set up datastructures: 137968ms
+38.1351, 38.7061, 37.8969, 37.967, 37.997, 38.6982, 38.3768, 38.2168, 38.1958, 38.95, 
+Time to set up datastructures: 138849ms
+34.631, 34.8859, 34.7431, 35.008, 34.832, 35.0339, 34.8661, 34.8151, 34.924, 34.8949, 
+Time to set up datastructures: 138478ms
+32.964, 32.6028, 32.84, 32.6521, 32.7849, 32.8732, 32.6309, 32.789, 32.7952, 32.5181, 
+Time to set up datastructures: 138624ms
+31.065, 31.23, 31.1859, 31.085, 30.9901, 30.8931, 31.1239, 31.0879, 31.131, 30.8061, 
