@@ -1,3 +1,6 @@
+rm -f driver_spmv_input
+make driver_spmv_input
+
 echo "Running method $4 with 2-8 threads"
 
 ./driver_spmv_input $1 $2 $3 $4 2

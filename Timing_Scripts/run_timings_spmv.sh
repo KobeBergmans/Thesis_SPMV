@@ -1,3 +1,6 @@
+rm -f driver_spmv_input
+make driver_spmv_input
+
 echo "Running sequential algorithm..."
 ./driver_spmv_input $1 $2 $3 1
 
