@@ -1,5 +1,6 @@
 # misc files
 /.vscode
+*.asv
 
 # Input files
 /Input
