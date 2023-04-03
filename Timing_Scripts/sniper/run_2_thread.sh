@@ -5,9 +5,6 @@
 #   - Sniper Config file
 #   - Output directory name
 
-rm -f driver_sniper
-make driver_sniper
-
 rm -rf Sniper_Out/$3
 mkdir Sniper_Out/$3
 mkdir Sniper_Out/$3/CRSOMP
