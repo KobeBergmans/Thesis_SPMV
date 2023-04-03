@@ -1,3 +1,10 @@
+# Runs simulations for the given config for the 4 methods using a given amount of threads
+# Inputs:
+#   - Matrix input file
+#   - Amount of threads used
+#   - Sniper config file
+#   - Output directory name
+
 rm -f driver_sniper
 make driver_sniper
 
