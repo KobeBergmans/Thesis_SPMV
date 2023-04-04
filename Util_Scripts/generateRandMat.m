@@ -4,14 +4,16 @@ function A = generateRandMat(size, avg_line, var_line, var_block)
 %   The properties are obtained by getting the amount of nonzero's from a
 %   normal distribution with the right properties
 
-lg_sqrt_size = ceil(log2(sqrt(size)));
+size = int64(size);
+
+lg_sqrt_size = ceil(log2(sqrt(double(size))));
 block_bits = min(16, 3+lg_sqrt_size);
-block_size = 2.^block_bits;
+block_size = int64(2.^block_bits);
 nb_blocks = ceil(size / block_size);
 
 block_compensation = 1;
 if mod(size, block_size) ~= 0 
-    block_compensation = mod(size, block_size) / block_size;
+    block_compensation = double(mod(size, block_size)) / double(block_size);
 end
 
 row_cts = max(ones(size, 1), round(sqrt(var_line)*randn(size, 1) + avg_line));
@@ -24,9 +26,9 @@ for block_row = 1:nb_blocks
     block_row_cts{block_row} = row_cts(row_start:row_end);
 end
 
-avg_block = (nnz / (size.^2)) * block_size.^2;
+avg_block = (nnz / double(size.^2)) * double(block_size.^2);
 
-block_cts = {};
+block_cts = cell(nb_blocks, 1);
 for i = 1:nb_blocks
     block_cts{i} = sqrt(var_block)*randn(nb_blocks, 1) + avg_block;
 end
@@ -42,8 +44,8 @@ end
 
 A_parts = cell(nb_blocks, 1);
 parfor block_row = 1:nb_blocks
-    disp(['block row ', num2str(block_row), ' starting...']);
-    block_row_nnz = sum(block_row_cts{block_row});
+    fprintf('block row %i starting...\n', block_row);
+    block_row_nnz = int64(sum(block_row_cts{block_row}));
 
     if block_row ~= nb_blocks
         curr_row_cts = zeros(block_size, 1);
@@ -67,8 +69,8 @@ parfor block_row = 1:nb_blocks
     end
     
     for i=1:block_row_nnz
-        if mod(i, 10000) == 0
-            disp(['block row ', num2str(block_row), ' has processed ', num2str(i), ' nnz']);
+        if mod(i, int64(10000)) == 0
+            fprintf('block row %i has processed %i nnz', block_row, i);
         end
 
         % Find row and block col which needs the most nnz by checking the 
@@ -102,9 +104,14 @@ parfor block_row = 1:nb_blocks
     A_parts{block_row} = A_temp;
 end
 
-A = A_parts{1};
+[row_ind, col_ind, data] = find(A_parts{1});
 for block_row = 2:nb_blocks
-    A = [A; A_parts{block_row}];
+    [new_row_ind, new_col_ind, new_data] = find(A_parts{block_row});
+    row_ind = [row_ind; new_row_ind + double((block_row-1)*block_size)];
+    col_ind = [col_ind; new_col_ind];
+    data = [data; new_data];
 end
+
+A = sparse(row_ind, col_ind, data, size, size);
 
 end
