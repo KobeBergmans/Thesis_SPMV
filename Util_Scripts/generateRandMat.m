@@ -25,17 +25,23 @@ for block_row = 1:nb_blocks
 end
 
 avg_block = (nnz / (size.^2)) * block_size.^2;
-block_cts = max(zeros(nb_blocks, nb_blocks), sqrt(var_block)*randn(nb_blocks, nb_blocks) + avg_block);
 
-for block_index = 1:nb_blocks
-    block_cts(end, block_index) = block_cts(end, block_index) * block_compensation;
-    block_cts(block_index, end) = block_cts(block_index, end) * block_compensation;
+block_cts = {};
+for i = 1:nb_blocks
+    block_cts{i} = max(zeros(nb_blocks, 1), sqrt(var_block)*randn(nb_blocks, 1) + avg_block);
 end
 
-block_cts = round(block_cts);
+for block_index = 1:nb_blocks
+    block_cts{nb_blocks}(block_index) = block_cts{nb_blocks}(block_index) * block_compensation;
+    block_cts{block_index}(end) = block_cts{block_index}(end) * block_compensation;
+end
+
+for i = 1:nb_blocks
+    block_cts{i} = round(block_cts{i});
+end
 
 A_parts = cell(nb_blocks, 1);
-for block_row = 1:nb_blocks
+parfor block_row = 1:nb_blocks
     disp(['block row ', num2str(block_row), ' starting...']);
     block_row_nnz = sum(block_row_cts{block_row});
 
@@ -90,7 +96,7 @@ for block_row = 1:nb_blocks
         rel_row_err(row_ind) = (block_row_cts{block_row}(row_ind) - curr_row_cts(row_ind)) ./ block_row_cts{block_row}(row_ind);
 
         curr_block_cts(block_col_index) = curr_block_cts(block_col_index) + 1;
-        rel_block_err(block_col_index) = (block_cts(block_row, block_col_index) - curr_block_cts(block_col_index)) ./ block_cts(block_row, block_col_index);
+        rel_block_err(block_col_index) = (block_cts{block_row}(block_col_index) - curr_block_cts(block_col_index)) ./ block_cts{block_row}(block_col_index);
     end
 
     A_parts{block_row} = A_temp;
