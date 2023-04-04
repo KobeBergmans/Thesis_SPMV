@@ -63,6 +63,9 @@ parfor block_row = 1:nb_blocks
     curr_block_cts = zeros(1, nb_blocks);
     rel_block_err = ones(1, nb_blocks);
 
+    % Set rel_block_err to zero if there are no nonzeros in the block
+    rel_block_err(block_cts{block_row} == 0) = 0;
+
     if (block_row ~= nb_blocks) || (mod(size, block_size) == 0)
         A_temp = spalloc(block_size, size, block_row_nnz);
     else
