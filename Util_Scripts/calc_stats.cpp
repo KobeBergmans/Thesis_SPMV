@@ -68,6 +68,11 @@ int main(int argc, char** argv) {
         rows_var += std::pow(rows_nnz[i]-rows_avg, 2)/input_mat.row_size;
     }
 
+    if (input_mat.row_size % block_size != 0) {
+        // If the block size does not evenly divide the matrix size we only take into account the whole blocks
+        nb_blocks--;
+    }
+
     double block_avg = 0;
     for (index_t i = 0; i < nb_blocks; ++i) {
         for (index_t j = 0; j < nb_blocks; ++j) {
