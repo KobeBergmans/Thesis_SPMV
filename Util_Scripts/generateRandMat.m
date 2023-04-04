@@ -14,7 +14,7 @@ if mod(size, block_size) ~= 0
     block_compensation = mod(size, block_size) / block_size;
 end
 
-row_cts = max(zeros(size, 1), round(sqrt(var_line)*randn(size, 1) + avg_line));
+row_cts = max(ones(size, 1), round(sqrt(var_line)*randn(size, 1) + avg_line));
 nnz = sum(row_cts);
 
 block_row_cts = cell(nb_blocks, 1);
@@ -28,7 +28,7 @@ avg_block = (nnz / (size.^2)) * block_size.^2;
 
 block_cts = {};
 for i = 1:nb_blocks
-    block_cts{i} = max(zeros(nb_blocks, 1), sqrt(var_block)*randn(nb_blocks, 1) + avg_block);
+    block_cts{i} = sqrt(var_block)*randn(nb_blocks, 1) + avg_block;
 end
 
 for block_index = 1:nb_blocks
@@ -37,7 +37,7 @@ for block_index = 1:nb_blocks
 end
 
 for i = 1:nb_blocks
-    block_cts{i} = round(block_cts{i});
+    block_cts{i} = max(ones(nb_blocks, 1), round(block_cts{i}));
 end
 
 A_parts = cell(nb_blocks, 1);
@@ -57,14 +57,8 @@ parfor block_row = 1:nb_blocks
         rel_row_err = ones(am_rows, 1);
     end
 
-    % Set rel_row_err to zero if there are no nonzeros on the row
-    rel_row_err(block_row_cts{block_row} == 0) = 0;
-
     curr_block_cts = zeros(1, nb_blocks);
     rel_block_err = ones(1, nb_blocks);
-
-    % Set rel_block_err to zero if there are no nonzeros in the block
-    rel_block_err(block_cts{block_row} == 0) = 0;
 
     if (block_row ~= nb_blocks) || (mod(size, block_size) == 0)
         A_temp = spalloc(block_size, size, block_row_nnz);
