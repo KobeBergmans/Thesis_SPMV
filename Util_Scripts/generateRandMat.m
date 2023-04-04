@@ -41,7 +41,7 @@ for i = 1:nb_blocks
 end
 
 A_parts = cell(nb_blocks, 1);
-parfor block_row = 1:nb_blocks
+for block_row = 1:nb_blocks
     disp(['block row ', num2str(block_row), ' starting...']);
     block_row_nnz = sum(block_row_cts{block_row});
 
@@ -56,6 +56,9 @@ parfor block_row = 1:nb_blocks
         curr_row_cts = zeros(am_rows, 1);
         rel_row_err = ones(am_rows, 1);
     end
+
+    % Set rel_row_err to zero if there are no nonzeros on the row
+    rel_row_err(block_row_cts{block_row} == 0) = 0;
 
     curr_block_cts = zeros(1, nb_blocks);
     rel_block_err = ones(1, nb_blocks);
