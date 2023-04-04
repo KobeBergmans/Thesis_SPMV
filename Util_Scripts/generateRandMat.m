@@ -41,7 +41,7 @@ for i = 1:nb_blocks
 end
 
 A_parts = cell(nb_blocks, 1);
-for block_row = 1:nb_blocks
+parfor block_row = 1:nb_blocks
     disp(['block row ', num2str(block_row), ' starting...']);
     block_row_nnz = sum(block_row_cts{block_row});
 
