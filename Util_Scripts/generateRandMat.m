@@ -70,7 +70,7 @@ parfor block_row = 1:nb_blocks
     
     for i=1:block_row_nnz
         if mod(i, int64(10000)) == 0
-            fprintf('block row %i has processed %i nnz', block_row, i);
+            fprintf('block row %i has processed %i nnz\n', block_row, i);
         end
 
         % Find row and block col which needs the most nnz by checking the 
