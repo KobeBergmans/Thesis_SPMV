@@ -3,7 +3,7 @@
 *.asv
 
 # Matlab coder files
-/codegen
+Util_Scripts/codegen
 *.prj
 
 # Input files
