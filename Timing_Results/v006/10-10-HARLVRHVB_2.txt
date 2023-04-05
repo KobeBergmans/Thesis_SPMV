@@ -1,4 +1,4 @@
-dpcpp -Wall -DNDEBUG -O3 -fopenmp -o driver_spmv_input driver_spmv_input.cpp -ltbb -lboost_thread
+2 3 4 5 6 7 8 9 10 11 12 13 14
 Running sequential algorithm
 Time to set up datastructures: 7894.76ms
 285.322, 283.379, 283.188, 283.338, 283.51, 285.282, 283.581, 283.634, 283.424, 283.254, 
@@ -191,3 +191,5 @@ Time to set up datastructures: 14729.7ms
 56.7541, 56.7319, 56.7129, 56.8612, 56.8578, 56.7889, 57.0011, 56.8469, 56.9558, 56.7811, 
 Time to set up datastructures: 14553.1ms
 55.7132, 55.7351, 55.8341, 55.876, 55.8319, 55.7981, 55.8751, 55.7239, 55.7749, 55.7828, 
+
+run on commit: 225e952312c190367299fb2cec7b68841900a7e0

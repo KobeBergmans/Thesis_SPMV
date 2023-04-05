@@ -1,6 +1,7 @@
 # misc files
 /.vscode
 *.asv
+*.png
 
 # Matlab coder files
 Util_Scripts/codegen
