@@ -85,19 +85,10 @@ int main(int argc, char** argv) {
     test_mat->mv(x,y);
     SimMarker(2, 1);
 
-    SimMarker(1, 2);
-    #pragma omp parallel for schedule(static) num_threads(threads)
-    for (int pid = 0; pid < threads; ++pid) {
-        std::generate(x+pid*pwm::integerCeil(mat_size, threads), 
-                      x+std::min(mat_size, pwm::integerCeil(mat_size, threads)*(pid+1)), 
-                      pwm::randFloat<data_t>);
-    }
-    SimMarker(2, 2);
-
     // Do simulation
-    SimMarker(1, 3);
+    SimMarker(1, 2);
     test_mat->mv(x, y);
-    SimMarker(2, 3);
+    SimMarker(2, 2);
 
 #ifndef NDEBUG
     std::cout << "Result for checking measures: " << std::endl;

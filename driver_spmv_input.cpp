@@ -87,18 +87,17 @@ int main(int argc, char** argv) {
 
     stop = omp_get_wtime();
     time = (stop - start) * 1000;
+    std::generate(x, x+mat_size, pwm::randFloat<data_t>);
     std::cout << "Time to set up datastructures: " << time << "ms" << std::endl;
 
     // Do warm up iterations
     for (int i = 0; i < warm_up; ++i) {
-        std::generate(x, x+mat_size, pwm::randFloat<data_t>);
         test_mat->mv(x, y);
     }
 
     // Solve power method an amount of time
     double timings[iter];
     for (int i = 0; i < iter; ++i) {
-        std::generate(x, x+mat_size, pwm::randFloat<data_t>);
         start = omp_get_wtime();
         test_mat->mv(x, y);
         stop = omp_get_wtime();

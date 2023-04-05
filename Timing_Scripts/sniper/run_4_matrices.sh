@@ -7,9 +7,10 @@
 #   - Matrix input file 4
 #   - Sniper config file
 
-sh Timing_Scripts/sniper/run_2_thread.sh $1 $5 "2_thread_1" & sh Timing_Scripts/sniper/run_2_thread.sh $2 $5 "2_thread_2"
-wait
-sh Timing_Scripts/sniper/run_2_thread.sh $3 $5 "2_thread_3" & sh Timing_Scripts/sniper/run_2_thread.sh $4 $5 "2_thread_4"
+sh Timing_Scripts/sniper/run_2_thread.sh $1 $5 "2_thread_1" & 
+sh Timing_Scripts/sniper/run_2_thread.sh $2 $5 "2_thread_2" &
+sh Timing_Scripts/sniper/run_2_thread.sh $3 $5 "2_thread_3" & 
+sh Timing_Scripts/sniper/run_2_thread.sh $4 $5 "2_thread_4"
 wait
 
 sh Timing_Scripts/sniper/run_8_thread.sh $1 $5 "8_thread_1"
