@@ -1,69 +1,56 @@
+# Runs spmv input driver for a given matrix and a specified amount of times for all methods using a given amount of threads
+# Inputs:
+# - Matrix file
+# - Amount of timed runs
+# - Amount of warmup runs
+# - Starting thread amount
+# - End thread amount
+
 rm -f driver_spmv_input
 make driver_spmv_input
 
-echo "Running sequential algorithm..."
+echo "Running sequential algorithm"
 ./driver_spmv_input $1 $2 $3 1
 
-echo "Running OpenMP implementation with 2 - 8 threads..."
-./driver_spmv_input $1 $2 $3 2 2
-./driver_spmv_input $1 $2 $3 2 3
-./driver_spmv_input $1 $2 $3 2 4
-./driver_spmv_input $1 $2 $3 2 5
-./driver_spmv_input $1 $2 $3 2 6
-./driver_spmv_input $1 $2 $3 2 7
-./driver_spmv_input $1 $2 $3 2 8
+echo "Running OpenMP implementation"
+for thread in $(seq $4 $5)
+do
+./driver_spmv_input $1 $2 $3 2 $thread
+done
 
-echo "Running TBB implementation with 2 - 8 threads..."
-./driver_spmv_input $1 $2 $3 3 2
-./driver_spmv_input $1 $2 $3 3 3
-./driver_spmv_input $1 $2 $3 3 4
-./driver_spmv_input $1 $2 $3 3 5
-./driver_spmv_input $1 $2 $3 3 6
-./driver_spmv_input $1 $2 $3 3 7
-./driver_spmv_input $1 $2 $3 3 8
+echo "Running TBB implementation"
+for thread in $(seq $4 $5)
+do
+./driver_spmv_input $1 $2 $3 3 $thread
+done
 
-echo "Running TBB_graphs implementation with 2 - 8 threads and double the amount of partitions than threads"
-./driver_spmv_input $1 $2 $3 4 2 4
-./driver_spmv_input $1 $2 $3 4 3 6
-./driver_spmv_input $1 $2 $3 4 4 8
-./driver_spmv_input $1 $2 $3 4 5 10
-./driver_spmv_input $1 $2 $3 4 6 12
-./driver_spmv_input $1 $2 $3 4 7 14
-./driver_spmv_input $1 $2 $3 4 8 16
+echo "Running TBB_graphs implementation with double the amount of partitions than threads"
+for thread in $(seq $4 $5)
+do
+./driver_spmv_input $1 $2 $3 4 $thread $(($thread*2))
+done
 
 
-echo "Running Threadpool implementation with 2 - 8 threads and double the amount of partitions than threads"
-./driver_spmv_input $1 $2 $3 6 2 4
-./driver_spmv_input $1 $2 $3 6 3 6
-./driver_spmv_input $1 $2 $3 6 4 8
-./driver_spmv_input $1 $2 $3 6 5 10
-./driver_spmv_input $1 $2 $3 6 6 12
-./driver_spmv_input $1 $2 $3 6 7 14
-./driver_spmv_input $1 $2 $3 6 8 16
+echo "Running Threadpool implementation with double the amount of partitions than threads"
+for thread in $(seq $4 $5)
+do
+./driver_spmv_input $1 $2 $3 6 $thread $(($thread*2))
+done
 
-echo "Running CRSMerge implementation with 2-8 threads"
-./driver_spmv_input $1 $2 $3 8 2
-./driver_spmv_input $1 $2 $3 8 3
-./driver_spmv_input $1 $2 $3 8 4
-./driver_spmv_input $1 $2 $3 8 5
-./driver_spmv_input $1 $2 $3 8 6
-./driver_spmv_input $1 $2 $3 8 7
-./driver_spmv_input $1 $2 $3 8 8
+echo "Running CRSMerge implementation"
+for thread in $(seq $4 $5)
+do
+./driver_spmv_input $1 $2 $3 8 $thread
+done
 
-echo "Running CSB implementation with 2-8 threads"
-./driver_spmv_input $1 $2 $3 9 2
-./driver_spmv_input $1 $2 $3 9 3
-./driver_spmv_input $1 $2 $3 9 4
-./driver_spmv_input $1 $2 $3 9 5
-./driver_spmv_input $1 $2 $3 9 6
-./driver_spmv_input $1 $2 $3 9 7
-./driver_spmv_input $1 $2 $3 9 8
+echo "Running CSB implementation"
+for thread in $(seq $4 $5)
+do
+./driver_spmv_input $1 $2 $3 9 $thread
+done
 
-echo "Running BlockCOH implementation with 2-8 threads"
-./driver_spmv_input $1 $2 $3 10 2
-./driver_spmv_input $1 $2 $3 10 3
-./driver_spmv_input $1 $2 $3 10 4
-./driver_spmv_input $1 $2 $3 10 5
-./driver_spmv_input $1 $2 $3 10 6
-./driver_spmv_input $1 $2 $3 10 7
-./driver_spmv_input $1 $2 $3 10 8
+echo "Running BlockCOH implementation"
+for thread in $(seq $4 $5)
+do
+./driver_spmv_input $1 $2 $3 10 $thread
+done
