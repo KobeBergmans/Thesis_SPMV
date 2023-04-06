@@ -12,13 +12,13 @@ def plot_results(algorithms, data_list, threads):
             
     plt.xlabel("Threads")
     plt.ylabel("Milliseconds")
-    plt.legend(algorithms)
-    plt.show()
+    plt.legend(algorithms, loc=(0.8,0.5))
 
 
 # Arguments:
 #    1) File name of test output
 #    2) 0 to plot the median, 1 to plot the minimum, 2 to plot the variance
+#    3) 1 to safe the file
 if __name__ == "__main__":
     file_name = sys.argv[1]
     
@@ -82,6 +82,8 @@ if __name__ == "__main__":
         med_list.append(medians)
         min_list.append(mins)
         var_list.append(vars)
+    
+    plt.figure(figsize=(10,6))
         
     # Plot results (plot median if second argument is 0, minimum if it is 1, variance otherwise)
     if int(sys.argv[2]) == 0:
@@ -90,3 +92,8 @@ if __name__ == "__main__":
         plot_results(algorithms, min_list, threads)
     else:
         plot_results(algorithms, var_list, threads)
+    
+    if int(sys.argv[3]) == 1:
+        plt.savefig(file_name[:-3]+'png')
+    else:
+        plt.show()
