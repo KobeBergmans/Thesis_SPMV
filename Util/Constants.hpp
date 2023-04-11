@@ -10,7 +10,7 @@
 #include <cstdint>
 
 // OpenMP chunk size for dynamic scheduling
-#define OMP_DYNAMIC_CHUNK_SIZE 500
+#define OMP_DYNAMIC_CHUNK_SIZE 512
 
 // Definitions for compressed integers
 typedef uint16_t compress_index_t;
