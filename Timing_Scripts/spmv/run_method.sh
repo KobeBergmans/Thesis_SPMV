@@ -11,7 +11,7 @@ rm -f driver_spmv_input
 make driver_spmv_input
 
 echo "Running method $4"
-for thread in $(seq $4 $5)
+for thread in $(seq $5 $6)
 do
 ./driver_spmv_input $1 $2 $3 $4 $thread
 done
