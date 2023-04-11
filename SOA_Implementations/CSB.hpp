@@ -597,31 +597,8 @@ namespace pwm {
                         {
                             std::fill(y+block_row*beta, y+std::min((block_row+1)*beta, this->nor), 0.);
 
-                            int* chunks = new int[horizontal_blocks+1]; // Worst case that all blocks are a separate chunk
-                            chunks[0] = -1;
-                            int_type chunk_index = 1;
-
-                            int_type first_block_index = blockCoordToIndex(block_row, 0);
-
-                            int_type count = 0;
-                            for (int_type block_col = 0; block_col < horizontal_blocks - 1; ++block_col) {
-                                // Add elements of current block to count
-                                count = count + blk_ptr[first_block_index+block_col+1]-blk_ptr[first_block_index+block_col];
-
-                                // Check if next block will exceed the maximum number of nz
-                                if (count + blk_ptr[first_block_index+block_col+2]-blk_ptr[first_block_index+block_col+1] > beta*O_BETA_CONST) {
-                                    chunks[chunk_index++] = block_col;
-                                    count = 0;
-                                }
-                            }
-
-                            // Add last block to end the last chunk
-                            chunks[chunk_index++] = horizontal_blocks-1; 
-
                             // Perform balanced block row multiplication
                             sparseRowMult(block_row, 0, horizontal_blocks-1, x, y+block_row*beta);
-
-                            delete [] chunks;
                         }
                     }
                 } else {
