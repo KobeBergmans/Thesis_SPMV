@@ -1,4 +1,4 @@
-function A = generateRandMat(size, avg_line, var_line, var_block)
+function A = generateRandMat(size, avg_line, var_line, var_block, unbalanced)
 %GENERATERANDMAT Generates a random sparse matrix
 %   The matrix is created to have approximately the right properties
 %   The properties are obtained by getting the amount of nonzero's from a
@@ -17,6 +17,15 @@ if mod(size, block_size) ~= 0
 end
 
 row_cts = max(ones(size, 1), round(sqrt(var_line)*randn(size, 1) + avg_line));
+
+if unbalanced
+    row_cts = unbalance_rows(row_cts, size);
+    while is_balanced(row_cts, block_size, nb_blocks)
+        row_cts = max(ones(size, 1), round(sqrt(var_line)*randn(size, 1) + avg_line));
+        row_cts = unbalance_rows(row_cts, size);
+    end
+end
+
 nnz = sum(row_cts);
 
 block_row_cts = cell(nb_blocks, 1);
@@ -99,4 +108,21 @@ for block_row = 2:nb_blocks
 end
 A = sparse(indices(:,1), indices(:,2), ones(nnz, 1), size, size);
 
+end
+
+function balance = is_balanced(row_cts, block_size, nb_blocks)
+    block_row_nnz = zeros(nb_blocks, 1);
+    for row = 1:length(row_cts)
+        block_row_nnz(ceil(row / double(block_size))) = block_row_nnz(ceil(row / double(block_size))) + row_cts(row);
+    end
+    balance = ~any(find(block_row_nnz > 2*mean(block_row_nnz)));
+end
+
+function new_row_cts = unbalance_rows(row_cts, size)
+    new_row_cts = sort(row_cts);
+    perm1 = randperm(size, ceil(size / 2));
+    perm2 = randperm(size, ceil(size / 2));
+    temp = new_row_cts(perm1);
+    new_row_cts(perm1) = new_row_cts(perm2);
+    new_row_cts(perm2) = temp;
 end
