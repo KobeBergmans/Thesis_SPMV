@@ -17,12 +17,11 @@ typedef uint16_t compress_index_t;
 typedef uint32_t compress_t;
 typedef int16_t bicrs_t;
 
-// Definitions for Block CO-H
+// Definitions for CSB
 #define LOW_BITMASK  0b00000000000000001111111111111111
 #define HIGH_BITMASK 0b11111111111111110000000000000000
 #define COORD_BITS 16
 
-// Definitions for CSB
 #define O_DIM_CONST 4
 #define O_BETA_CONST 3
 #define L2_CACHE_SIZE_MB 1
