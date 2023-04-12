@@ -74,14 +74,24 @@ int main(int argc, char** argv) {
     }
 
     double block_avg = 0;
+    double block_row_avg = 0;
+    index_t* block_row_nnz = new index_t[nb_blocks];
     for (index_t i = 0; i < nb_blocks; ++i) {
+        block_row_nnz[i] = 0;
         for (index_t j = 0; j < nb_blocks; ++j) {
+            block_row_nnz[i] += block_nnz[i][j];
             block_avg += (double)block_nnz[i][j] / std::pow((double)nb_blocks, 2);
         }
+        block_row_avg += (double)block_row_nnz[i] / nb_blocks;
     }
 
     double block_var = 0;
+    bool balanced = true;
     for (index_t i = 0; i < nb_blocks; ++i) {
+        if (block_row_nnz[i] > 2*block_row_avg) {
+            balanced = false;
+        }
+
         for (index_t j = 0; j < nb_blocks; ++j) {
             block_var += std::pow((double)block_nnz[i][j]-block_avg, 2) / std::pow((double)nb_blocks, 2);
         }
@@ -92,9 +102,13 @@ int main(int argc, char** argv) {
     std::cout << "Average nnz per block:     " << block_avg << std::endl;
     std::cout << "Variance of nnz per block: " << block_var << std::endl;
 
+    if (balanced) std::cout << "Matrix is balanced for CSB multiplication" << std::endl;
+    else std::cout << "Matrix is unbalanced for CSB multiplication" << std::endl;
+
     delete [] rows_nnz;
     for (index_t i = 0; i < nb_blocks; ++i) {
         delete [] block_nnz[i];
     }
     delete [] block_nnz;
+    delete [] block_row_nnz;
 }
