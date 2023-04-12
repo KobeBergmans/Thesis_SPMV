@@ -16,7 +16,9 @@ sh Timing_Scripts/sniper/run_2_thread.sh $3 $5 "2_thread_3_$6" &
 sh Timing_Scripts/sniper/run_2_thread.sh $4 $5 "2_thread_4_$6"
 wait
 
-sh Timing_Scripts/sniper/run_8_thread.sh $1 $5 "8_thread_1_$6"
+sh Timing_Scripts/sniper/run_8_thread.sh $1 $5 "8_thread_1_$6" &
 sh Timing_Scripts/sniper/run_8_thread.sh $2 $5 "8_thread_2_$6"
-sh Timing_Scripts/sniper/run_8_thread.sh $3 $5 "8_thread_3_$6"
+wait
+
+sh Timing_Scripts/sniper/run_8_thread.sh $3 $5 "8_thread_3_$6" &
 sh Timing_Scripts/sniper/run_8_thread.sh $4 $5 "8_thread_4_$6"
