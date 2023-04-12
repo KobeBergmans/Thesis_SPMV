@@ -1,0 +1,11 @@
+dpcpp -Wall -DNDEBUG -O3 -fopenmp -o driver_spmv_input driver_spmv_input.cpp -ltbb -lboost_thread
+Running sequential algorithm
+Time to set up datastructures: 4800.42ms
+348.48, 348.559, 348.753, 348.528, 348.355, 349.406, 348.699, 348.378, 348.599, 348.652, 348.513, 348.513, 348.441, 349.89, 348.718, 348.795, 348.424, 349.336, 348.354, 348.509, 348.776, 348.349, 348.658, 348.711, 348.59, 348.987, 348.615, 348.43, 348.578, 348.634, 348.38, 348.328, 348.508, 348.38, 348.487, 348.5, 348.7, 348.481, 348.247, 348.392, 348.758, 348.575, 348.568, 348.734, 348.891, 348.475, 348.747, 348.517, 348.945, 348.489, 348.556, 348.554, 348.724, 348.949, 348.563, 348.476, 348.424, 348.622, 348.449, 348.803, 348.472, 348.585, 348.365, 348.534, 348.402, 348.51, 348.596, 348.505, 348.699, 348.434, 348.602, 348.827, 348.569, 348.806, 348.536, 348.599, 348.617, 348.483, 348.811, 348.609, 348.984, 348.746, 348.764, 348.366, 348.686, 348.507, 348.559, 348.571, 348.584, 348.5, 348.577, 348.843, 348.582, 348.63, 348.698, 348.529, 348.553, 348.517, 348.459, 348.675, 
+Running OpenMP implementation
+Running TBB implementation
+Running TBB_graphs implementation with double the amount of partitions than threads
+Running Threadpool implementation with double the amount of partitions than threads
+Running CRSMerge implementation
+Running CSB implementation
+Running BlockCOH implementation
