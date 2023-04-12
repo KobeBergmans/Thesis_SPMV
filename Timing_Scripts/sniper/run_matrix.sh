@@ -3,6 +3,9 @@
 #   - Matrix input file
 #   - Sniper config file
 
+rm -rf driver_sniper
+make driver_sniper
+
 sh Timing_Scripts/sniper/run_2_thread.sh $1 $2 "2_thread_matrix" & 
 sh Timing_Scripts/sniper/run_8_thread.sh $1 $2 "8_thread_matrix"
 
