@@ -2,20 +2,39 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
+def get_color(algorithm):
+    if algorithm == "sequential":
+        return "tab:blue"
+    elif algorithm == "OpenMP":
+        return "tab:orange"
+    elif algorithm == "TBB":
+        return "tab:green"
+    elif algorithm == "TBB_graphs":
+        return "tab:red"
+    elif algorithm == "Threadpool":
+        return "tab:purple"
+    elif algorithm == "CRSMerge":
+        return "tab:brown"
+    elif algorithm == "CSB":
+        return "tab:pink"
+    elif algorithm == "BlockCOH":
+        return "tab:gray"
+            
+
 def plot_results(algorithms, data_list, threads):
     
     for i in range(len(algorithms)):
-        plt.plot(threads, data_list[i], '*-')
+        plt.plot(threads, data_list[i], '*-', color=get_color(algorithms[i]))
             
     plt.xlabel("Threads")
     plt.ylabel("Speedup")
-    plt.legend(algorithms)
-    plt.show()
+    plt.legend(algorithms, loc="lower right")
 
 
 # Arguments:
 #    1) File name of test output
 #    2) 0 to plot the median, 1 to plot the minimum
+#    3) 1 to safe the file
 if __name__ == "__main__":
     file_name = sys.argv[1]
     
@@ -80,13 +99,19 @@ if __name__ == "__main__":
     seq_min = min_list[0][0]
     med_speedup = []
     min_speedup = []
-    for i in range(2, len(algorithms)):
+    for i in range(1, len(algorithms)):
         med_speedup.append([seq_med / med for med in med_list[i]])
         min_speedup.append([seq_min / min for min in min_list[i]])
     
+    plt.figure(figsize=(10,6))
         
     # Plot results (plot median if second argument is 0, minimum if it is 1, variance otherwise)
     if int(sys.argv[2]) == 0:
-        plot_results(algorithms[2:], med_speedup, threads)
+        plot_results(algorithms[1:], med_speedup, threads)
     elif int(sys.argv[2]) == 1:
-        plot_results(algorithms[2:], min_speedup, threads)
+        plot_results(algorithms[1:], min_speedup, threads)
+        
+    if int(sys.argv[3]) == 1:
+        plt.savefig(file_name[:-3]+'png')
+    else:
+        plt.show()

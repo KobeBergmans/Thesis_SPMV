@@ -2,13 +2,31 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
+def get_color(algorithm):
+    if algorithm == "sequential":
+        return "tab:blue"
+    elif algorithm == "OpenMP":
+        return "tab:orange"
+    elif algorithm == "TBB":
+        return "tab:green"
+    elif algorithm == "TBB_graphs":
+        return "tab:red"
+    elif algorithm == "Threadpool":
+        return "tab:purple"
+    elif algorithm == "CRSMerge":
+        return "tab:brown"
+    elif algorithm == "CSB":
+        return "tab:pink"
+    elif algorithm == "BlockCOH":
+        return "tab:gray"
+
 def plot_results(algorithms, data_list, threads):
     
     for i in range(len(algorithms)):
         if algorithms[i] == "sequential":
-            plt.plot([threads[0], threads[-1]], [data_list[i][0], data_list[i][0]])
+            plt.plot([threads[0], threads[-1]], [data_list[i][0], data_list[i][0]], color=get_color(algorithms[i]))
         else:
-            plt.plot(threads, data_list[i], '*-')
+            plt.plot(threads, data_list[i], '*-', color=get_color(algorithms[i]))
             
     plt.xlabel("Threads")
     plt.ylabel("Milliseconds")
