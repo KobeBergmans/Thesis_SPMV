@@ -1,4 +1,4 @@
-# Runs simulations for the 4 given matrices with a given config
+# Runs simulations for a given matrix using 2 configs
 # Inputs:
 #   - Matrix input file 1
 #   - Sniper config file 1
