@@ -251,9 +251,9 @@ BOOST_AUTO_TEST_CASE(mv_size_9_3_unsigned, * boost::unit_test::tolerance(std::po
 
 BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_AUTO_TEST_SUITE(poisson_powermethod)
+BOOST_AUTO_TEST_SUITE(poisson_powerIteration)
 
-BOOST_AUTO_TEST_CASE(powermethod_size_5_5, * boost::unit_test::tolerance(std::pow(10, -12))) {
+BOOST_AUTO_TEST_CASE(powerIteration_size_5_5, * boost::unit_test::tolerance(std::pow(10, -12))) {
     int mat_size = 5*5;
 
     // Precomputed solution using matlab
@@ -284,7 +284,7 @@ BOOST_AUTO_TEST_CASE(powermethod_size_5_5, * boost::unit_test::tolerance(std::po
         for (int partitions = 1; partitions <= std::min(max_threads*3, 5*5); ++partitions) {
             mat->generatePoissonMatrix(5, 5, partitions);
             std::fill(x, x+mat_size, 1.);
-            mat->powerMethod(x, y, 100);
+            mat->powerIteration(x, y, 100);
 
             // Check solution
             for (int i = 0; i < mat_size; ++i) {
@@ -310,7 +310,7 @@ BOOST_AUTO_TEST_CASE(powermethod_size_5_5, * boost::unit_test::tolerance(std::po
     delete [] y;
 }
 
-BOOST_AUTO_TEST_CASE(powermethod_size_10_5, * boost::unit_test::tolerance(std::pow(10, -12))) {
+BOOST_AUTO_TEST_CASE(powerIteration_size_10_5, * boost::unit_test::tolerance(std::pow(10, -12))) {
     int mat_size = 10*5;
 
     // Precomputed solution using matlab
@@ -341,7 +341,7 @@ BOOST_AUTO_TEST_CASE(powermethod_size_10_5, * boost::unit_test::tolerance(std::p
         for (int partitions = 1; partitions <= std::min(max_threads*3, 10*5); ++partitions) {
             mat->generatePoissonMatrix(10, 5, partitions);
             std::fill(x, x+mat_size, 1.);
-            mat->powerMethod(x, y, 100);
+            mat->powerIteration(x, y, 100);
 
             // Check solution
             for (int i = 0; i < mat_size; ++i) {
@@ -369,9 +369,9 @@ BOOST_AUTO_TEST_CASE(powermethod_size_10_5, * boost::unit_test::tolerance(std::p
 
 BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_AUTO_TEST_SUITE(poisson_powermethod_unsigned)
+BOOST_AUTO_TEST_SUITE(poisson_powerIteration_unsigned)
 
-BOOST_AUTO_TEST_CASE(powermethod_size_5_5_unsigned, * boost::unit_test::tolerance(std::pow(10, -12))) {
+BOOST_AUTO_TEST_CASE(powerIteration_size_5_5_unsigned, * boost::unit_test::tolerance(std::pow(10, -12))) {
     int mat_size = 5*5;
 
     // Precomputed solution using matlab
@@ -402,7 +402,7 @@ BOOST_AUTO_TEST_CASE(powermethod_size_5_5_unsigned, * boost::unit_test::toleranc
         for (int partitions = 1; partitions <= std::min(max_threads*3, 5*5); ++partitions) {
             mat->generatePoissonMatrix(5, 5, partitions);
             std::fill(x, x+mat_size, 1.);
-            mat->powerMethod(x, y, 100);
+            mat->powerIteration(x, y, 100);
 
             // Check solution
             for (int i = 0; i < mat_size; ++i) {
@@ -428,7 +428,7 @@ BOOST_AUTO_TEST_CASE(powermethod_size_5_5_unsigned, * boost::unit_test::toleranc
     delete [] y;
 }
 
-BOOST_AUTO_TEST_CASE(powermethod_size_10_5_unsigned, * boost::unit_test::tolerance(std::pow(10, -12))) {
+BOOST_AUTO_TEST_CASE(powerIteration_size_10_5_unsigned, * boost::unit_test::tolerance(std::pow(10, -12))) {
     int mat_size = 10*5;
 
     // Precomputed solution using matlab
@@ -459,7 +459,7 @@ BOOST_AUTO_TEST_CASE(powermethod_size_10_5_unsigned, * boost::unit_test::toleran
         for (int partitions = 1; partitions <= std::min(max_threads*3, 10*5); ++partitions) {
             mat->generatePoissonMatrix(10, 5, partitions);
             std::fill(x, x+mat_size, 1.);
-            mat->powerMethod(x, y, 100);
+            mat->powerIteration(x, y, 100);
 
             // Check solution
             for (int i = 0; i < mat_size; ++i) {

@@ -63,7 +63,7 @@ namespace pwm {
              * @param it Amount of iterations
              * @return T* Resulting vector
              */
-            virtual void powerMethod(T* x, T* y, const int_type it) = 0;
+            virtual void powerIteration(T* x, T* y, const int_type it) = 0;
 
     };
 } // namespace pwm

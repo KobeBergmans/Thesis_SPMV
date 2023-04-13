@@ -648,7 +648,7 @@ namespace pwm {
              * @param it Amount of iterations
              * @return T* Resulting vector
              */
-            void powerMethod(T* x, T* y, const int_type it) {
+            void powerIteration(T* x, T* y, const int_type it) {
                 assert(this->nor == this->noc); //Power method only works on square matrices
                 
                 for (int i = 0; i < it; ++i) {

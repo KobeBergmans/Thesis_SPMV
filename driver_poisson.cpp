@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
     // Do warm up iterations
     for (int i = 0; i < warm_up; ++i) {
         std::generate(x, x+mat_size, pwm::randFloat<data_t>);
-        test_mat->powerMethod(x, y, pwm_iter);
+        test_mat->powerIteration(x, y, pwm_iter);
     }
 
     // Solve power method an amount of time
@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < iter; ++i) {
         std::generate(x, x+mat_size, pwm::randFloat<data_t>);
         start = omp_get_wtime();
-        test_mat->powerMethod(x, y, pwm_iter);
+        test_mat->powerIteration(x, y, pwm_iter);
         stop = omp_get_wtime();
         timings[i] = (stop - start) * 1000;
     }

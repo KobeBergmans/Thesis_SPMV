@@ -1,4 +1,4 @@
-# Powermethod implementation for Discretized Poisson equation matrix
+# powerIteration implementation for Discretized Poisson equation matrix
 
 ## Prerequisites
 

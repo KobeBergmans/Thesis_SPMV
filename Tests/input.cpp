@@ -720,9 +720,9 @@ BOOST_AUTO_TEST_CASE(mv_8_4_bin_no_rand_unsigned, * boost::unit_test::tolerance(
 
 BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_AUTO_TEST_SUITE(powermethod_input)
+BOOST_AUTO_TEST_SUITE(powerIteration_input)
 
-BOOST_AUTO_TEST_CASE(powermethod_arc130, * boost::unit_test::tolerance(std::pow(10, -12))) {
+BOOST_AUTO_TEST_CASE(powerIteration_arc130, * boost::unit_test::tolerance(std::pow(10, -12))) {
     pwm::Triplet<double, int> input_mat;
     input_mat.loadFromMM("Test_input/arc130.mtx", true, false);
     int mat_size = input_mat.col_size;
@@ -754,7 +754,7 @@ BOOST_AUTO_TEST_CASE(powermethod_arc130, * boost::unit_test::tolerance(std::pow(
         for (int partitions = 1; partitions <= std::min(max_threads*2, mat_size); ++partitions) {
             mat->loadFromTriplets(&input_mat, partitions);
             std::fill(x, x+mat_size, 1.);
-            mat->powerMethod(x, y, 100);
+            mat->powerIteration(x, y, 100);
 
             // Check solution
             for (int i = 0; i < mat_size; ++i) {
@@ -780,7 +780,7 @@ BOOST_AUTO_TEST_CASE(powermethod_arc130, * boost::unit_test::tolerance(std::pow(
     delete [] y;
 }
 
-BOOST_AUTO_TEST_CASE(powermethod_G38, * boost::unit_test::tolerance(std::pow(10, -12))) {
+BOOST_AUTO_TEST_CASE(powerIteration_G38, * boost::unit_test::tolerance(std::pow(10, -12))) {
     pwm::Triplet<double, int> input_mat;
     input_mat.loadFromMM("Test_input/G38.mtx", false, true, false);
     int mat_size = input_mat.col_size;
@@ -812,7 +812,7 @@ BOOST_AUTO_TEST_CASE(powermethod_G38, * boost::unit_test::tolerance(std::pow(10,
         for (int partitions = 1; partitions <= std::min(max_threads*2, mat_size); ++partitions) {
             mat->loadFromTriplets(&input_mat, partitions);
             std::fill(x, x+mat_size, 1.);
-            mat->powerMethod(x, y, 100);
+            mat->powerIteration(x, y, 100);
 
             // Check solution
             for (int i = 0; i < mat_size; ++i) {
@@ -840,9 +840,9 @@ BOOST_AUTO_TEST_CASE(powermethod_G38, * boost::unit_test::tolerance(std::pow(10,
 
 BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_AUTO_TEST_SUITE(powermethod_input_unsigned)
+BOOST_AUTO_TEST_SUITE(powerIteration_input_unsigned)
 
-BOOST_AUTO_TEST_CASE(powermethod_arc130_unsigned, * boost::unit_test::tolerance(std::pow(10, -12))) {
+BOOST_AUTO_TEST_CASE(powerIteration_arc130_unsigned, * boost::unit_test::tolerance(std::pow(10, -12))) {
     pwm::Triplet<double, unsigned int> input_mat;
     input_mat.loadFromMM("Test_input/arc130.mtx", true, false);
     int mat_size = input_mat.col_size;
@@ -874,7 +874,7 @@ BOOST_AUTO_TEST_CASE(powermethod_arc130_unsigned, * boost::unit_test::tolerance(
         for (int partitions = 1; partitions <= std::min(max_threads*2, mat_size); ++partitions) {
             mat->loadFromTriplets(&input_mat, partitions);
             std::fill(x, x+mat_size, 1.);
-            mat->powerMethod(x, y, 100);
+            mat->powerIteration(x, y, 100);
 
             // Check solution
             for (int i = 0; i < mat_size; ++i) {
@@ -900,7 +900,7 @@ BOOST_AUTO_TEST_CASE(powermethod_arc130_unsigned, * boost::unit_test::tolerance(
     delete [] y;
 }
 
-BOOST_AUTO_TEST_CASE(powermethod_G38_unsigned, * boost::unit_test::tolerance(std::pow(10, -12))) {
+BOOST_AUTO_TEST_CASE(powerIteration_G38_unsigned, * boost::unit_test::tolerance(std::pow(10, -12))) {
     pwm::Triplet<double, unsigned int> input_mat;
     input_mat.loadFromMM("Test_input/G38.mtx", false, true, false);
     int mat_size = input_mat.col_size;
@@ -932,7 +932,7 @@ BOOST_AUTO_TEST_CASE(powermethod_G38_unsigned, * boost::unit_test::tolerance(std
         for (int partitions = 1; partitions <= std::min(max_threads*2, mat_size); ++partitions) {
             mat->loadFromTriplets(&input_mat, partitions);
             std::fill(x, x+mat_size, 1.);
-            mat->powerMethod(x, y, 100);
+            mat->powerIteration(x, y, 100);
 
             // Check solution
             for (int i = 0; i < mat_size; ++i) {

@@ -132,7 +132,7 @@ namespace pwm {
              * @param y Vector to store calculations, contains the output at the end of the algorithm if it is even
              * @param it Amount of iterations for the algorithm
              */
-            void powerMethod(T* x, T* y, const int_type it) {
+            void powerIteration(T* x, T* y, const int_type it) {
                 assert(this->nor == this->noc); //Power method only works on square matrices
                 
                 for (int it_nb = 0; it_nb < it; ++it_nb) {

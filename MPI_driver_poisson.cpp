@@ -35,7 +35,7 @@ void mv(const double* x, double* y, const double* data_arr, const int* col_ind, 
     }
 }
 
-void powerMethod(double* x, double* y, const double* data_arr, const int* col_ind, const int* row_start, const int thread_rows, const int first_row, 
+void powerIteration(double* x, double* y, const double* data_arr, const int* col_ind, const int* row_start, const int thread_rows, const int first_row, 
                  const int iterations, const int* recvcount, const int* displs) {
     for (int i = 0; i < iterations; ++i) {
         mv(x, y, data_arr, col_ind, row_start, thread_rows, first_row);
@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
     // Do warm up iterations
     for (int i = 0; i < warm_up; ++i) {
         std::fill(x, x+m*m, 1.);
-        powerMethod(x, y, data_arr, col_ind, row_start, thread_rows, first_row, pwm_iter, recvcount, displs);
+        powerIteration(x, y, data_arr, col_ind, row_start, thread_rows, first_row, pwm_iter, recvcount, displs);
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
     // Do power iterations
     for (int i = 0; i < iter; ++i) {
         std::fill(x, x+m*m, 1.);
-        powerMethod(x, y, data_arr, col_ind, row_start, thread_rows, first_row, pwm_iter, recvcount, displs);
+        powerIteration(x, y, data_arr, col_ind, row_start, thread_rows, first_row, pwm_iter, recvcount, displs);
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
