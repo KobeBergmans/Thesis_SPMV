@@ -548,6 +548,7 @@ namespace pwm {
                 // This happens if no blockrow has twice the nnz on a blockrow than the average nnz per blockrow
                 balanced_block_rows = true;
 
+#ifndef CSB_ALWAYS_BALANCED
                 const double block_row_avg = std::accumulate(blockrow_nnz, blockrow_nnz+vertical_blocks, 0.0) / vertical_blocks;
                 for (int_type i = 0; i < vertical_blocks; ++i) {
                     if (blockrow_nnz[i] > 2*block_row_avg) {
@@ -555,6 +556,7 @@ namespace pwm {
                         break;
                     }
                 }
+#endif
 
 #ifndef NDEBUG
                 if (balanced_block_rows) std::cout << "The CSB matrix is balanced" << std::endl;
