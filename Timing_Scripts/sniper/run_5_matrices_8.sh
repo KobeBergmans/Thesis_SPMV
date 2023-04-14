@@ -1,4 +1,4 @@
-# Runs simulations for the 7 given matrices with a given config
+# Runs simulations for the 5 given matrices with a given config
 # Inputs:
 #   - Matrix input file 1
 #   - Matrix input file 2
