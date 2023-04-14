@@ -1,5 +1,4 @@
-# Runs simulations for the given config for the 4 methods using 8 threads with the first and last methods in parallel
-# (Takes approximately 2h for test matrices and uses 32 threads)
+# Runs simulations for the given config for the 4 methods using 8 threads with all methods in parallel
 # Inputs:
 #   - Matrix input file
 #   - Sniper Config file

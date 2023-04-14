@@ -9,6 +9,6 @@
 rm -rf driver_sniper
 make driver_sniper
 
-sh Timing_Scripts/sniper/run_8_thread.sh $1 $2 "8_thread_1_$4" &
-sh Timing_Scripts/sniper/run_8_thread.sh $1 $3 "8_thread_1_$5"
+sh Timing_Scripts/sniper/thread/run_8_thread.sh $1 $2 "8_thread_1_$4" &
+sh Timing_Scripts/sniper/thread/run_8_thread.sh $1 $3 "8_thread_1_$5"
 wait
