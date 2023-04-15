@@ -8,6 +8,9 @@
 # - Starting partition multiplier
 # - Ending partition multiplier
 
+rm -f driver_spmv_input
+make driver_spmv_input
+
 for partition in $(seq $6 $7)
 do
     echo "Running TBB_graphs_$partition implementation"
