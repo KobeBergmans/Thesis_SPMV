@@ -24,17 +24,17 @@ do
 ./driver_spmv_input $1 $2 $3 3 $thread
 done
 
-echo "Running TBB_graphs implementation with double the amount of partitions than threads"
+echo "Running TBB_graphs_6 implementation with double the amount of partitions than threads"
 for thread in $(seq $4 $5)
 do
-./driver_spmv_input $1 $2 $3 4 $thread $(($thread*2))
+./driver_spmv_input $1 $2 $3 4 $thread $(($thread*6))
 done
 
 
-echo "Running Threadpool implementation with double the amount of partitions than threads"
+echo "Running Threadpool_10 implementation with double the amount of partitions than threads"
 for thread in $(seq $4 $5)
 do
-./driver_spmv_input $1 $2 $3 6 $thread $(($thread*2))
+./driver_spmv_input $1 $2 $3 6 $thread $(($thread*10))
 done
 
 echo "Running CRSMerge implementation"
