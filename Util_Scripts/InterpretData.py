@@ -37,6 +37,7 @@ def plot_results(algorithms, data_list, threads):
 #    1) File name of test output
 #    2) 0 to plot the median, 1 to plot the minimum, 2 to plot the variance
 #    3) 1 to safe the file
+#    4) 1 if the ymin must be 0
 if __name__ == "__main__":
     file_name = sys.argv[1]
     
@@ -79,6 +80,7 @@ if __name__ == "__main__":
     med_list = []
     min_list = []
     var_list = []
+    max_val = -1
     
     for i in range(len(algorithms)):
         medians = []
@@ -97,6 +99,15 @@ if __name__ == "__main__":
         print("Variance:")
         print(vars)
         
+        if int(sys.argv[2]) == 0:
+            max_val = max(max(medians), max_val)
+        elif int(sys.argv[2]) == 1:
+            max_val = max(max(mins), max_val)
+        else:
+            max_val = max(max(vars), max_val)
+        
+        
+        
         med_list.append(medians)
         min_list.append(mins)
         var_list.append(vars)
@@ -110,6 +121,10 @@ if __name__ == "__main__":
         plot_results(algorithms, min_list, threads)
     else:
         plot_results(algorithms, var_list, threads)
+        
+    if int(sys.argv[4]) == 1:
+        plt.ylim([0, 1.1*max_val])
+
     
     if int(sys.argv[3]) == 1:
         plt.savefig(file_name[:-3]+'png')
