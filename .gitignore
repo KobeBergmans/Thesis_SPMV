@@ -2,6 +2,7 @@
 /.vscode
 *.asv
 *.png
+*.pdf
 
 # Matlab coder files
 Util_Scripts/codegen

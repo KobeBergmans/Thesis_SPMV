@@ -127,6 +127,6 @@ if __name__ == "__main__":
 
     
     if int(sys.argv[3]) == 1:
-        plt.savefig(file_name[:-3]+'png')
+        plt.savefig(file_name[:-3]+'pdf', bbox_inches="tight", pad_inches=0.)
     else:
         plt.show()
