@@ -20,7 +20,7 @@ def get_color(algorithm):
     elif algorithm == "BlockCOH":
         return "tab:gray"
 
-def plot_results(algorithms, data_list, threads):
+def plot_results(algorithms, data_list, threads, legend=False):
     
     for i in range(len(algorithms)):
         if algorithms[i] == "sequential":
@@ -30,7 +30,9 @@ def plot_results(algorithms, data_list, threads):
             
     plt.xlabel("Threads")
     plt.ylabel("Milliseconds")
-    plt.legend(algorithms, loc=(0.8,0.5))
+    
+    if legend:
+        plt.legend(algorithms, loc="lower right")
 
 
 # Arguments:
@@ -38,6 +40,7 @@ def plot_results(algorithms, data_list, threads):
 #    2) 0 to plot the median, 1 to plot the minimum, 2 to plot the variance
 #    3) 1 to safe the file
 #    4) 1 if the ymin must be 0
+#    5) 1 if a legend needs to be plotted
 if __name__ == "__main__":
     file_name = sys.argv[1]
     
@@ -116,11 +119,11 @@ if __name__ == "__main__":
         
     # Plot results (plot median if second argument is 0, minimum if it is 1, variance otherwise)
     if int(sys.argv[2]) == 0:
-        plot_results(algorithms, med_list, threads)
+        plot_results(algorithms, med_list, threads, len(sys.argv)==6)
     elif int(sys.argv[2]) == 1:
-        plot_results(algorithms, min_list, threads)
+        plot_results(algorithms, min_list, threads, len(sys.argv)==6)
     else:
-        plot_results(algorithms, var_list, threads)
+        plot_results(algorithms, var_list, threads, len(sys.argv)==6)
         
     if int(sys.argv[4]) == 1:
         plt.ylim([0, 1.1*max_val])

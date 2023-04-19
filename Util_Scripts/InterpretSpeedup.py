@@ -21,14 +21,16 @@ def get_color(algorithm):
         return "tab:gray"
             
 
-def plot_results(algorithms, data_list, threads):
+def plot_results(algorithms, data_list, threads, legend=False):
     
     for i in range(len(algorithms)):
         plt.plot(threads, data_list[i], '*-', color=get_color(algorithms[i]))
             
     plt.xlabel("Threads")
     plt.ylabel("Speedup")
-    plt.legend(algorithms, loc="lower right")
+    
+    if legend:
+        plt.legend(algorithms, loc="lower right")
 
 
 # Arguments:
@@ -36,6 +38,7 @@ def plot_results(algorithms, data_list, threads):
 #    2) 0 to plot the median, 1 to plot the minimum
 #    3) 1 to safe the file
 #    4) 1 if the ymin must be 1
+#    5) 1 if a legend needs to be plotted
 if __name__ == "__main__":
     file_name = sys.argv[1]
     
@@ -109,9 +112,9 @@ if __name__ == "__main__":
         
     # Plot results (plot median if second argument is 0, minimum if it is 1, variance otherwise)
     if int(sys.argv[2]) == 0:
-        plot_results(algorithms[1:], med_speedup, threads)
+        plot_results(algorithms[1:], med_speedup, threads, len(sys.argv)==6)
     elif int(sys.argv[2]) == 1:
-        plot_results(algorithms[1:], min_speedup, threads)
+        plot_results(algorithms[1:], min_speedup, threads, len(sys.argv)==6)
         
     if int(sys.argv[4]) == 1:
         # Calculate the maximum value
