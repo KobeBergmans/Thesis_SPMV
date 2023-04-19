@@ -35,6 +35,7 @@ def plot_results(algorithms, data_list, threads):
 #    1) File name of test output
 #    2) 0 to plot the median, 1 to plot the minimum
 #    3) 1 to safe the file
+#    4) 1 if the ymin must be 1
 if __name__ == "__main__":
     file_name = sys.argv[1]
     
@@ -99,6 +100,7 @@ if __name__ == "__main__":
     seq_min = min_list[0][0]
     med_speedup = []
     min_speedup = []
+    max_val = 0
     for i in range(1, len(algorithms)):
         med_speedup.append([seq_med / med for med in med_list[i]])
         min_speedup.append([seq_min / min for min in min_list[i]])
@@ -110,6 +112,16 @@ if __name__ == "__main__":
         plot_results(algorithms[1:], med_speedup, threads)
     elif int(sys.argv[2]) == 1:
         plot_results(algorithms[1:], min_speedup, threads)
+        
+    if int(sys.argv[4]) == 1:
+        # Calculate the maximum value
+        max_val = 0
+        if int(sys.argv[2]) == 0:
+            max_val = max(max_val, max(np.concatenate(med_speedup).flat))
+        elif int(sys.argv[2]) == 1:
+            max_val = max(max_val, max(np.concatenate(min_speedup).flat))
+        
+        plt.ylim([1, 1.1*max_val])
         
     if int(sys.argv[3]) == 1:
         plt.savefig(file_name[:-3]+'pdf', bbox_inches="tight", pad_inches=0.)
