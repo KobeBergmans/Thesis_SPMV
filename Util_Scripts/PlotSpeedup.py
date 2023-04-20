@@ -12,7 +12,7 @@ def plot_results(algorithms, data_list, threads, legend=False):
     plt.ylabel("Speedup")
     
     if legend:
-        plt.legend(algorithms, loc="lower right")
+        plt.legend(get_algo_names(algorithms), loc="lower right")
 
 
 # Arguments:
