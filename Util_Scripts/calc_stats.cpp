@@ -97,6 +97,8 @@ int main(int argc, char** argv) {
         }
     }
 
+    std::cout << "Size:                      " << input_mat.row_size << std::endl;
+    std::cout << "Nonzeros:                  " << input_mat.nnz << std::endl;
     std::cout << "Average nnz per row:       " << rows_avg << std::endl;
     std::cout << "Variance of nnz per row:   " << rows_var << std::endl;
     std::cout << "Average nnz per block:     " << block_avg << std::endl;
