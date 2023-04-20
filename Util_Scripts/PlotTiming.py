@@ -1,24 +1,7 @@
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-
-def get_color(algorithm):
-    if algorithm == "sequential":
-        return "tab:blue"
-    elif algorithm == "OpenMP":
-        return "tab:orange"
-    elif algorithm == "TBB":
-        return "tab:green"
-    elif algorithm == "TBB_graphs":
-        return "tab:red"
-    elif algorithm == "Threadpool":
-        return "tab:purple"
-    elif algorithm == "CRSMerge":
-        return "tab:brown"
-    elif algorithm == "CSB":
-        return "tab:pink"
-    elif algorithm == "BlockCOH":
-        return "tab:gray"
+from PlotUtil import *
 
 def plot_results(algorithms, data_list, threads, legend=False):
     
@@ -32,7 +15,7 @@ def plot_results(algorithms, data_list, threads, legend=False):
     plt.ylabel("Milliseconds")
     
     if legend:
-        plt.legend(algorithms, loc="lower right")
+        plt.legend(get_algo_names(algorithms), loc=(0.8, 0.5))
 
 
 # Arguments:
