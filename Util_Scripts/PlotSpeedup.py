@@ -90,7 +90,7 @@ if __name__ == "__main__":
         med_speedup.append([seq_med / med for med in med_list[i]])
         min_speedup.append([seq_min / min for min in min_list[i]])
     
-    plt.figure(figsize=(10,6))
+    plt.figure(figsize=(7,5))
         
     # Plot results (plot median if second argument is 0, minimum if it is 1, variance otherwise)
     if int(sys.argv[2]) == 0:

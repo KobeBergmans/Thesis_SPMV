@@ -15,7 +15,7 @@ def plot_results(algorithms, data_list, threads, legend=False):
     plt.ylabel("Milliseconds")
     
     if legend:
-        plt.legend(get_algo_names(algorithms), loc=(0.8, 0.5))
+        plt.legend(get_algo_names(algorithms), loc=(0.72, 0.45))
 
 
 # Arguments:
@@ -98,7 +98,7 @@ if __name__ == "__main__":
         min_list.append(mins)
         var_list.append(vars)
     
-    plt.figure(figsize=(10,6))
+    plt.figure(figsize=(7,5))
         
     # Plot results (plot median if second argument is 0, minimum if it is 1, variance otherwise)
     if int(sys.argv[2]) == 0:

@@ -21,7 +21,7 @@ def get_algo_names(algorithms):
         if algorithms[i] == "TBB_graphs_6":
             algorithms[i] = "TBB graph"
         elif algorithms[i] == "Threadpool_10":
-            algorithms[i] = "Threadpool"
+            algorithms[i] = "thread_pool"
         elif algorithms[i] == "CRSMerge":
             algorithms[i] = "Merge-based"
         elif algorithms[i] == "BlockCOH":
