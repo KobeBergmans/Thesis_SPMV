@@ -21,7 +21,7 @@ def plot_results(algorithms, data_list, threads, legend=False):
 # Arguments:
 #    1) File name of test output
 #    2) 0 to plot the median, 1 to plot the minimum, 2 to plot the variance
-#    3) 1 to safe the file
+#    3) 1 to safe the file, 0 to show the plot, -1 to do nothing
 #    4) 1 if the ymin must be 0
 #    5) 1 if a legend needs to be plotted
 if __name__ == "__main__":
@@ -114,5 +114,5 @@ if __name__ == "__main__":
     
     if int(sys.argv[3]) == 1:
         plt.savefig(file_name[:-3]+'pdf', bbox_inches="tight", pad_inches=0.)
-    else:
+    elif int(sys.argv[3]) == 0:
         plt.show()
