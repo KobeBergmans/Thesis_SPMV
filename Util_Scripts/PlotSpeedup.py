@@ -89,6 +89,12 @@ if __name__ == "__main__":
     for i in range(1, len(algorithms)):
         med_speedup.append([seq_med / med for med in med_list[i]])
         min_speedup.append([seq_min / min for min in min_list[i]])
+        
+        print("Algorithm: " + algorithms[i])
+        print("Medians Speedup:")
+        print(med_speedup[i-1])
+        print("Minima Speedup:")
+        print(min_speedup[i-1])
     
     plt.figure(figsize=(7,5))
         
