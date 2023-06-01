@@ -1,11 +1,11 @@
 # SpMV multiplication and powermethod implementation for the 2D discretized poisson matrix or input matrices in matrix market format
 
-The code in this repository was written to perform the needed tests for my thesis to finish my master in mathematical engineering at the department of engineering of the KU Leuven.
+The code in this repository was written to perform the needed tests for my thesis to finish my master in mathematical engineering at the Faculty of Engineering Science of the KU Leuven.
 
-The code consists of code to perform a sparse matrix-vector (SpMV) multiplication for the discretized poisson matrix or a matrix which is loaded in from matrix market format. These SpMV multiplications are performed by [executing the drivers](README#running-the-code). These drivers are not made to inspect the resulting output, but they are used to time the execution of the code, they include options to specify the amount of timed runs and warmup runs. All code is also testable by [running the tests](README#running-the-tests). Finally, there is also a driver which is used to simulate the code execution: driver_sniper. This driver includes special directives of the [sniper simulator](snipersim.org). This driver includes one warmup run and a timed run.
+The code consists of algorithms to perform a sparse matrix-vector (SpMV) multiplication for the discretized poisson matrix or a matrix which is loaded in from matrix market format. These SpMV multiplications are performed by [executing the drivers](README#running-the-code). These drivers are not made to inspect the resulting output, but they are used to time the execution of the code. They include options to specify the amount of timed runs and warmup runs. All code is also testable by [running the tests](README#running-the-tests). Finally, there is also a driver which is used to simulate the code execution: driver_sniper. This driver includes special directives for the [sniper simulator](snipersim.org). This driver includes one warmup run and a timed run.
 
-The different implementations of the SpMV multiplications can be categorized. First, there is a sequential implementation of the CRS algorithm. This method is implemented in [Matrix/CRS](Matrix/CRS.hpp). Then, there is a class of methods which are parallelizations of the basic CRS algorithm. These parallelizations are performed with different parallel libraries. These methods are stored in the folder [Env_Implementations](Env_Implementations/). Following methods are available:
-* [CRSOMP](Env_Implementations/CRSOMP.hpp): Dynamic parallelization using OpenMP pragma's.
+The different implementations of the SpMV multiplications can be categorized. First, there is a sequential implementation of the CRS algorithm. This method is implemented in [Matrix/CRS.hpp](Matrix/CRS.hpp). Then, there is a class of methods which are parallelizations of the basic CRS algorithm. These parallelizations are performed with different parallel libraries. These implementations are stored in the folder [Env_Implementations](Env_Implementations/). Following methods are available:
+* [CRSOMP](Env_Implementations/CRSOMP.hpp): Dynamic parallelization using OpenMP.
 * [CRSTBB](Env_Implementations/CRSTBB.hpp): Dynamic parallelization using TBB parallel_for function.
 * [CRSTBBGraph](Env_Implementations/CRSTBBGraph.hpp): Static parallelization using a TBB graph object.
 * [CRSTBBGraphPinned](Env_Implementations/CRSTBBGraphPinned.hpp): Identical to the previous parallelization but with partitions always pinned to the same threads.
@@ -14,7 +14,7 @@ The different implementations of the SpMV multiplications can be categorized. Fi
 
 Finally, there are also the state of the art methods which are taken from research. These methods are stored in the [SOA_Implementations](SOA_Implementations/) folder and contain the following methods:
 * [Row distributed block CO-H](SOA_Implementations/BlockCOH.hpp) [1]: Parallelization which statically splits up nonzeros amongst threads. The respective block row per thread is split up into blocks which are ordered in hilbert order.
-* [Compressed sparse blocks](SOA_Implementations/CSB.hpp) [2]: Parallelization which uses openMP tasking. The matrix is split up completely in hypersparse blocks. The resulting block rows are considered as tasks. If a block row consists of too many nonzeros this block row is split up into multiple tasks. Furthermore, if there are any dense blocks, these blocks are considered as individual tasks, and they can be split up if they contain too many nonzeros. Based on: A. Buluç, J. T. Fineman, M. Frigo, J. R. Gilbert, and C. E. Leiserson. Parallel sparse matrix-vector and matrix-transpose-vector multiplication using compressed sparse blocks. In Proceedings of the Twenty-First Annual Symposium on Parallelism in Algorithms and Architectures, SPAA ’09, pages 233–244, New York, NY, USA, 2009. Association for Computing Machinery.
+* [Compressed sparse blocks](SOA_Implementations/CSB.hpp) [2]: Parallelization which uses openMP tasking. The matrix is split up completely in hypersparse blocks. The resulting block rows are considered as tasks. If a block row consists of too many nonzeros this block row is split up into multiple tasks. Furthermore, if there are any dense blocks, these blocks are considered as individual tasks, and they can be split up if they contain too many nonzeros.
 * [Merge-based CRS](SOA_Implementations/CRS_Merge.hpp) [3]: Static parallelization of the CRS structure, which tries to obtain optimal load balancing.
 
 ## Prerequisites
@@ -44,13 +44,16 @@ driver_sniper:
 
 ## Running the tests
 
-The tests are made such that each implementation of SpMV multiplication is correct for a couple of matrices and different amounts of threads. The tests can be compiled by running `make test` and then run by performing `./test`.
+The tests make sure that each implementation of SpMV multiplication is correct for a couple of matrices and different amounts of threads. The tests can be compiled by running `make test` and then run by performing `./test`.
 
-The input matrices on which the tests are run are obtained from the university of Florida sparse matrix collection [4].
+The input matrices on which the tests are run are obtained from the university of Florida sparse matrix collection [4] and stored in the [Test_Input](Test_Input/) folder.
 
 ## Remarks
 * There was not a way found to pin threads of threadpool or TBB to a CPU for cache reuse. The only way found was to force this in execution of the function/node by setting the affinity. This does not mean that a thread is fixed to a CPU but that only the tasks are fixed to a CPU. This is thus suboptimal.
 * Results for timings on different versions can be found in the folder Timing_Results.
+* Some scripts to make running timings and simulations easier can be found in the [Timing_Scripts](Timing_Scripts/) folder.
+* Some script to deal with the timing results can be found in the [Util_Scripts](Util_Scripts/) folder.
+* Some configurations which mimic modern processors can be found in the [Sniper_Configs](Sniper_Configs/) folder.
 
 ## References
 [1]: A.-J. N. Yzelman and D. Roose. High-level strategies for parallel shared-memory sparse matrix-vector multiplication. IEEE Transactions on Parallel and Distributed Systems, 25(1):116–125, 2014.
