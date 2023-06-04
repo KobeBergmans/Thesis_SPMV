@@ -124,9 +124,9 @@ namespace pwm {
                 for (int pid = 0; pid < threads; ++pid) {
                     maximal_size = std::max(calculateNOR(pid), this->noc);
 
-                    // Maximum of 16 is specified because row and column indices should fit in 4 bytes
+                    // Maximum of 15 is specified because row and column jumps should fit in 4 bytes
                     lg_sqrt_size = (int_type)(std::ceil(std::log2(std::sqrt((double)maximal_size))));
-                    block_bits[pid] = std::min<int_type>(16, 3+lg_sqrt_size);
+                    block_bits[pid] = std::min<int_type>(15, 3+lg_sqrt_size);
                     beta[pid] = (int_type)(std::pow(2, block_bits[pid]));
                 }
             }
