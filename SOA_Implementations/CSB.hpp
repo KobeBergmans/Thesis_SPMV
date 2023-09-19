@@ -26,6 +26,7 @@
 #include "../Util/Math.hpp"
 #include "../Util/TripletToCRS.hpp"
 #include "../Util/Constants.hpp"
+#include "../Util/IndexCompression.hpp"
 
 namespace pwm {
     template<typename T, typename int_type>
@@ -59,37 +60,6 @@ namespace pwm {
             bool balanced_block_rows;
 
         private:
-            /**
-             * @brief Transforms compressed index to the corresponding row index
-             * 
-             * @param input Compressed input parameter
-             * @return compress_index_t Corresponding row index
-             */
-            inline compress_index_t fromCompressedToRow(const compress_t input) {
-                return (compress_index_t)((input & HIGH_BITMASK) >> COORD_BITS);
-            }
-
-            /**
-             * @brief Transforms compressed index to the corresponding column index
-             * 
-             * @param input Compressed input parameter
-             * @return compress_index_t Corresponding column index
-             */
-            inline compress_index_t fromCompressedToCol(const compress_t input) {
-                return (compress_index_t)(input & LOW_BITMASK);
-            }
-            
-            /**
-             * @brief Transforms row and column index to compressed index
-             * 
-             * @param row Row index to be compressed
-             * @param col Column index to be compressed
-             * @return compress_t Compressed integer
-             */
-            inline compress_t fromIndicesToCompressed(const compress_index_t row, const compress_index_t col) {
-                return ((compress_t)row << COORD_BITS) | (compress_t)col;
-            }
-
             /**
              * @brief Sets the blocksize and block bits for the imported matrix
              */
